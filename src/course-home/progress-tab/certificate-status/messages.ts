@@ -1,106 +1,110 @@
-import { defineMessages } from '@edx/frontend-platform/i18n';
+import { defineMessages } from "@edx/frontend-platform/i18n";
 
 const messages = defineMessages({
-  notPassingHeader: {
-    id: 'progress.certificateStatus.notPassingHeader',
-    defaultMessage: 'Certificate status',
-    description: 'Header text when learner certifcate status is not passing',
-  },
-  notPassingBody: {
-    id: 'progress.certificateStatus.notPassingBody',
-    defaultMessage: 'In order to qualify for a certificate, you must have a passing grade.',
-    description: 'Body text when learner certifcate status is not passing',
-  },
-  inProgressHeader: {
-    id: 'progress.certificateStatus.inProgressHeader',
-    defaultMessage: 'More content is coming soon!',
-    description: 'Header text when learner certifcate is in progress',
-  },
-  inProgressBody: {
-    id: 'progress.certificateStatus.inProgressBody',
-    defaultMessage: 'It looks like there is more content in this course that will be released in the future. Look out for email updates or check back on your course for when this content will be available.',
-    description: 'Body text when learner certifcate is in progress',
-  },
-  requestableHeader: {
-    id: 'progress.certificateStatus.requestableHeader',
-    defaultMessage: 'Certificate status',
-    description: 'Header text when learner certifcate status is requestable',
-  },
-  requestableBody: {
-    id: 'progress.certificateStatus.requestableBody',
-    defaultMessage: 'Congratulations, you qualified for a certificate! In order to access your certificate, request it below.',
-    description: 'Body text when learner certifcate status is requestable',
-  },
-  requestableButton: {
-    id: 'progress.certificateStatus.requestableButton',
-    defaultMessage: 'Request certificate',
-    description: 'Button text when learner certifcate status is requestable',
-  },
-  unverifiedHeader: {
-    id: 'progress.certificateStatus.unverifiedHeader',
-    defaultMessage: 'Certificate status',
-    description: 'Header text when learner certifcate status is unverified',
-  },
-  unverifiedButton: {
-    id: 'progress.certificateStatus.unverifiedButton',
-    defaultMessage: 'Verify ID',
-    description: 'Button text when learner certifcate status is unverified',
-  },
-  unverifiedPendingBody: {
-    id: 'progress.certificateStatus.courseCelebration.verificationPending',
-    defaultMessage: 'Your ID verification is pending and your certificate will be available once approved.',
-    description: 'Body text when learner certifcate status is unverified pending',
-  },
-  downloadableHeader: {
-    id: 'progress.certificateStatus.downloadableHeader',
-    defaultMessage: 'Your certificate is available!',
-    description: 'Header text when the certifcate is available',
-  },
-  viewableButton: {
-    id: 'progress.certificateStatus.viewableButton',
-    defaultMessage: 'View my certificate',
-    description: 'Button text which view or links to the certifcate',
-  },
-  notAvailableHeader: {
-    id: 'progress.certificateStatus.notAvailableHeader',
-    defaultMessage: 'Certificate status',
-    description: 'Header text when the certifcate is not available',
-  },
-  notAvailableEndDateBody: {
-    id: 'progress.certificateBody.notAvailable.endDate',
-    defaultMessage: 'Final grades and any earned certificates are scheduled to be available after {endDate}.',
-    description: 'Shown for learners who have finished a course before grades and certificates are available.',
-  },
-  upgradeHeader: {
-    id: 'progress.certificateStatus.upgradeHeader',
-    defaultMessage: 'Earn a certificate',
-    description: 'Header text when the learner needs to upgrade to earn a certifcate ',
-  },
-  upgradeBody: {
-    id: 'progress.certificateStatus.upgradeBody',
-    defaultMessage: 'You are in an audit track and do not qualify for a certificate. In order to work towards a certificate, upgrade your course today.',
-    description: 'Body text when the learner needs to upgrade to earn a certifcate ',
-  },
-  upgradeButton: {
-    id: 'progress.certificateStatus.upgradeButton',
-    defaultMessage: 'Upgrade now',
-    description: 'Button text which leaner needs to upgrade to get the certifcate',
-  },
-  unverifiedHomeHeader: {
-    id: 'progress.certificateStatus.unverifiedHomeHeader.v2',
-    defaultMessage: 'Verify your identity to qualify for a certificate.',
-    description: 'Header text when the learner needs to do verification to earn a certifcate ',
-  },
-  unverifiedHomeButton: {
-    id: 'progress.certificateStatus.unverifiedHomeButton',
-    defaultMessage: 'Verify my ID',
-    description: 'Button text which leaner needs to do verification to earn a certifcate',
-  },
-  unverifiedHomeBody: {
-    id: 'progress.certificateStatus.unverifiedHomeBody',
-    defaultMessage: 'In order to generate a certificate for this course, you must complete the ID verification process.',
-    description: 'Body text when the learner needs to do verification to earn a certifcate',
-  },
+    notPassingHeader: {
+        id: "progress.certificateStatus.notPassingHeader",
+        defaultMessage: "Trạng thái chứng chỉ",
+        description: "Header text when learner certifcate status is not passing",
+    },
+    notPassingBody: {
+        id: "progress.certificateStatus.notPassingBody",
+        defaultMessage: "Để đủ điều kiện nhận chứng chỉ, bạn phải có điểm đạt.",
+        description: "Body text when learner certifcate status is not passing",
+    },
+    inProgressHeader: {
+        id: "progress.certificateStatus.inProgressHeader",
+        defaultMessage: "Sẽ có thêm nội dung sớm!",
+        description: "Header text when learner certifcate is in progress",
+    },
+    inProgressBody: {
+        id: "progress.certificateStatus.inProgressBody",
+        defaultMessage:
+            "Có vẻ như có thêm nội dung trong khóa học này sẽ được phát hành trong tương lai. Hãy chú ý email cập nhật hoặc kiểm tra lại khóa học của bạn để biết khi nào nội dung này sẽ có sẵn.",
+        description: "Body text when learner certifcate is in progress",
+    },
+    requestableHeader: {
+        id: "progress.certificateStatus.requestableHeader",
+        defaultMessage: "Trạng thái chứng chỉ",
+        description: "Header text when learner certifcate status is requestable",
+    },
+    requestableBody: {
+        id: "progress.certificateStatus.requestableBody",
+        defaultMessage:
+            "Chúc mừng, bạn đã đủ điều kiện nhận chứng chỉ! Để truy cập chứng chỉ của bạn, hãy yêu cầu bên dưới.",
+        description: "Body text when learner certifcate status is requestable",
+    },
+    requestableButton: {
+        id: "progress.certificateStatus.requestableButton",
+        defaultMessage: "Yêu cầu chứng chỉ",
+        description: "Button text when learner certifcate status is requestable",
+    },
+    unverifiedHeader: {
+        id: "progress.certificateStatus.unverifiedHeader",
+        defaultMessage: "Trạng thái chứng chỉ",
+        description: "Header text when learner certifcate status is unverified",
+    },
+    unverifiedButton: {
+        id: "progress.certificateStatus.unverifiedButton",
+        defaultMessage: "Xác minh danh tính",
+        description: "Button text when learner certifcate status is unverified",
+    },
+    unverifiedPendingBody: {
+        id: "progress.certificateStatus.courseCelebration.verificationPending",
+        defaultMessage:
+            "Xác minh danh tính của bạn đang chờ xử lý và chứng chỉ của bạn sẽ có sẵn sau khi được phê duyệt.",
+        description: "Body text when learner certifcate status is unverified pending",
+    },
+    downloadableHeader: {
+        id: "progress.certificateStatus.downloadableHeader",
+        defaultMessage: "Chứng chỉ của bạn đã sẵn sàng!",
+        description: "Header text when the certifcate is available",
+    },
+    viewableButton: {
+        id: "progress.certificateStatus.viewableButton",
+        defaultMessage: "Xem chứng chỉ của tôi",
+        description: "Button text which view or links to the certifcate",
+    },
+    notAvailableHeader: {
+        id: "progress.certificateStatus.notAvailableHeader",
+        defaultMessage: "Trạng thái chứng chỉ",
+        description: "Header text when the certifcate is not available",
+    },
+    notAvailableEndDateBody: {
+        id: "progress.certificateBody.notAvailable.endDate",
+        defaultMessage: "Điểm cuối kỳ và bất kỳ chứng chỉ nào đã đạt được dự kiến sẽ có sẵn sau {endDate}.",
+        description: "Shown for learners who have finished a course before grades and certificates are available.",
+    },
+    upgradeHeader: {
+        id: "progress.certificateStatus.upgradeHeader",
+        defaultMessage: "Nhận chứng chỉ",
+        description: "Header text when the learner needs to upgrade to earn a certifcate ",
+    },
+    upgradeBody: {
+        id: "progress.certificateStatus.upgradeBody",
+        defaultMessage:
+            "Bạn đang trong lộ trình kiểm tra và không đủ điều kiện nhận chứng chỉ. Để hướng tới chứng chỉ, hãy nâng cấp khóa học của bạn ngay hôm nay.",
+        description: "Body text when the learner needs to upgrade to earn a certifcate ",
+    },
+    upgradeButton: {
+        id: "progress.certificateStatus.upgradeButton",
+        defaultMessage: "Nâng cấp ngay",
+        description: "Button text which leaner needs to upgrade to get the certifcate",
+    },
+    unverifiedHomeHeader: {
+        id: "progress.certificateStatus.unverifiedHomeHeader.v2",
+        defaultMessage: "Xác minh danh tính của bạn để đủ điều kiện nhận chứng chỉ.",
+        description: "Header text when the learner needs to do verification to earn a certifcate ",
+    },
+    unverifiedHomeButton: {
+        id: "progress.certificateStatus.unverifiedHomeButton",
+        defaultMessage: "Xác minh danh tính của tôi",
+        description: "Button text which leaner needs to do verification to earn a certifcate",
+    },
+    unverifiedHomeBody: {
+        id: "progress.certificateStatus.unverifiedHomeBody",
+        defaultMessage: "Để tạo chứng chỉ cho khóa học này, bạn phải hoàn thành quy trình xác minh danh tính.",
+        description: "Body text when the learner needs to do verification to earn a certifcate",
+    },
 });
 
 export default messages;

@@ -458,6 +458,10 @@
   }
 }
 
+.outline-sidebar-wrapper.flex-shrink-0.mr-4.h-auto {
+  height: 100vh !important;
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
 @import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
