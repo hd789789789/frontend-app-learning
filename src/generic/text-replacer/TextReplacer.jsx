@@ -8,9 +8,13 @@ const useTextReplacer = () => {
                 replacements: { 'ngày': "Ngày" },
             },
             {
-                selector: 'a.nav-link[href*="/dates"]',
+                selector: 'a.pgn__dropdown-item.dropdown-item',
                 replacements: { 'Specific Student...': "Học sinh cụ thể..." },
-            }
+            },
+            {
+                selector: 'a.nav-item.flex-shrink-0.nav-link',
+                replacements: { 'Tiến triển': "Tiến độ" },
+            },
             // Thêm các translation khác ở đây
         ];
 
