@@ -18,7 +18,7 @@ const messages = defineMessages({
     },
     outlineCardLink: {
         id: "progress.relatedLinks.outlineCard.link",
-        defaultMessage: "Dàn bài khóa học",
+        defaultMessage: "Đề cương khóa học",
         description: "Anchor text for link that redirects to course outline tab",
     },
     relatedLinks: {

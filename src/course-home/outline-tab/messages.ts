@@ -38,7 +38,7 @@ const messages = defineMessages({
     },
     hiddenSection: {
         id: "learning.outline.hiddenSection",
-        defaultMessage: "Ẩn trong Dàn bài khóa học, có thể truy cập qua liên kết",
+        defaultMessage: "Ẩn trong Đề cương khóa học, có thể truy cập qua liên kết",
         description: "Label for hidden section in course outline",
     },
     hiddenSequenceLink: {

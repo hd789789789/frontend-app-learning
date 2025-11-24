@@ -8,12 +8,12 @@ const messages = defineMessages({
     },
     toggleCourseOutlineTrigger: {
         id: "courseOutline.toggle.button",
-        defaultMessage: "Chuyển đổi khay dàn bài khóa học",
+        defaultMessage: "Chuyển đổi khay Đề cương khóa học",
         description: "Button for the learner to toggle the sidebar",
     },
     courseOutlineTitle: {
         id: "courseOutline.tray.title",
-        defaultMessage: "Dàn bài khóa học",
+        defaultMessage: "Đề cương khóa học",
         description: "Title text displayed for the course outline tray",
     },
     completedUnit: {

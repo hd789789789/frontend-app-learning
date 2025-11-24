@@ -83,7 +83,7 @@ const messages = defineMessages({
     },
     courseOutline: {
         id: "progress.courseOutline",
-        defaultMessage: "Dàn bài khóa học",
+        defaultMessage: "Đề cương khóa học",
         description: "Anchor text for link that redirects to (course outline) tab",
     },
     currentGradeLabel: {
