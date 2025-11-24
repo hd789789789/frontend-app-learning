@@ -5,20 +5,12 @@ const useTextReplacer = () => {
         const translations = [
             {
                 selector: 'a.nav-link[href*="/dates"]',
-                replacements: { ngày: "Dates" },
+                replacements: { 'ngày': "Ngày" },
             },
             {
-                selector: 'a.nav-link[href*="/progress"]',
-                replacements: { "tiến độ": "Progress" },
-            },
-            {
-                selector: 'a.nav-link[href*="/home"]',
-                replacements: { "trang chủ": "Home", "Trang Chủ": "Home" },
-            },
-            {
-                selector: 'a.nav-link[href*="/discussion"]',
-                replacements: { "thảo luận": "Discussion" },
-            },
+                selector: 'a.nav-link[href*="/dates"]',
+                replacements: { 'Specific Student...': "Học sinh cụ thể..." },
+            }
             // Thêm các translation khác ở đây
         ];
 
