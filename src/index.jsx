@@ -34,7 +34,7 @@ import PreferencesUnsubscribe from "./preferences-unsubscribe";
 import PageNotFound from "./generic/PageNotFound";
 
 // THÊM IMPORT NÀY
-import { TextReplacerProvider } from "./generic/TextReplacer";
+import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 
 subscribe(APP_READY, () => {
     const root = createRoot(document.getElementById("root"));
