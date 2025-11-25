@@ -470,6 +470,11 @@ div#main-content {
   min-height: 70vh;
 }
 
+.text-right.small.py-1 > .text-gray-500 {
+  display: none !important;
+}
+
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
 @import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
