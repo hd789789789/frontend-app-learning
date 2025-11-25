@@ -47,63 +47,65 @@ const useTextReplacer = () => {
             });
         };
 
-        // ============ SIMPLE STRING REPLACEMENT - TARGET TOÀN BỘ TEXT ============
+        // ============ COURSE START MESSAGE - DÙNG TEXTCONTENT CỦA ELEMENT ============
         const replaceCourseStartMessage = () => {
-            // Target tất cả text nodes trong body
             const allText = document.body.innerText;
             
-            // Debug: Log ra để xem text thực sự
             if (allText.includes('in') && allText.includes('days') && allText.includes('vào ngày')) {
                 console.log('🔍 Found course start message in DOM');
             }
             
-            // Tìm tất cả elements có chứa text cần dịch
+            // Tìm tất cả elements
             const elements = document.querySelectorAll('*');
             
             elements.forEach(element => {
-                // Bỏ qua script, style
                 if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE') return;
                 
-                // Chỉ xử lý text nodes trực tiếp của element
-                Array.from(element.childNodes).forEach(node => {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        let text = node.textContent;
-                        
-                        // BỎ QUA nếu đã dịch
-                        if (text.includes('sẽ bắt đầu từ ngày') || text.includes('từ ngày') && /\d{2}\/\d{2}\/\d{4}/.test(text)) {
-                            return;
+                // LẤY TEXTCONTENT CỦA ELEMENT (bao gồm tất cả text con)
+                let text = element.textContent;
+                
+                // BỎ QUA nếu đã dịch
+                if (text.includes('sẽ bắt đầu từ ngày')) {
+                    return;
+                }
+                
+                // CHECK PATTERN
+                if (/Khóa học bắt đầu\s+in\s+[\d,]+\s+days?\s+vào ngày/.test(text)) {
+                    console.log('✅ Element match found:', element.tagName, text.substring(0, 100));
+                    
+                    const originalText = text;
+                    
+                    // Pattern với dấu chấm
+                    text = text.replace(
+                        /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})\./gi,
+                        (match, days, month, day, year) => {
+                            console.log('🎯 Regex matched with period:', match);
+                            const monthNum = monthMap[month] || month;
+                            const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
+                            const cleanDays = days.replace(/,/g, '.');
+                            return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày).`;
                         }
-                        
-                        // Pattern 1: "Khóa học bắt đầu in X days vào ngày Month D, YYYY."
-                        if (/Khóa học bắt đầu\s+in\s+[\d,]+\s+days?\s+vào ngày/.test(text)) {
-                            console.log('✅ Match found:', text);
-                            
-                            // Replace với NHIỀU patterns khác nhau
-                            text = text
-                                // Pattern với dấu chấm cuối
-                                .replace(/Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})\./gi, 
-                                    (match, days, month, day, year) => {
-                                        const monthNum = monthMap[month] || month;
-                                        const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
-                                        const cleanDays = days.replace(/,/g, '.');
-                                        return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày).`;
-                                    })
-                                // Pattern không có dấu chấm
-                                .replace(/Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi, 
-                                    (match, days, month, day, year) => {
-                                        const monthNum = monthMap[month] || month;
-                                        const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
-                                        const cleanDays = days.replace(/,/g, '.');
-                                        return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
-                                    });
-                            
-                            if (text !== node.textContent) {
-                                console.log('✨ Replaced to:', text);
-                                node.textContent = text;
-                            }
+                    );
+                    
+                    // Pattern không có dấu chấm
+                    text = text.replace(
+                        /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi,
+                        (match, days, month, day, year) => {
+                            console.log('🎯 Regex matched without period:', match);
+                            const monthNum = monthMap[month] || month;
+                            const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
+                            const cleanDays = days.replace(/,/g, '.');
+                            return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
                         }
+                    );
+                    
+                    if (text !== originalText) {
+                        console.log('✨ Replacement successful! Setting textContent...');
+                        element.textContent = text;
+                    } else {
+                        console.log('❌ Regex did NOT match. Original text:', originalText.substring(0, 150));
                     }
-                });
+                }
             });
         };
 
@@ -118,7 +120,6 @@ const useTextReplacer = () => {
                     if (node.nodeType === Node.TEXT_NODE) {
                         let text = node.textContent;
                         
-                        // BỎ QUA nếu đã có format tiếng Việt
                         if (/(Thứ (Hai|Ba|Tư|Năm|Sáu|Bảy)|Chủ Nhật),\s+\d{2}\/\d{2}\/\d{4}/.test(text)) {
                             return;
                         }
@@ -183,20 +184,18 @@ const useTextReplacer = () => {
 
         const replaceAll = () => {
             replaceTexts();
-            replaceCourseStartMessage(); // PRIORITY 1
-            replaceDates(); // PRIORITY 2
+            replaceCourseStartMessage();
+            replaceDates();
         };
 
-        // Initial run với delays DÀI HƠN
         console.log('🚀 TextReplacer initialized');
-        const timeouts = [0, 500, 1000, 2000, 4000, 6000].map((delay) => 
+        const timeouts = [0, 500, 1000, 2000, 4000].map((delay) => 
             setTimeout(() => {
                 console.log(`⏰ Running replaceAll at ${delay}ms`);
                 replaceAll();
             }, delay)
         );
 
-        // Observer
         let observerTimeout;
         const observer = new MutationObserver((mutations) => {
             clearTimeout(observerTimeout);
@@ -206,7 +205,6 @@ const useTextReplacer = () => {
             }, 300);
         });
 
-        // Bắt đầu observe SAU 1 giây
         setTimeout(() => {
             observer.observe(document.body, {
                 childList: true,
@@ -219,7 +217,6 @@ const useTextReplacer = () => {
             timeouts.forEach(clearTimeout);
             clearTimeout(observerTimeout);
             observer.disconnect();
-            console.log('🛑 TextReplacer cleanup');
         };
     }, []);
 };
