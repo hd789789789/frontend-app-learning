@@ -32,17 +32,28 @@ const useTextReplacer = () => {
             { selector: 'a.nav-item.flex-shrink-0.nav-link', replacements: { 'Tiến triển': "Tiến độ" } },
             { selector: 'a.pgn__dropdown-item.dropdown-item', replacements: { 'Staff': "Nhân viên" } },
             { selector: 'button#masquerade-widget-toggle', replacements: { 'Staff': "Nhân viên" } },
+            { 
+                selector: '.container-xl.py-2.d-flex.align-items-center > a.text-gray-700', 
+                replacements: { 'Help': "Trợ giúp" },
+                href: 'https://pistudy.vn/help' // THÊM HREF MỚI
+            },
         ];
 
         const replaceTexts = () => {
-            translations.forEach(({ selector, replacements }) => {
+            translations.forEach(({ selector, replacements, href }) => {
                 const elements = document.querySelectorAll(selector);
                 elements.forEach((el) => {
+                    // Replace text content
                     Object.entries(replacements).forEach(([vi, en]) => {
                         if (el.textContent.trim() === vi) {
                             el.textContent = en;
                         }
                     });
+                    
+                    // Replace href nếu có
+                    if (href && el.tagName === 'A') {
+                        el.href = href;
+                    }
                 });
             });
         };
@@ -50,7 +61,6 @@ const useTextReplacer = () => {
         const processedElements = new WeakSet();
         
         const replaceCourseStartMessage = () => {
-            // Tìm tất cả elements chứa pattern
             const targetElements = [];
             document.querySelectorAll('*').forEach(el => {
                 if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
@@ -58,7 +68,6 @@ const useTextReplacer = () => {
                 
                 const text = el.textContent;
                 if (text.includes('Khóa học bắt đầu in') && text.includes('days vào ngày')) {
-                    // Chỉ lấy elements KHÔNG có child elements (chỉ có text nodes)
                     const hasOnlyTextNodes = Array.from(el.childNodes).every(
                         node => node.nodeType === Node.TEXT_NODE
                     );
@@ -69,32 +78,23 @@ const useTextReplacer = () => {
                 }
             });
             
-            // Sắp xếp để lấy element nhỏ nhất
             targetElements.sort((a, b) => a.textContent.length - b.textContent.length);
             
             const targetElement = targetElements[0];
             if (!targetElement) return;
             
-            console.log('🎯 Target element:', targetElement.tagName);
-            
-            // Lấy FULL TEXT từ element
             let fullText = targetElement.textContent;
-            console.log('📝 Full text:', fullText);
             
-            // BỎ QUA nếu đã dịch
             if (fullText.includes('sẽ bắt đầu từ ngày')) {
-                console.log('⏭️ Already translated');
                 processedElements.add(targetElement);
                 return;
             }
             
             const originalText = fullText;
             
-            // Replace pattern với dấu chấm
             fullText = fullText.replace(
                 /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})\./gi,
                 (match, days, month, day, year) => {
-                    console.log('✅ Pattern 1 matched:', match);
                     const monthNum = monthMap[month] || month;
                     const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
                     const cleanDays = days.replace(/,/g, '.');
@@ -102,11 +102,9 @@ const useTextReplacer = () => {
                 }
             );
             
-            // Replace pattern không có dấu chấm
             fullText = fullText.replace(
                 /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi,
                 (match, days, month, day, year) => {
-                    console.log('✅ Pattern 2 matched:', match);
                     const monthNum = monthMap[month] || month;
                     const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
                     const cleanDays = days.replace(/,/g, '.');
@@ -115,18 +113,11 @@ const useTextReplacer = () => {
             );
             
             if (fullText !== originalText) {
-                console.log('✨ Replacement successful!');
-                console.log('📤 New text:', fullText);
-                
-                // SET textContent (safe vì element CHỈ chứa text nodes)
                 targetElement.textContent = fullText;
                 processedElements.add(targetElement);
-            } else {
-                console.log('❌ No match found');
             }
         };
 
-        // ============ DATE FORMATS ============
         const replaceDates = () => {
             const walker = document.createTreeWalker(
                 document.body,
@@ -138,7 +129,6 @@ const useTextReplacer = () => {
                             return NodeFilter.FILTER_REJECT;
                         }
                         
-                        // Bỏ qua nếu parent đã được xử lý
                         if (processedElements.has(parent)) {
                             return NodeFilter.FILTER_REJECT;
                         }
@@ -163,7 +153,6 @@ const useTextReplacer = () => {
                 let text = textNode.textContent;
                 let modified = false;
 
-                // Pattern 1: "Mon, Nov 24, 2025"
                 const pattern1 = /\b(Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday),?\s+(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|September|Oct|October|Nov|November|Dec|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi;
                 
                 const matches1 = [...text.matchAll(pattern1)];
@@ -175,7 +164,6 @@ const useTextReplacer = () => {
                     });
                 }
 
-                // Pattern 2: "2025-11-24"
                 const pattern2 = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g;
                 const matches2 = [...text.matchAll(pattern2)];
                 if (matches2.length > 0) {
@@ -192,7 +180,6 @@ const useTextReplacer = () => {
                     });
                 }
 
-                // Pattern 3: Standalone months
                 const monthReplacements = {
                     'January': 'Tháng 1', 'February': 'Tháng 2', 'March': 'Tháng 3',
                     'April': 'Tháng 4', 'May': 'Tháng 5', 'June': 'Tháng 6',
@@ -223,20 +210,14 @@ const useTextReplacer = () => {
             replaceDates();
         };
 
-        console.log('🚀 TextReplacer initialized');
         const timeouts = [0, 500, 1000, 2000, 4000].map((delay) => 
-            setTimeout(() => {
-                console.log(`⏰ Running replaceAll at ${delay}ms`);
-                replaceAll();
-            }, delay)
+            setTimeout(replaceAll, delay)
         );
 
         let observerTimeout;
         const observer = new MutationObserver(() => {
             clearTimeout(observerTimeout);
-            observerTimeout = setTimeout(() => {
-                replaceAll();
-            }, 300);
+            observerTimeout = setTimeout(replaceAll, 300);
         });
 
         setTimeout(() => {
