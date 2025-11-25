@@ -2,6 +2,14 @@ import { useEffect } from "react";
 
 const useTextReplacer = () => {
     useEffect(() => {
+        // Map tháng để convert
+        const monthMap = {
+            'Th1': 1, 'Th2': 2, 'Th3': 3, 'Th4': 4, 'Th5': 5, 'Th6': 6,
+            'Th7': 7, 'Th8': 8, 'Th9': 9, 'Th10': 10, 'Th11': 11, 'Th12': 12,
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+        };
+
         // Function format date
         const formatDateToVietnamese = (dateString) => {
             if (!dateString) return '';
@@ -61,6 +69,66 @@ const useTextReplacer = () => {
                     });
                 });
             });
+        };
+
+        // Function thay thế format ngày tháng khóa học
+        const replaceCourseDates = (node = document.body) => {
+            const replaceInTextNode = (textNode) => {
+                let text = textNode.textContent;
+                let modified = false;
+
+                // Pattern: "in X days vào ngày Month DD, YYYY" 
+                // hoặc "in X,XXX days vào ngày Month DD, YYYY"
+                const regex = /in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
+                
+                if (regex.test(text)) {
+                    text = text.replace(regex, (match, days, month, day, year) => {
+                        const monthNum = monthMap[month] || month;
+                        const dateStr = `${day}/${monthNum}/${year}`;
+                        return `từ ngày ${dateStr} (${days} ngày nữa)`;
+                    });
+                    modified = true;
+                }
+
+                // Xử lý trường hợp "Khóa học bắt đầu in" -> "Khóa học bắt đầu từ ngày"
+                if (text.includes('Khóa học bắt đầu')) {
+                    const newText = text.replace(/Khóa học bắt đầu\s+in/gi, 'Khóa học bắt đầu từ ngày');
+                    if (newText !== text) {
+                        text = newText;
+                        modified = true;
+                    }
+                }
+
+                if (modified) {
+                    textNode.textContent = text;
+                }
+            };
+
+            // Duyệt qua các text nodes
+            const walker = document.createTreeWalker(
+                node,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: (node) => {
+                        const parent = node.parentElement;
+                        if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        if (node.textContent.trim().length > 0) {
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                }
+            );
+
+            const textNodes = [];
+            let currentNode;
+            while (currentNode = walker.nextNode()) {
+                textNodes.push(currentNode);
+            }
+
+            textNodes.forEach(replaceInTextNode);
         };
 
         // Function thay thế ngày tháng trong toàn bộ DOM
@@ -149,10 +217,11 @@ const useTextReplacer = () => {
             textNodes.forEach(replaceInTextNode);
         };
 
-        // Function gộp: thay thế text và date
+        // Function gộp: thay thế text, date và course dates
         const replaceAll = () => {
             replaceTexts();
             replaceDates();
+            replaceCourseDates();
         };
 
         // Chạy nhiều lần để đảm bảo DOM đã load
@@ -169,8 +238,10 @@ const useTextReplacer = () => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         replaceDates(node);
+                        replaceCourseDates(node);
                     } else if (node.nodeType === Node.TEXT_NODE) {
                         replaceDates(node.parentElement);
+                        replaceCourseDates(node.parentElement);
                     }
                 });
             });
