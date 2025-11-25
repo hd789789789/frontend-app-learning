@@ -47,138 +47,183 @@ const useTextReplacer = () => {
             });
         };
 
-        // ============ COURSE START MESSAGE - DÙNG TEXTCONTENT CỦA ELEMENT ============
+        // ============ FIX: CHỈ REPLACE TEXT NODES, KHÔNG ĐỘNG ĐẾN ELEMENTS ============
+        const processedTextNodes = new WeakSet();
+        
         const replaceCourseStartMessage = () => {
-            const allText = document.body.innerText;
+            // Tìm element chứa text (để filter)
+            const targetElements = [];
+            document.querySelectorAll('*').forEach(el => {
+                if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+                if (el.textContent.includes('Khóa học bắt đầu in') && el.textContent.includes('days vào ngày')) {
+                    // CHỈ LẤY LEAF ELEMENTS (không có child elements hoặc chỉ có text)
+                    const hasOnlyTextChildren = Array.from(el.childNodes).every(
+                        node => node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE && node.childNodes.length === 0
+                    );
+                    
+                    // Hoặc là STRONG, SPAN, P tag
+                    if (hasOnlyTextChildren || ['STRONG', 'SPAN', 'P', 'DIV'].includes(el.tagName)) {
+                        targetElements.push(el);
+                    }
+                }
+            });
             
-            if (allText.includes('in') && allText.includes('days') && allText.includes('vào ngày')) {
-                console.log('🔍 Found course start message in DOM');
+            // Sắp xếp để xử lý từ nhỏ nhất (most specific) trước
+            targetElements.sort((a, b) => a.textContent.length - b.textContent.length);
+            
+            // Chỉ xử lý element nhỏ nhất
+            const targetElement = targetElements[0];
+            if (!targetElement) return;
+            
+            console.log('🎯 Target element:', targetElement.tagName, targetElement.textContent.substring(0, 100));
+            
+            // Duyệt qua tất cả TEXT NODES trong element này
+            const walker = document.createTreeWalker(
+                targetElement,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: (node) => {
+                        if (processedTextNodes.has(node)) return NodeFilter.FILTER_REJECT;
+                        if (!node.textContent.includes('in') || !node.textContent.includes('days')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                }
+            );
+            
+            const textNodes = [];
+            let currentNode;
+            while (currentNode = walker.nextNode()) {
+                textNodes.push(currentNode);
             }
             
-            // Tìm tất cả elements
-            const elements = document.querySelectorAll('*');
-            
-            elements.forEach(element => {
-                if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE') return;
-                
-                // LẤY TEXTCONTENT CỦA ELEMENT (bao gồm tất cả text con)
-                let text = element.textContent;
+            textNodes.forEach(textNode => {
+                let text = textNode.textContent;
                 
                 // BỎ QUA nếu đã dịch
                 if (text.includes('sẽ bắt đầu từ ngày')) {
+                    processedTextNodes.add(textNode);
                     return;
                 }
                 
-                // CHECK PATTERN
-                if (/Khóa học bắt đầu\s+in\s+[\d,]+\s+days?\s+vào ngày/.test(text)) {
-                    console.log('✅ Element match found:', element.tagName, text.substring(0, 100));
-                    
-                    const originalText = text;
-                    
-                    // Pattern với dấu chấm
-                    text = text.replace(
-                        /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})\./gi,
-                        (match, days, month, day, year) => {
-                            console.log('🎯 Regex matched with period:', match);
-                            const monthNum = monthMap[month] || month;
-                            const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
-                            const cleanDays = days.replace(/,/g, '.');
-                            return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày).`;
-                        }
-                    );
-                    
-                    // Pattern không có dấu chấm
-                    text = text.replace(
-                        /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi,
-                        (match, days, month, day, year) => {
-                            console.log('🎯 Regex matched without period:', match);
-                            const monthNum = monthMap[month] || month;
-                            const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
-                            const cleanDays = days.replace(/,/g, '.');
-                            return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
-                        }
-                    );
-                    
-                    if (text !== originalText) {
-                        console.log('✨ Replacement successful! Setting textContent...');
-                        element.textContent = text;
-                    } else {
-                        console.log('❌ Regex did NOT match. Original text:', originalText.substring(0, 150));
+                // Pattern với dấu chấm
+                text = text.replace(
+                    /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})\./gi,
+                    (match, days, month, day, year) => {
+                        console.log('✅ Matched and replacing:', match);
+                        const monthNum = monthMap[month] || month;
+                        const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
+                        const cleanDays = days.replace(/,/g, '.');
+                        return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày).`;
                     }
+                );
+                
+                // Pattern không có dấu chấm
+                text = text.replace(
+                    /Khóa học bắt đầu\s+in\s+([\d,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi,
+                    (match, days, month, day, year) => {
+                        console.log('✅ Matched and replacing:', match);
+                        const monthNum = monthMap[month] || month;
+                        const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
+                        const cleanDays = days.replace(/,/g, '.');
+                        return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
+                    }
+                );
+                
+                if (text !== textNode.textContent) {
+                    console.log('✨ Setting text node content');
+                    textNode.textContent = text;
+                    processedTextNodes.add(textNode);
                 }
             });
         };
 
         // ============ DATE FORMATS ============
         const replaceDates = () => {
-            const elements = document.querySelectorAll('*');
-            
-            elements.forEach(element => {
-                if (element.tagName === 'SCRIPT' || element.tagName === 'STYLE') return;
-                
-                Array.from(element.childNodes).forEach(node => {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        let text = node.textContent;
+            const walker = document.createTreeWalker(
+                document.body,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: (node) => {
+                        const parent = node.parentElement;
+                        if (!parent || parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE') {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        if (processedTextNodes.has(node)) return NodeFilter.FILTER_REJECT;
                         
+                        const text = node.textContent;
                         if (/(Thứ (Hai|Ba|Tư|Năm|Sáu|Bảy)|Chủ Nhật),\s+\d{2}\/\d{2}\/\d{4}/.test(text)) {
-                            return;
+                            return NodeFilter.FILTER_REJECT;
                         }
                         
-                        let modified = false;
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                }
+            );
+            
+            const textNodes = [];
+            let currentNode;
+            while (currentNode = walker.nextNode()) {
+                textNodes.push(currentNode);
+            }
+            
+            textNodes.forEach(textNode => {
+                let text = textNode.textContent;
+                let modified = false;
 
-                        // Pattern 1: "Mon, Nov 24, 2025"
-                        const pattern1 = /\b(Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday),?\s+(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|September|Oct|October|Nov|November|Dec|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi;
+                // Pattern 1: "Mon, Nov 24, 2025"
+                const pattern1 = /\b(Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday),?\s+(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|September|Oct|October|Nov|November|Dec|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi;
+                
+                const matches1 = [...text.matchAll(pattern1)];
+                if (matches1.length > 0) {
+                    matches1.forEach(match => {
+                        const formatted = formatDateToVietnamese(match[0]);
+                        text = text.replace(match[0], formatted);
+                        modified = true;
+                    });
+                }
+
+                // Pattern 2: "2025-11-24"
+                const pattern2 = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g;
+                const matches2 = [...text.matchAll(pattern2)];
+                if (matches2.length > 0) {
+                    matches2.forEach(match => {
+                        const [fullMatch, year, month, day] = match;
+                        const m = parseInt(month);
+                        const d = parseInt(day);
                         
-                        const matches1 = [...text.matchAll(pattern1)];
-                        if (matches1.length > 0) {
-                            matches1.forEach(match => {
-                                const formatted = formatDateToVietnamese(match[0]);
-                                text = text.replace(match[0], formatted);
-                                modified = true;
-                            });
+                        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                            const formatted = formatDateToVietnamese(fullMatch);
+                            text = text.replace(fullMatch, formatted);
+                            modified = true;
                         }
+                    });
+                }
 
-                        // Pattern 2: "2025-11-24"
-                        const pattern2 = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g;
-                        const matches2 = [...text.matchAll(pattern2)];
-                        if (matches2.length > 0) {
-                            matches2.forEach(match => {
-                                const [fullMatch, year, month, day] = match;
-                                const m = parseInt(month);
-                                const d = parseInt(day);
-                                
-                                if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-                                    const formatted = formatDateToVietnamese(fullMatch);
-                                    text = text.replace(fullMatch, formatted);
-                                    modified = true;
-                                }
-                            });
-                        }
+                // Pattern 3: Standalone months
+                const monthReplacements = {
+                    'January': 'Tháng 1', 'February': 'Tháng 2', 'March': 'Tháng 3',
+                    'April': 'Tháng 4', 'May': 'Tháng 5', 'June': 'Tháng 6',
+                    'July': 'Tháng 7', 'August': 'Tháng 8', 'September': 'Tháng 9',
+                    'October': 'Tháng 10', 'November': 'Tháng 11', 'December': 'Tháng 12',
+                    'Jan': 'Th1', 'Feb': 'Th2', 'Mar': 'Th3', 'Apr': 'Th4',
+                    'Jun': 'Th6', 'Jul': 'Th7', 'Aug': 'Th8', 'Sep': 'Th9',
+                    'Oct': 'Th10', 'Nov': 'Th11', 'Dec': 'Th12'
+                };
 
-                        // Pattern 3: Standalone months
-                        const monthReplacements = {
-                            'January': 'Tháng 1', 'February': 'Tháng 2', 'March': 'Tháng 3',
-                            'April': 'Tháng 4', 'May': 'Tháng 5', 'June': 'Tháng 6',
-                            'July': 'Tháng 7', 'August': 'Tháng 8', 'September': 'Tháng 9',
-                            'October': 'Tháng 10', 'November': 'Tháng 11', 'December': 'Tháng 12',
-                            'Jan': 'Th1', 'Feb': 'Th2', 'Mar': 'Th3', 'Apr': 'Th4',
-                            'Jun': 'Th6', 'Jul': 'Th7', 'Aug': 'Th8', 'Sep': 'Th9',
-                            'Oct': 'Th10', 'Nov': 'Th11', 'Dec': 'Th12'
-                        };
-
-                        Object.entries(monthReplacements).forEach(([eng, viet]) => {
-                            const regex = new RegExp(`\\b${eng}\\b(?!\\s*\\d)`, 'g');
-                            if (regex.test(text)) {
-                                text = text.replace(regex, viet);
-                                modified = true;
-                            }
-                        });
-
-                        if (modified) {
-                            node.textContent = text;
-                        }
+                Object.entries(monthReplacements).forEach(([eng, viet]) => {
+                    const regex = new RegExp(`\\b${eng}\\b(?!\\s*\\d)`, 'g');
+                    if (regex.test(text)) {
+                        text = text.replace(regex, viet);
+                        modified = true;
                     }
                 });
+
+                if (modified) {
+                    textNode.textContent = text;
+                    processedTextNodes.add(textNode);
+                }
             });
         };
 
@@ -197,10 +242,9 @@ const useTextReplacer = () => {
         );
 
         let observerTimeout;
-        const observer = new MutationObserver((mutations) => {
+        const observer = new MutationObserver(() => {
             clearTimeout(observerTimeout);
             observerTimeout = setTimeout(() => {
-                console.log('🔄 DOM changed, running replaceAll');
                 replaceAll();
             }, 300);
         });
@@ -210,7 +254,6 @@ const useTextReplacer = () => {
                 childList: true,
                 subtree: true,
             });
-            console.log('👁️ Observer started');
         }, 1000);
 
         return () => {
