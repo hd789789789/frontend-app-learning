@@ -2,10 +2,10 @@ import { useEffect } from "react";
 
 const useTextReplacer = () => {
     useEffect(() => {
-        // Đánh dấu đã xử lý để tránh xử lý lại
-        const PROCESSED_ATTR = 'data-date-processed';
+        // Sử dụng WeakSet để track processed nodes (tốt hơn attribute)
+        const processedCourseDates = new WeakSet();
+        const processedDates = new WeakSet();
         
-        // Map tháng
         const monthMap = {
             'Th1': 1, 'Th2': 2, 'Th3': 3, 'Th4': 4, 'Th5': 5, 'Th6': 6,
             'Th7': 7, 'Th8': 8, 'Th9': 9, 'Th10': 10, 'Th11': 11, 'Th12': 12,
@@ -13,9 +13,6 @@ const useTextReplacer = () => {
             'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12,
             'January': 1, 'February': 2, 'March': 3, 'April': 4, 'June': 6,
             'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12,
-            'Tháng 1': 1, 'Tháng 2': 2, 'Tháng 3': 3, 'Tháng 4': 4, 
-            'Tháng 5': 5, 'Tháng 6': 6, 'Tháng 7': 7, 'Tháng 8': 8,
-            'Tháng 9': 9, 'Tháng 10': 10, 'Tháng 11': 11, 'Tháng 12': 12
         };
 
         const formatDateToVietnamese = (dateString) => {
@@ -77,57 +74,67 @@ const useTextReplacer = () => {
             });
         };
 
-        // ============ FIX COURSE DATES ============
+        // ============ FIX COURSE DATES - THÊM PATTERN MỚI ============
         const replaceCourseDates = (node = document.body) => {
             const replaceInTextNode = (textNode) => {
-                // Kiểm tra đã xử lý chưa
-                const parent = textNode.parentElement;
-                if (parent && parent.hasAttribute(PROCESSED_ATTR)) {
+                // Check đã xử lý chưa
+                if (processedCourseDates.has(textNode)) {
                     return;
                 }
 
                 let text = textNode.textContent;
+                const originalText = text;
                 let modified = false;
 
-                // Pattern 1: "sau X ngày vào ngày Jan 1, 2030" (KHÔNG CÓ DẤU PHẨY SAU THÁNG)
-                const regex1 = /sau\s+([\d.,]+)\s+ngày\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
+                // Pattern 1: "Khóa học bắt đầu in X days vào ngày Jan 1, 2030"
+                const regex1 = /Khóa học bắt đầu\s+in\s+([\d.,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
                 if (regex1.test(text)) {
                     text = text.replace(regex1, (match, days, month, day, year) => {
                         const monthNum = monthMap[month] || month;
                         const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
                         const cleanDays = days.replace(/,/g, '.');
-                        return `từ ngày ${dateStr} (${cleanDays} ngày nữa)`;
+                        return `Khóa học sẽ bắt đầu từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
                     });
                     modified = true;
                 }
 
-                // Pattern 2: "in X days vào ngày Month DD, YYYY"
-                const regex2 = /in\s+([\d.,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
+                // Pattern 2: "sau X ngày vào ngày Jan 1, 2030"
+                const regex2 = /sau\s+([\d.,]+)\s+ngày\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
                 if (regex2.test(text)) {
                     text = text.replace(regex2, (match, days, month, day, year) => {
                         const monthNum = monthMap[month] || month;
                         const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
                         const cleanDays = days.replace(/,/g, '.');
-                        return `từ ngày ${dateStr} (${cleanDays} ngày nữa)`;
+                        return `từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
                     });
                     modified = true;
                 }
 
-                // Pattern 3: "Khóa học bắt đầu in X days"
-                const regex3 = /Khóa học bắt đầu\s+in\s+([\d.,]+)\s+days?/gi;
+                // Pattern 3: "in X days vào ngày Month DD, YYYY"
+                const regex3 = /in\s+([\d.,]+)\s+days?\s+vào ngày\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/gi;
                 if (regex3.test(text)) {
-                    text = text.replace(regex3, (match, days) => {
+                    text = text.replace(regex3, (match, days, month, day, year) => {
+                        const monthNum = monthMap[month] || month;
+                        const dateStr = `${day.padStart(2, '0')}/${monthNum.toString().padStart(2, '0')}/${year}`;
                         const cleanDays = days.replace(/,/g, '.');
-                        return `Khóa học sẽ bắt đầu sau ${cleanDays} ngày`;
+                        return `từ ngày ${dateStr} (sau ${cleanDays} ngày)`;
                     });
                     modified = true;
                 }
 
-                if (modified) {
+                // Pattern 4: Còn sót "in X days" đơn lẻ
+                const regex4 = /\bin\s+([\d.,]+)\s+days?\b/gi;
+                if (regex4.test(text) && !text.includes('từ ngày')) {
+                    text = text.replace(regex4, (match, days) => {
+                        const cleanDays = days.replace(/,/g, '.');
+                        return `sau ${cleanDays} ngày`;
+                    });
+                    modified = true;
+                }
+
+                if (modified && text !== originalText) {
                     textNode.textContent = text;
-                    if (parent) {
-                        parent.setAttribute(PROCESSED_ATTR, 'course-dates');
-                    }
+                    processedCourseDates.add(textNode);
                 }
             };
 
@@ -160,62 +167,64 @@ const useTextReplacer = () => {
         // ============ FIX DATE FORMATS ============
         const replaceDates = (node = document.body) => {
             const replaceInTextNode = (textNode) => {
-                const parent = textNode.parentElement;
-                if (parent && parent.hasAttribute(PROCESSED_ATTR)) {
+                // Check đã xử lý chưa
+                if (processedDates.has(textNode)) {
                     return;
                 }
 
                 let text = textNode.textContent;
+                const originalText = text;
                 let modified = false;
 
-                // BỎ QUA NẾU ĐÃ LÀ FORMAT TIẾNG VIỆT
-                if (/Thứ (Hai|Ba|Tư|Năm|Sáu|Bảy)|Chủ Nhật/.test(text)) {
+                // BỎ QUA NẾU ĐÃ CÓ FORMAT TIẾNG VIỆT
+                if (/(Thứ (Hai|Ba|Tư|Năm|Sáu|Bảy)|Chủ Nhật),\s+\d{2}\/\d{2}\/\d{4}/.test(text)) {
+                    processedDates.add(textNode);
                     return;
                 }
 
                 // Pattern 1: "Mon, Nov 24, 2025" hoặc "Monday, November 24, 2025"
                 const pattern1 = /\b(Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday),?\s+(Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|August|Sep|September|Oct|October|Nov|November|Dec|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi;
                 
-                const matches1 = text.match(pattern1);
-                if (matches1) {
-                    matches1.forEach(match => {
-                        const formatted = formatDateToVietnamese(match);
-                        text = text.replace(match, formatted);
-                    });
+                let match1;
+                while ((match1 = pattern1.exec(originalText)) !== null) {
+                    const formatted = formatDateToVietnamese(match1[0]);
+                    text = text.replace(match1[0], formatted);
                     modified = true;
                 }
 
                 // Pattern 2: "2025-11-24" (ISO format)
                 const pattern2 = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g;
-                const matches2 = text.match(pattern2);
-                if (matches2) {
-                    matches2.forEach(match => {
-                        // Validate date trước
-                        const [year, month, day] = match.split('-').map(Number);
-                        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-                            const formatted = formatDateToVietnamese(match);
-                            text = text.replace(match, formatted);
-                            modified = true;
-                        }
-                    });
+                let match2;
+                while ((match2 = pattern2.exec(originalText)) !== null) {
+                    const [fullMatch, year, month, day] = match2;
+                    const m = parseInt(month);
+                    const d = parseInt(day);
+                    
+                    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+                        const formatted = formatDateToVietnamese(fullMatch);
+                        text = text.replace(fullMatch, formatted);
+                        modified = true;
+                    }
                 }
 
-                // Pattern 3: "MM/DD/YYYY"
+                // Pattern 3: "MM/DD/YYYY" hoặc "DD/MM/YYYY"
                 const pattern3 = /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g;
-                const matches3 = text.match(pattern3);
-                if (matches3) {
-                    matches3.forEach(match => {
-                        const [month, day, year] = match.split('/').map(Number);
-                        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-                            const isoDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                            const formatted = formatDateToVietnamese(isoDate);
-                            text = text.replace(match, formatted);
-                            modified = true;
-                        }
-                    });
+                let match3;
+                while ((match3 = pattern3.exec(originalText)) !== null) {
+                    const [fullMatch, first, second, year] = match3;
+                    // Assume MM/DD/YYYY format (US style)
+                    const month = parseInt(first);
+                    const day = parseInt(second);
+                    
+                    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                        const isoDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        const formatted = formatDateToVietnamese(isoDate);
+                        text = text.replace(fullMatch, formatted);
+                        modified = true;
+                    }
                 }
 
-                // Pattern 4: Standalone months (CHỈ REPLACE NẾU KHÔNG PHẢI PART OF DATE)
+                // Pattern 4: Standalone months
                 if (!modified) {
                     const monthReplacements = {
                         'January': 'Tháng 1', 'February': 'Tháng 2', 'March': 'Tháng 3',
@@ -236,11 +245,9 @@ const useTextReplacer = () => {
                     });
                 }
 
-                if (modified) {
+                if (modified && text !== originalText) {
                     textNode.textContent = text;
-                    if (parent) {
-                        parent.setAttribute(PROCESSED_ATTR, 'dates');
-                    }
+                    processedDates.add(textNode);
                 }
             };
 
@@ -272,12 +279,12 @@ const useTextReplacer = () => {
 
         const replaceAll = () => {
             replaceTexts();
-            replaceCourseDates();
+            replaceCourseDates(); // PHẢI CHẠY TRƯỚC
             replaceDates();
         };
 
-        // Initial run với delays
-        const timeouts = [0, 200, 500, 1000, 2000].map((delay) => 
+        // Initial run
+        const timeouts = [0, 300, 800, 1500].map((delay) => 
             setTimeout(replaceAll, delay)
         );
 
@@ -291,17 +298,18 @@ const useTextReplacer = () => {
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach((node) => {
                         if (node.nodeType === Node.ELEMENT_NODE) {
-                            // Xóa attribute cũ để xử lý lại
-                            node.querySelectorAll(`[${PROCESSED_ATTR}]`).forEach(el => {
-                                el.removeAttribute(PROCESSED_ATTR);
-                            });
-                            
                             replaceCourseDates(node);
                             replaceDates(node);
+                        } else if (node.nodeType === Node.TEXT_NODE) {
+                            const parent = node.parentElement;
+                            if (parent) {
+                                replaceCourseDates(parent);
+                                replaceDates(parent);
+                            }
                         }
                     });
                 });
-            }, 100); // Debounce 100ms
+            }, 150);
         });
 
         observer.observe(document.body, {
