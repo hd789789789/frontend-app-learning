@@ -1,0 +1,282 @@
+/* ===== DARK THEME STYLES ===== */
+
+/* CSS Variables */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --border-color: #e5e7eb;
+    --border-color-dark: #d1d5db;
+    --link-color: #2563eb;
+    --link-hover: #1d4ed8;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-lg: rgba(0, 0, 0, 0.15);
+}
+
+.dark-theme {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --bg-tertiary: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --border-color: #374151;
+    --border-color-dark: #4b5563;
+    --link-color: #60a5fa;
+    --link-hover: #93c5fd;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-lg: rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Base Styles ===== */
+.dark-theme {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-theme body {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===== Typography ===== */
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme h4,
+.dark-theme h5,
+.dark-theme h6 {
+    color: var(--text-primary) !important;
+}
+
+.dark-theme p,
+.dark-theme span,
+.dark-theme div {
+    color: var(--text-primary);
+}
+
+.dark-theme .text-muted,
+.dark-theme .text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+/* ===== Links ===== */
+.dark-theme a {
+    color: var(--link-color) !important;
+}
+
+.dark-theme a:hover {
+    color: var(--link-hover) !important;
+}
+
+/* ===== Containers & Cards ===== */
+.dark-theme .container,
+.dark-theme .content-wrapper,
+.dark-theme .card,
+.dark-theme .card-body,
+.dark-theme .panel,
+.dark-theme .well {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ===== Header ===== */
+.dark-theme header,
+.dark-theme .learning-header,
+.dark-theme .site-header-desktop,
+.dark-theme .site-header-mobile,
+.dark-theme nav {
+    background-color: var(--bg-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+    box-shadow: 0 1px 3px var(--shadow) !important;
+}
+
+.dark-theme .navbar {
+    background-color: var(--bg-primary) !important;
+}
+
+/* ===== Forms ===== */
+.dark-theme input,
+.dark-theme textarea,
+.dark-theme select,
+.dark-theme .form-control {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+    color: var(--text-tertiary) !important;
+}
+
+.dark-theme input:focus,
+.dark-theme textarea:focus,
+.dark-theme select:focus {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--link-color) !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
+}
+
+/* ===== Buttons ===== */
+.dark-theme button:not([style*="background"]),
+.dark-theme .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme button:hover:not([style*="background"]),
+.dark-theme .btn:hover:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-warning) {
+    background-color: var(--border-color-dark) !important;
+}
+
+/* ===== Course Content ===== */
+.dark-theme .sequence,
+.dark-theme .sequence-nav,
+.dark-theme .course-tabs,
+.dark-theme .unit-navigation,
+.dark-theme .courseware-section,
+.dark-theme .vertical {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .sequence-nav-button {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-theme .xblock {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===== Sidebar ===== */
+.dark-theme .sidebar,
+.dark-theme .course-sidebar {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ===== Tables ===== */
+.dark-theme table,
+.dark-theme .table {
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme table thead,
+.dark-theme .table thead {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-theme table tbody tr,
+.dark-theme .table tbody tr {
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme table tbody tr:hover,
+.dark-theme .table tbody tr:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/* ===== Modals & Popovers ===== */
+.dark-theme .modal-content,
+.dark-theme .popover,
+.dark-theme .tooltip-inner,
+.dark-theme .dropdown-menu {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .modal-header,
+.dark-theme .modal-footer {
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .dropdown-item {
+    color: var(--text-primary) !important;
+}
+
+.dark-theme .dropdown-item:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/* ===== Alerts & Badges ===== */
+.dark-theme .alert {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark-theme .badge {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===== Code Blocks ===== */
+.dark-theme code,
+.dark-theme pre {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ===== Progress Bars ===== */
+.dark-theme .progress {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/* ===== Breadcrumbs ===== */
+.dark-theme .breadcrumb {
+    background-color: var(--bg-secondary) !important;
+}
+
+.dark-theme .breadcrumb-item {
+    color: var(--text-secondary) !important;
+}
+
+.dark-theme .breadcrumb-item.active {
+    color: var(--text-primary) !important;
+}
+
+/* ===== Scrollbar ===== */
+.dark-theme ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.dark-theme ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.dark-theme ::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-color-dark);
+}
+
+/* ===== Video Player ===== */
+.dark-theme .video-player,
+.dark-theme .video-wrapper {
+    background-color: var(--bg-primary) !important;
+}
+
+/* ===== Footer ===== */
+.dark-theme footer,
+.dark-theme .footer {
+    background-color: var(--bg-secondary) !important;
+    border-top-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}

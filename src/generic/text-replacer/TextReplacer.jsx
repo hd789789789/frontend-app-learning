@@ -59,7 +59,7 @@ const useTextReplacer = () => {
             { selector: "button#masquerade-widget-toggle", replacements: { Staff: "Nhân viên" } },
             {
                 selector: ".container-xl.py-2.d-flex.align-items-center > a.text-gray-700",
-                replacements: { Help: "Trợ giúp" },
+                replacements: { Help: "Hỗ trợ" },
                 href: "https://pistudy.vn/help", // THÊM HREF MỚI
             },
             {
