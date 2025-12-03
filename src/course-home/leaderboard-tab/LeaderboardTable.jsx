@@ -64,6 +64,8 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
     },
   ];
 
+  console.log('[LeaderboardTable] Rendering with', leaderboard.length, 'items');
+
   return (
     <div className="leaderboard-table mt-4">
       <h3 className="mb-3">Tất cả học viên ({totalStudents})</h3>
@@ -77,7 +79,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
         <DataTable.TableControlBar />
         <DataTable.Table />
         <DataTable.EmptyTable content="Không tìm thấy học viên nào" />
-        <DataTable.TableFooter />
+        {/* <DataTable.TableFooter /> */}
       </DataTable>
     </div>
   );
