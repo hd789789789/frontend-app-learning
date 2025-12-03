@@ -89,9 +89,9 @@ function TopStudentsByProgress({ courseId }) {
   };
 
   const periodButtons = [
-    { value: 'week', label: 'This Week' },
-    { value: 'month', label: 'This Month' },
-    { value: 'all', label: 'All Time' },
+    { value: 'week', label: 'Tuần này' },
+    { value: 'month', label: 'Tháng này' },
+    { value: 'all', label: 'Tất cả' },
   ];
 
   return (
@@ -99,7 +99,7 @@ function TopStudentsByProgress({ courseId }) {
       <Card.Header className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
         <div className="d-flex align-items-center">
           <span style={{ fontSize: '1.25rem' }} className="mr-2">⚡</span>
-          <span className="font-weight-bold" style={{ fontSize: '1rem' }}>Top Students by Progress</span>
+          <span className="font-weight-bold" style={{ fontSize: '1rem' }}>Top Tiến Độ</span>
         </div>
         <div className="d-flex align-items-center">
           <Button
@@ -117,7 +117,7 @@ function TopStudentsByProgress({ courseId }) {
             className="ml-2"
             style={{ fontSize: '0.8rem' }}
           >
-            ↻Refresh
+            ↻Tải lại
           </Button>
         </div>
       </Card.Header>

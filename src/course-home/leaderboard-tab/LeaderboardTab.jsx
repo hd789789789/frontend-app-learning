@@ -12,7 +12,6 @@ import { useModel } from '../../generic/model-store';
 import StatCards from './StatCards';
 import TopStudentsByGrade from './TopStudentsByGrade';
 import TopStudentsByProgress from './TopStudentsByProgress';
-import DiscussionLeaderboard from './DiscussionLeaderboard';
 
 function LeaderboardTab({ intl }) {
   const { courseId } = useParams();
@@ -93,21 +92,16 @@ function LeaderboardTab({ intl }) {
         competingCount={summaryData.competingCount}
       />
 
-      {/* Three Column Leaderboard Layout */}
+      {/* Two Column Leaderboard Layout */}
       <div className="row">
         {/* Top Students by Grade */}
-        <div className="col-lg-4 col-md-6 mb-4">
+        <div className="col-lg-6 col-md-6 mb-4">
           <TopStudentsByGrade courseId={courseId} />
         </div>
 
         {/* Top Students by Progress */}
-        <div className="col-lg-4 col-md-6 mb-4">
+        <div className="col-lg-6 col-md-6 mb-4">
           <TopStudentsByProgress courseId={courseId} />
-        </div>
-
-        {/* Discussion Leaderboard */}
-        <div className="col-lg-4 col-md-12 mb-4">
-          <DiscussionLeaderboard courseId={courseId} />
         </div>
       </div>
     </Container>

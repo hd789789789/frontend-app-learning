@@ -6,22 +6,22 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
   const stats = [
     {
       value: totalStudents,
-      label: 'TOTAL STUDENTS',
+      label: 'TỔNG HỌC VIÊN',
       color: '#4285f4',
     },
     {
       value: `${avgGrade?.toFixed(2) || 0}%`,
-      label: 'AVERAGE GRADE',
+      label: 'ĐIỂM TRUNG BÌNH',
       color: '#34a853',
     },
     {
       value: `${maxGrade || 0}%`,
-      label: 'HIGHEST GRADE',
+      label: 'ĐIỂM CAO NHẤT',
       color: '#9c27b0',
     },
     {
       value: competingCount || 0,
-      label: 'COMPETING',
+      label: 'ĐANG THI ĐUA',
       color: '#34a853',
     },
   ];

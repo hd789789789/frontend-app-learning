@@ -92,7 +92,7 @@ function TopStudentsByGrade({ courseId }) {
       <Card.Header className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
         <div className="d-flex align-items-center">
           <span style={{ fontSize: '1.25rem' }} className="mr-2">🏆</span>
-          <span className="font-weight-bold" style={{ fontSize: '1rem' }}>Top Students by Grade</span>
+          <span className="font-weight-bold" style={{ fontSize: '1rem' }}>Top Điểm Số</span>
         </div>
         <div className="d-flex align-items-center">
           <Button
@@ -110,7 +110,7 @@ function TopStudentsByGrade({ courseId }) {
             className="ml-2"
             style={{ fontSize: '0.8rem' }}
           >
-            ↻Refresh
+            ↻Tải lại
           </Button>
         </div>
       </Card.Header>
@@ -120,7 +120,7 @@ function TopStudentsByGrade({ courseId }) {
           {/* Filter */}
           <div className="px-3 py-2 border-bottom bg-light">
             <div className="d-flex align-items-center">
-              <span className="text-muted mr-2" style={{ fontSize: '0.85rem' }}>Display:</span>
+              <span className="text-muted mr-2" style={{ fontSize: '0.85rem' }}>Hiển thị:</span>
               <Form.Control
                 as="select"
                 size="sm"
