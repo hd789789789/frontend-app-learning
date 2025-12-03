@@ -1,56 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { getConfig } from '@edx/frontend-platform';
+import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import { camelCaseObject } from '@edx/frontend-platform';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 import { Alert, Container, Spinner } from '@openedx/paragon';
 import { Info } from '@openedx/paragon/icons';
 
 import { useModel } from '../../generic/model-store';
-// import LeaderboardTable from './LeaderboardTable';
-import LeaderboardTableSimple from './LeaderboardTableSimple';
-import CurrentUserRank from './CurrentUserRank';
-import TopPerformers from './TopPerformers';
+import StatCards from './StatCards';
+import TopStudentsByGrade from './TopStudentsByGrade';
+import TopStudentsByProgress from './TopStudentsByProgress';
+import DiscussionLeaderboard from './DiscussionLeaderboard';
 
 function LeaderboardTab({ intl }) {
   const { courseId } = useParams();
+  const [summaryData, setSummaryData] = useState({
+    totalStudents: 0,
+    avgGrade: 0,
+    maxGrade: 0,
+    competingCount: 0,
+  });
+  const [summaryLoading, setSummaryLoading] = useState(true);
 
   const leaderboardData = useModel('leaderboardTab', courseId);
 
-  // Debug logging
-  console.log('[LeaderboardTab] Raw leaderboardData:', leaderboardData);
+  // Fetch summary data from top-grades API
+  useEffect(() => {
+    const fetchSummary = async () => {
+      if (!courseId) return;
+      
+      setSummaryLoading(true);
+      try {
+        const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-grades/${courseId}/?limit=10`;
+        const { data } = await getAuthenticatedHttpClient().get(url);
+        const camelCased = camelCaseObject(data);
+        console.log('[LeaderboardTab] Summary data:', camelCased);
+        
+        if (camelCased.summary) {
+          setSummaryData({
+            totalStudents: camelCased.summary.totalStudents || 0,
+            avgGrade: camelCased.summary.avgGrade || 0,
+            maxGrade: camelCased.summary.maxGrade || 0,
+            competingCount: camelCased.summary.topCount || 10,
+          });
+        }
+      } catch (error) {
+        console.error('[LeaderboardTab] Error fetching summary:', error);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
 
-  const {
-    courseId: leaderboardCourseId,
-    courseName,
-    leaderboard = [],
-    currentUserRank,
-    totalStudents = 0,
-    topPerformers = [],
-  } = leaderboardData || {};
-
-  console.log('[LeaderboardTab] Parsed data:', {
-    courseName,
-    leaderboardCount: leaderboard?.length,
-    currentUserRank,
-    totalStudents,
-    topPerformersCount: topPerformers?.length,
-  });
-
-  // Log detailed array data
-  if (leaderboard && leaderboard.length > 0) {
-    console.log('[LeaderboardTab] First leaderboard item:', leaderboard[0]);
-  }
-  if (topPerformers && topPerformers.length > 0) {
-    console.log('[LeaderboardTab] First topPerformer:', topPerformers[0]);
-  }
+    fetchSummary();
+  }, [courseId]);
 
   const {
     courseStatus,
   } = useSelector(state => state.courseHome);
 
   // Loading state managed by TabContainer
-  if (courseStatus === 'loading') {
+  if (courseStatus === 'loading' && summaryLoading) {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="primary" />
@@ -71,57 +82,33 @@ function LeaderboardTab({ intl }) {
     );
   }
 
-  if (!leaderboard || leaderboard.length === 0) {
-    return (
-      <Container className="py-5">
-        <Alert variant="info" icon={Info}>
-          <Alert.Heading>Chưa có dữ liệu bảng xếp hạng</Alert.Heading>
-          <p>
-            Bảng xếp hạng sẽ xuất hiện khi học viên bắt đầu có điểm trong khóa học này.
-          </p>
-        </Alert>
-      </Container>
-    );
-  }
-
-  console.log('[LeaderboardTab] About to render components');
-  console.log('[LeaderboardTab] Will render CurrentUserRank?', currentUserRank && currentUserRank.rank);
-  console.log('[LeaderboardTab] Will render TopPerformers?', topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0);
-  console.log('[LeaderboardTab] Will render LeaderboardTable?', leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0);
-
   return (
-    <Container className="py-5 leaderboard-tab">
-      <h2 className="mb-4">{courseName || 'Course'} - Bảng xếp hạng</h2>
+    <Container fluid className="py-4 px-4" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Summary Statistics Cards */}
+      <StatCards
+        totalStudents={summaryData.totalStudents}
+        avgGrade={summaryData.avgGrade}
+        maxGrade={summaryData.maxGrade}
+        competingCount={summaryData.competingCount}
+      />
 
-      {/* Test CurrentUserRank first */}
-      {currentUserRank && currentUserRank.rank && (
-        <>
-          {console.log('[LeaderboardTab] Rendering CurrentUserRank with:', { rank: currentUserRank.rank, totalStudents: currentUserRank.totalStudents || totalStudents, percentile: currentUserRank.percentile || 0 })}
-          <CurrentUserRank
-            rank={currentUserRank.rank}
-            totalStudents={currentUserRank.totalStudents || totalStudents}
-            percentile={currentUserRank.percentile || 0}
-          />
-        </>
-      )}
+      {/* Three Column Leaderboard Layout */}
+      <div className="row">
+        {/* Top Students by Grade */}
+        <div className="col-lg-4 col-md-6 mb-4">
+          <TopStudentsByGrade courseId={courseId} />
+        </div>
 
-      {/* Now test TopPerformers */}
-      {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
-        <>
-          {console.log('[LeaderboardTab] Rendering TopPerformers with count:', topPerformers.length)}
-          <TopPerformers topPerformers={topPerformers} />
-        </>
-      )}
+        {/* Top Students by Progress */}
+        <div className="col-lg-4 col-md-6 mb-4">
+          <TopStudentsByProgress courseId={courseId} />
+        </div>
 
-      {leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0 && (
-        <>
-          {console.log('[LeaderboardTab] Rendering LeaderboardTableSimple with count:', leaderboard.length)}
-          <LeaderboardTableSimple
-            leaderboard={leaderboard}
-            totalStudents={totalStudents}
-          />
-        </>
-      )}
+        {/* Discussion Leaderboard */}
+        <div className="col-lg-4 col-md-12 mb-4">
+          <DiscussionLeaderboard courseId={courseId} />
+        </div>
+      </div>
     </Container>
   );
 }

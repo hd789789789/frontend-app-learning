@@ -248,6 +248,44 @@ export async function getLeaderboardTabData(courseId) {
   }
 }
 
+// API lấy Top Students theo điểm số (Grades)
+export async function getTopGradesLeaderboard(courseId, limit = 10) {
+  const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-grades/${courseId}/?limit=${limit}`;
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    console.log('[Top Grades API] Raw response:', data);
+    const camelCased = camelCaseObject(data);
+    console.log('[Top Grades API] After camelCase:', camelCased);
+    return camelCased;
+  } catch (error) {
+    console.error('[Top Grades API] Error:', error);
+    const httpErrorStatus = error?.response?.status;
+    if (httpErrorStatus === 401 || httpErrorStatus === 403) {
+      return { success: false, topStudents: [], summary: {} };
+    }
+    throw error;
+  }
+}
+
+// API lấy Top Students theo tiến độ (Progress)
+export async function getTopProgressLeaderboard(courseId, period = 'all', limit = 10) {
+  const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-progress/${courseId}/?period=${period}&limit=${limit}`;
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    console.log('[Top Progress API] Raw response:', data);
+    const camelCased = camelCaseObject(data);
+    console.log('[Top Progress API] After camelCase:', camelCased);
+    return camelCased;
+  } catch (error) {
+    console.error('[Top Progress API] Error:', error);
+    const httpErrorStatus = error?.response?.status;
+    if (httpErrorStatus === 401 || httpErrorStatus === 403) {
+      return { success: false, topStudents: [], summary: {} };
+    }
+    throw error;
+  }
+}
+
 export async function getProgressTabData(courseId, targetUserId) {
   let url = `${getConfig().LMS_BASE_URL}/api/course_home/progress/${courseId}`;
 
