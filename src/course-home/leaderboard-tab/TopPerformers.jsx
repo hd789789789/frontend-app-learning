@@ -22,7 +22,7 @@ function TopPerformers({ topPerformers }) {
     <div className="top-performers mb-4">
       <h3 className="mb-3">
         <Trophy className="mr-2 text-warning" />
-        Top Performers
+        Top 3 xuất sắc nhất
       </h3>
       <div className="row">
         {topPerformers.map((student) => (
@@ -32,11 +32,11 @@ function TopPerformers({ topPerformers }) {
                 <div className="display-3 mb-2">{getMedalEmoji(student.rank)}</div>
                 <div className="h5 font-weight-bold mb-1">
                   {student.displayName}
-                  {student.isCurrentUser && <span className="ml-2 badge badge-primary">You</span>}
+                  {student.isCurrentUser && <span className="ml-2 badge badge-primary">Bạn</span>}
                 </div>
                 <div className="text-muted mb-2">@{student.username}</div>
                 <div className="display-4 font-weight-bold text-primary mb-2">
-                  {student.gradePercent.toFixed(2)}%
+                  {(student.gradePercent || 0).toFixed(2)}%
                 </div>
                 {student.letterGrade && (
                   <div className="badge badge-success badge-lg">

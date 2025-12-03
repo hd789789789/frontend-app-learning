@@ -227,7 +227,10 @@ export async function getLeaderboardTabData(courseId) {
   const url = `${getConfig().LMS_BASE_URL}/api/course_home/leaderboard/${courseId}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    return camelCaseObject(data);
+    console.log('[Leaderboard API] Raw response:', data);
+    const camelCased = camelCaseObject(data);
+    console.log('[Leaderboard API] After camelCase:', camelCased);
+    return camelCased;
   } catch (error) {
     const httpErrorStatus = error?.response?.status;
     if (httpErrorStatus === 401) {

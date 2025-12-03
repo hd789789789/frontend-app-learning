@@ -13,7 +13,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
 
   const columns = [
     {
-      Header: 'Rank',
+      Header: 'Hạng',
       accessor: 'rank',
       Cell: ({ value }) => (
         <div className="font-weight-bold">
@@ -22,7 +22,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       ),
     },
     {
-      Header: 'Student',
+      Header: 'Học viên',
       accessor: 'displayName',
       Cell: ({ row }) => (
         <div className="d-flex align-items-center">
@@ -30,7 +30,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
           <div>
             <div className={row.original.isCurrentUser ? 'font-weight-bold text-primary' : ''}>
               {row.original.displayName}
-              {row.original.isCurrentUser && <span className="ml-2 badge badge-primary">You</span>}
+              {row.original.isCurrentUser && <span className="ml-2 badge badge-primary">Bạn</span>}
             </div>
             <small className="text-muted">@{row.original.username}</small>
           </div>
@@ -38,12 +38,12 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       ),
     },
     {
-      Header: 'Grade',
+      Header: 'Điểm',
       accessor: 'gradePercent',
       Cell: ({ value, row }) => (
         <div>
           <div className="font-weight-bold">
-            {value.toFixed(2)}%
+            {(value || 0).toFixed(2)}%
           </div>
           {row.original.letterGrade && (
             <small className="text-muted">
@@ -54,11 +54,11 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       ),
     },
     {
-      Header: 'Status',
+      Header: 'Trạng thái',
       accessor: 'isPassing',
       Cell: ({ value }) => (
         <span className={`badge badge-${value ? 'success' : 'secondary'}`}>
-          {value ? 'Passing' : 'Not Passing'}
+          {value ? 'Đạt' : 'Chưa đạt'}
         </span>
       ),
     },
@@ -66,7 +66,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
 
   return (
     <div className="leaderboard-table mt-4">
-      <h3 className="mb-3">All Students ({totalStudents})</h3>
+      <h3 className="mb-3">Tất cả học viên ({totalStudents})</h3>
       <DataTable
         data={leaderboard}
         columns={columns}
@@ -76,7 +76,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       >
         <DataTable.TableControlBar />
         <DataTable.Table />
-        <DataTable.EmptyTable content="No students found" />
+        <DataTable.EmptyTable content="Không tìm thấy học viên nào" />
         <DataTable.TableFooter />
       </DataTable>
     </div>
