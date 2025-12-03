@@ -43,9 +43,9 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       Cell: ({ value, row }) => (
         <div>
           <div className="font-weight-bold">
-            {(value || 0).toFixed(2)}%
+            {(value || 0).toFixed(1)}%
           </div>
-          {row.original.letterGrade && (
+          {row.original.letterGrade && row.original.letterGrade.trim() && (
             <small className="text-muted">
               {row.original.letterGrade}
             </small>
@@ -71,7 +71,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
         data={leaderboard}
         columns={columns}
         itemCount={leaderboard.length}
-        pageCount={Math.ceil(leaderboard.length / 20)}
+        isPaginated
         defaultColumnValues={{ Filter: null }}
       >
         <DataTable.TableControlBar />

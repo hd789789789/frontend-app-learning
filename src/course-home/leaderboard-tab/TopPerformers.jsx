@@ -36,9 +36,9 @@ function TopPerformers({ topPerformers }) {
                 </div>
                 <div className="text-muted mb-2">@{student.username}</div>
                 <div className="display-4 font-weight-bold text-primary mb-2">
-                  {(student.gradePercent || 0).toFixed(2)}%
+                  {(student.gradePercent || 0).toFixed(1)}%
                 </div>
-                {student.letterGrade && (
+                {student.letterGrade && student.letterGrade.trim() && (
                   <div className="badge badge-success badge-lg">
                     {student.letterGrade}
                   </div>
