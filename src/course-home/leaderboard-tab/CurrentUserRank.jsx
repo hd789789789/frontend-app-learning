@@ -4,6 +4,8 @@ import { Card } from '@openedx/paragon';
 import { Person, TrendingUp } from '@openedx/paragon/icons';
 
 function CurrentUserRank({ rank, totalStudents, percentile }) {
+  console.log('[CurrentUserRank] Rendering with:', { rank, totalStudents, percentile });
+
   return (
     <Card className="mb-4 shadow-sm">
       <Card.Header className="bg-primary text-white">

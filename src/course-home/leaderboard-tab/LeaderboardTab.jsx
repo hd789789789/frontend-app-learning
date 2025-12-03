@@ -93,6 +93,7 @@ function LeaderboardTab({ intl }) {
     <Container className="py-5 leaderboard-tab">
       <h2 className="mb-4">{courseName || 'Course'} - Bảng xếp hạng</h2>
 
+      {/* Test CurrentUserRank first */}
       {currentUserRank && currentUserRank.rank && (
         <>
           {console.log('[LeaderboardTab] Rendering CurrentUserRank with:', { rank: currentUserRank.rank, totalStudents: currentUserRank.totalStudents || totalStudents, percentile: currentUserRank.percentile || 0 })}
@@ -104,12 +105,13 @@ function LeaderboardTab({ intl }) {
         </>
       )}
 
-      {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
+      {/* TopPerformers still commented for now */}
+      {/* {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
         <>
           {console.log('[LeaderboardTab] Rendering TopPerformers with count:', topPerformers.length)}
           <TopPerformers topPerformers={topPerformers} />
         </>
-      )}
+      )} */}
 
       {leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0 && (
         <>

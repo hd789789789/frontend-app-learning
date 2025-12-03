@@ -18,6 +18,8 @@ function TopPerformers({ topPerformers }) {
     return '';
   };
 
+  console.log('[TopPerformers] Rendering with data:', topPerformers);
+
   return (
     <div className="top-performers mb-4">
       <h3 className="mb-3">
@@ -25,8 +27,8 @@ function TopPerformers({ topPerformers }) {
         Top 3 xuất sắc nhất
       </h3>
       <div className="row">
-        {topPerformers.map((student) => (
-          <div key={student.userId} className="col-md-4 mb-3">
+        {topPerformers.map((student, index) => (
+          <div key={student.userId || student.username || index} className="col-md-4 mb-3">
             <Card className={`h-100 shadow-sm ${getMedalClass(student.rank)}`} style={{ borderWidth: '2px' }}>
               <Card.Body className="text-center">
                 <div className="display-3 mb-2">{getMedalEmoji(student.rank)}</div>
