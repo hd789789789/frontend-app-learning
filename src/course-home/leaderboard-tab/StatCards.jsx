@@ -2,6 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
 
+// CSS styles for hover animation
+const cardHoverStyle = `
+  .stat-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+  .stat-card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+  }
+`;
+
 function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
   const stats = [
     {
@@ -27,28 +39,34 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
   ];
 
   return (
-    <div className="row mb-4">
-      {stats.map((stat, index) => (
-        <div key={index} className="col-md-3 col-sm-6 mb-3">
-          <Card className="h-100 text-center shadow-sm" style={{ borderRadius: '12px' }}>
-            <Card.Body className="py-4">
-              <div
-                className="display-4 font-weight-bold mb-2"
-                style={{ color: stat.color, fontSize: '2.5rem' }}
-              >
-                {stat.value}
-              </div>
-              <div
-                className="text-muted text-uppercase"
-                style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}
-              >
-                {stat.label}
-              </div>
-            </Card.Body>
-          </Card>
-        </div>
-      ))}
-    </div>
+    <>
+      <style>{cardHoverStyle}</style>
+      <div className="row mb-4">
+        {stats.map((stat, index) => (
+          <div key={index} className="col-md-3 col-sm-6 mb-3">
+            <Card 
+              className="h-100 text-center shadow-sm stat-card-hover" 
+              style={{ borderRadius: '12px' }}
+            >
+              <Card.Body className="py-4">
+                <div
+                  className="display-4 font-weight-bold mb-2"
+                  style={{ color: stat.color, fontSize: '2.5rem' }}
+                >
+                  {stat.value}
+                </div>
+                <div
+                  className="text-muted text-uppercase"
+                  style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}
+                >
+                  {stat.label}
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

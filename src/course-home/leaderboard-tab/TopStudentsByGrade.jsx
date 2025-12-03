@@ -5,6 +5,27 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { camelCaseObject } from '@edx/frontend-platform';
 
+// CSS styles for hover animation
+const hoverStyles = `
+  .leaderboard-row-hover {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+  .leaderboard-row-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+  }
+  .leaderboard-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .leaderboard-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+  }
+`;
+
 function TopStudentsByGrade({ courseId }) {
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({});
@@ -88,8 +109,10 @@ function TopStudentsByGrade({ courseId }) {
   };
 
   return (
-    <Card className="h-100 shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
-      {/* Header với title rõ ràng */}
+    <>
+      <style>{hoverStyles}</style>
+      <Card className="h-100 shadow-sm leaderboard-card-hover" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+        {/* Header với title rõ ràng */}
       <div 
         className="d-flex justify-content-between align-items-center px-3 py-3"
         style={{ 
@@ -160,15 +183,35 @@ function TopStudentsByGrade({ courseId }) {
                 students.map((student, index) => (
                   <div
                     key={student.userId || index}
-                    className="d-flex align-items-center px-3 py-2 border-bottom"
-                    style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f9f9f9' }}
+                    className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
+                    style={{ 
+                      backgroundColor: student.isCurrentUser 
+                        ? '#e3f2fd' 
+                        : (index % 2 === 0 ? '#fff' : '#f9f9f9')
+                    }}
                   >
                     <div className="mr-3" style={{ minWidth: '35px' }}>
                       {getRankBadge(student.rank)}
                     </div>
                     <div className="flex-grow-1">
-                      <div className="font-weight-semibold" style={{ fontSize: '0.9rem' }}>
-                        {student.fullName || student.displayName}
+                      <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                        <span className="font-weight-semibold">
+                          {student.fullName || student.displayName}
+                        </span>
+                        {student.isCurrentUser && (
+                          <span
+                            className="ml-2 px-2 py-0"
+                            style={{
+                              backgroundColor: '#1976d2',
+                              color: '#fff',
+                              borderRadius: '10px',
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            Bạn
+                          </span>
+                        )}
                       </div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                         @{student.username}
@@ -190,7 +233,8 @@ function TopStudentsByGrade({ courseId }) {
           )}
         </Card.Body>
       )}
-    </Card>
+      </Card>
+    </>
   );
 }
 
