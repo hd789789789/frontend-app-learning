@@ -33,7 +33,8 @@ function LeaderboardTab({ intl }) {
       
       setSummaryLoading(true);
       try {
-        const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-grades/${courseId}/?limit=10`;
+        // Sử dụng API mới: /api/course_home/top-grades/{courseId}
+        const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=10`;
         const { data } = await getAuthenticatedHttpClient().get(url);
         const camelCased = camelCaseObject(data);
         console.log('[LeaderboardTab] Summary data:', camelCased);

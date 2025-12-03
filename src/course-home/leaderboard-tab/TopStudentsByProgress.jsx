@@ -16,7 +16,8 @@ function TopStudentsByProgress({ courseId }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-progress/${courseId}/?period=${period}&limit=${limit}`;
+      // Sử dụng API mới: /api/course_home/top-progress/{courseId}
+      const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-progress/${courseId}?period=${period}&limit=${limit}`;
       const { data } = await getAuthenticatedHttpClient().get(url);
       const camelCased = camelCaseObject(data);
       console.log('[TopStudentsByProgress] Data:', camelCased);

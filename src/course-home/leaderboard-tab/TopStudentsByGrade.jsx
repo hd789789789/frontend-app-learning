@@ -15,7 +15,8 @@ function TopStudentsByGrade({ courseId }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-grades/${courseId}/?limit=${limit}`;
+      // Sử dụng API mới: /api/course_home/top-grades/{courseId}
+      const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}`;
       const { data } = await getAuthenticatedHttpClient().get(url);
       const camelCased = camelCaseObject(data);
       console.log('[TopStudentsByGrade] Data:', camelCased);

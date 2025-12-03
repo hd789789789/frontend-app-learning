@@ -250,7 +250,8 @@ export async function getLeaderboardTabData(courseId) {
 
 // API lấy Top Students theo điểm số (Grades)
 export async function getTopGradesLeaderboard(courseId, limit = 10) {
-  const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-grades/${courseId}/?limit=${limit}`;
+  // Sử dụng API mới: /api/course_home/top-grades/{courseId}
+  const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     console.log('[Top Grades API] Raw response:', data);
@@ -269,7 +270,8 @@ export async function getTopGradesLeaderboard(courseId, limit = 10) {
 
 // API lấy Top Students theo tiến độ (Progress)
 export async function getTopProgressLeaderboard(courseId, period = 'all', limit = 10) {
-  const url = `${getConfig().LMS_BASE_URL}/api/custom/v1/leaderboard/top-progress/${courseId}/?period=${period}&limit=${limit}`;
+  // Sử dụng API mới: /api/course_home/top-progress/{courseId}
+  const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-progress/${courseId}?period=${period}&limit=${limit}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     console.log('[Top Progress API] Raw response:', data);
