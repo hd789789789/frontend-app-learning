@@ -147,9 +147,10 @@ function TopStudentsByProgress({ courseId }) {
                             size="sm"
                             onClick={handleRefresh}
                             className="ml-2"
-                            style={{ fontSize: '0.8rem' }}
+                            style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}
+                            title="Tải lại"
                         >
-                            ↻Tải lại
+                            ↻
                         </Button>
                     </div>
                 </div>
