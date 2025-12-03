@@ -71,6 +71,12 @@ const useTextReplacer = () => {
                     "Sign Out": "Đăng xuất",
                 },
             },
+            {
+                selector: "#courseTabsNavigation a.dropdown-item",
+                replacements: {
+                    ngày: "Ngày",
+                },
+            },
         ];
 
         const replaceTexts = () => {
