@@ -17,13 +17,6 @@ const hoverStyles = `
     position: relative;
     z-index: 1;
   }
-  .progress-card-hover {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .progress-card-hover:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
-  }
 `;
 
 function TopStudentsByProgress({ courseId }) {
@@ -118,7 +111,7 @@ function TopStudentsByProgress({ courseId }) {
     return (
         <>
             <style>{hoverStyles}</style>
-            <Card className="h-100 shadow-sm progress-card-hover" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+            <Card className="h-100 shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
                 {/* Header với title rõ ràng */}
                 <div
                     className="d-flex justify-content-between align-items-center px-3 py-3"
