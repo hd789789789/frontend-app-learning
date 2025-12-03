@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
+import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { getConfig } from '@edx/frontend-platform';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 import { Alert, Container, Spinner } from '@openedx/paragon';
 import { Info } from '@openedx/paragon/icons';
 
-import { fetchLeaderboardTab } from '../data';
 import { useModel } from '../../generic/model-store';
 import LeaderboardTable from './LeaderboardTable';
 import CurrentUserRank from './CurrentUserRank';
@@ -14,8 +13,6 @@ import TopPerformers from './TopPerformers';
 
 function LeaderboardTab({ intl }) {
   const { courseId } = useParams();
-  const dispatch = useDispatch();
-  const [isLoading, setIsLoading] = useState(true);
 
   const {
     courseId: leaderboardCourseId,
@@ -30,27 +27,8 @@ function LeaderboardTab({ intl }) {
     courseStatus,
   } = useSelector(state => state.courseHome);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
-      try {
-        await dispatch(fetchLeaderboardTab(courseId));
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [courseId, dispatch]);
-
-  if (isLoading) {
+  // Loading state managed by TabContainer
+  if (courseStatus === 'loading') {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" variant="primary" />
