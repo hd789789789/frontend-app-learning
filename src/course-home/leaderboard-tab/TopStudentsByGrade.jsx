@@ -88,11 +88,20 @@ function TopStudentsByGrade({ courseId }) {
   };
 
   return (
-    <Card className="h-100 shadow-sm" style={{ borderRadius: '12px' }}>
-      <Card.Header className="bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+    <Card className="h-100 shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+      {/* Header với title rõ ràng */}
+      <div 
+        className="d-flex justify-content-between align-items-center px-3 py-3"
+        style={{ 
+          backgroundColor: '#fff',
+          borderBottom: '1px solid #dee2e6'
+        }}
+      >
         <div className="d-flex align-items-center">
           <span style={{ fontSize: '1.25rem' }} className="mr-2">🏆</span>
-          <span className="font-weight-bold" style={{ fontSize: '1rem' }}>Top Điểm Số</span>
+          <span className="font-weight-bold" style={{ fontSize: '1.1rem', color: '#333' }}>
+            Top Điểm Số
+          </span>
         </div>
         <div className="d-flex align-items-center">
           <Button
@@ -113,7 +122,7 @@ function TopStudentsByGrade({ courseId }) {
             ↻Tải lại
           </Button>
         </div>
-      </Card.Header>
+      </div>
 
       {!isCollapsed && (
         <Card.Body className="p-0">
