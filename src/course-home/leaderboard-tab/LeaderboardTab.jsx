@@ -105,13 +105,13 @@ function LeaderboardTab({ intl }) {
         </>
       )}
 
-      {/* TopPerformers still commented for now */}
-      {/* {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
+      {/* Now test TopPerformers */}
+      {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
         <>
           {console.log('[LeaderboardTab] Rendering TopPerformers with count:', topPerformers.length)}
           <TopPerformers topPerformers={topPerformers} />
         </>
-      )} */}
+      )}
 
       {leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0 && (
         <>

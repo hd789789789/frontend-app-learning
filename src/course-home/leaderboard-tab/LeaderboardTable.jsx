@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { DataTable } from '@openedx/paragon';
-import { Trophy, Person } from '@openedx/paragon/icons';
+// import { Trophy, Person } from '@openedx/paragon/icons'; // Icons don't exist in this version
 
 function LeaderboardTable({ leaderboard, totalStudents }) {
   const getRankBadge = (rank) => {
-    if (rank === 1) return <span className="text-warning"><Trophy className="mr-2" />🥇</span>;
-    if (rank === 2) return <span className="text-muted"><Trophy className="mr-2" />🥈</span>;
-    if (rank === 3) return <span className="text-muted"><Trophy className="mr-2" />🥉</span>;
+    if (rank === 1) return <span className="text-warning">🥇 #{rank}</span>;
+    if (rank === 2) return <span className="text-muted">🥈 #{rank}</span>;
+    if (rank === 3) return <span className="text-muted">🥉 #{rank}</span>;
     return <span className="text-muted">#{rank}</span>;
   };
 
@@ -25,20 +25,17 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       Header: 'Học viên',
       accessor: 'displayName',
       Cell: ({ row }) => (
-        <div className="d-flex align-items-center">
-          <Person className="mr-2" />
-          <div>
-            <div className={row.original.isCurrentUser ? 'font-weight-bold text-primary' : ''}>
-              {row.original.displayName}
-              {row.original.isCurrentUser && <span className="ml-2 badge badge-primary">Bạn</span>}
-            </div>
-            <small className="text-muted">@{row.original.username}</small>
+        <div>
+          <div className={row.original.isCurrentUser ? 'font-weight-bold text-primary' : ''}>
+            {row.original.displayName}
+            {row.original.isCurrentUser && <span className="ml-2 badge badge-primary">Bạn</span>}
           </div>
+          <small className="text-muted">@{row.original.username}</small>
         </div>
       ),
     },
     {
-      Header: 'Điểm',
+      Header: 'Tiến độ',
       accessor: 'gradePercent',
       Cell: ({ value, row }) => (
         <div>
@@ -47,7 +44,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
           </div>
           {row.original.letterGrade && row.original.letterGrade.trim() && (
             <small className="text-muted">
-              {row.original.letterGrade}
+              Điểm: {row.original.letterGrade}
             </small>
           )}
         </div>

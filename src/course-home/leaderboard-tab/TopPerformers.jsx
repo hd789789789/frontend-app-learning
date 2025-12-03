@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
-import { Trophy } from '@openedx/paragon/icons';
+// import { Trophy } from '@openedx/paragon/icons'; // Trophy doesn't exist in this Paragon version
 
 function TopPerformers({ topPerformers }) {
   const getMedalEmoji = (rank) => {
@@ -23,7 +23,7 @@ function TopPerformers({ topPerformers }) {
   return (
     <div className="top-performers mb-4">
       <h3 className="mb-3">
-        <Trophy className="mr-2 text-warning" />
+        <span className="mr-2">🏆</span>
         Top 3 xuất sắc nhất
       </h3>
       <div className="row">
@@ -40,9 +40,10 @@ function TopPerformers({ topPerformers }) {
                 <div className="display-4 font-weight-bold text-primary mb-2">
                   {(student.gradePercent || 0).toFixed(1)}%
                 </div>
+                <div className="text-muted small">Tiến độ hoàn thành</div>
                 {student.letterGrade && student.letterGrade.trim() && (
-                  <div className="badge badge-success badge-lg">
-                    {student.letterGrade}
+                  <div className="badge badge-success badge-lg mt-2">
+                    Điểm: {student.letterGrade}
                   </div>
                 )}
               </Card.Body>

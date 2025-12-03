@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
-import { Person, TrendingUp } from '@openedx/paragon/icons';
+// import { Person, TrendingUp } from '@openedx/paragon/icons'; // May not exist in this version
 
 function CurrentUserRank({ rank, totalStudents, percentile }) {
   console.log('[CurrentUserRank] Rendering with:', { rank, totalStudents, percentile });
@@ -10,7 +10,7 @@ function CurrentUserRank({ rank, totalStudents, percentile }) {
     <Card className="mb-4 shadow-sm">
       <Card.Header className="bg-primary text-white">
         <h4 className="mb-0">
-          <Person className="mr-2" />
+          <span className="mr-2">👤</span>
           Xếp hạng của bạn
         </h4>
       </Card.Header>
@@ -26,7 +26,7 @@ function CurrentUserRank({ rank, totalStudents, percentile }) {
           </div>
           <div className="col-md-4 text-center">
             <div className="display-4 font-weight-bold text-info">
-              <TrendingUp className="mr-2" />
+              <span className="mr-2">📈</span>
               {(percentile || 0).toFixed(1)}%
             </div>
             <div className="text-muted">Phần trăm vượt trội</div>

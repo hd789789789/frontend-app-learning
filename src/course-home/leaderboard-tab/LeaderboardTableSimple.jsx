@@ -12,7 +12,7 @@ function LeaderboardTableSimple({ leaderboard, totalStudents }) {
           <tr>
             <th>Hạng</th>
             <th>Học viên</th>
-            <th>Điểm</th>
+            <th>Tiến độ</th>
             <th>Trạng thái</th>
           </tr>
         </thead>
