@@ -4,6 +4,7 @@ import {
   executePostFromPostEvent,
   getCourseHomeCourseMetadata,
   getDatesTabData,
+  getLeaderboardTabData,
   getOutlineTabData,
   getProgressTabData,
   postCourseDeadlines,
@@ -87,6 +88,10 @@ export function fetchTab(courseId, tab, getTabData, targetUserId) {
 
 export function fetchDatesTab(courseId) {
   return fetchTab(courseId, 'dates', getDatesTabData);
+}
+
+export function fetchLeaderboardTab(courseId) {
+  return fetchTab(courseId, 'leaderboardTab', getLeaderboardTabData);
 }
 
 export function fetchProgressTab(courseId, targetUserId) {

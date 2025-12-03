@@ -1,5 +1,6 @@
 export {
   fetchDatesTab,
+  fetchLeaderboardTab,
   fetchOutlineTab,
   fetchProgressTab,
   resetDeadlines,

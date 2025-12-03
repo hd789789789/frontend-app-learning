@@ -18,10 +18,11 @@ import CoursewareContainer from "./courseware";
 import CoursewareRedirectLandingPage from "./courseware/CoursewareRedirectLandingPage";
 import DatesTab from "./course-home/dates-tab";
 import GoalUnsubscribe from "./course-home/goal-unsubscribe";
+import LeaderboardTab from "./course-home/leaderboard-tab";
 import ProgressTab from "./course-home/progress-tab/ProgressTab";
 import { TabContainer } from "./tab-page";
 
-import { fetchDatesTab, fetchOutlineTab, fetchProgressTab } from "./course-home/data";
+import { fetchDatesTab, fetchLeaderboardTab, fetchOutlineTab, fetchProgressTab } from "./course-home/data";
 import { fetchCourse } from "./courseware/data";
 import { store } from "./store";
 import NoticesProvider from "./generic/notices";
@@ -130,6 +131,20 @@ subscribe(APP_READY, () => {
                                                     slice="courseHome"
                                                 >
                                                     <DiscussionTab />
+                                                </TabContainer>
+                                            </DecodePageRoute>
+                                        }
+                                    />
+                                    <Route
+                                        path={DECODE_ROUTES.LEADERBOARD}
+                                        element={
+                                            <DecodePageRoute>
+                                                <TabContainer
+                                                    tab="leaderboard"
+                                                    fetch={fetchLeaderboardTab}
+                                                    slice="courseHome"
+                                                >
+                                                    <LeaderboardTab />
                                                 </TabContainer>
                                             </DecodePageRoute>
                                         }

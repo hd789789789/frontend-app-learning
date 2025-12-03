@@ -223,6 +223,28 @@ export async function getDatesTabData(courseId) {
   }
 }
 
+export async function getLeaderboardTabData(courseId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/course_home/leaderboard/${courseId}`;
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    return camelCaseObject(data);
+  } catch (error) {
+    const httpErrorStatus = error?.response?.status;
+    if (httpErrorStatus === 401) {
+      // The backend sends this for unenrolled and unauthenticated learners, but we handle those cases by examining
+      // courseAccess in the metadata call, so just ignore this status for now.
+      return {};
+    }
+    if (httpErrorStatus === 403) {
+      // The backend sends this if there is a course access error and the user should be redirected. The redirect
+      // info is included in the course metadata request and will be handled there as long as this call returns
+      // without an error
+      return {};
+    }
+    throw error;
+  }
+}
+
 export async function getProgressTabData(courseId, targetUserId) {
   let url = `${getConfig().LMS_BASE_URL}/api/course_home/progress/${courseId}`;
 
