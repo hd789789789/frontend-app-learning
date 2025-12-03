@@ -16,6 +16,9 @@ function LeaderboardTab({ intl }) {
 
   const leaderboardData = useModel('leaderboardTab', courseId);
 
+  // Debug logging
+  console.log('[LeaderboardTab] Raw leaderboardData:', leaderboardData);
+
   const {
     courseId: leaderboardCourseId,
     courseName,
@@ -24,6 +27,14 @@ function LeaderboardTab({ intl }) {
     totalStudents = 0,
     topPerformers = [],
   } = leaderboardData || {};
+
+  console.log('[LeaderboardTab] Parsed data:', {
+    courseName,
+    leaderboardCount: leaderboard?.length,
+    currentUserRank,
+    totalStudents,
+    topPerformersCount: topPerformers?.length,
+  });
 
   const {
     courseStatus,
@@ -66,7 +77,7 @@ function LeaderboardTab({ intl }) {
 
   return (
     <Container className="py-5 leaderboard-tab">
-      <h2 className="mb-4">{courseName} - Bảng xếp hạng</h2>
+      <h2 className="mb-4">{courseName || 'Course'} - Bảng xếp hạng</h2>
 
       {currentUserRank && currentUserRank.rank && (
         <CurrentUserRank
@@ -76,14 +87,16 @@ function LeaderboardTab({ intl }) {
         />
       )}
 
-      {topPerformers && topPerformers.length > 0 && (
+      {topPerformers && Array.isArray(topPerformers) && topPerformers.length > 0 && (
         <TopPerformers topPerformers={topPerformers} />
       )}
 
-      <LeaderboardTable
-        leaderboard={leaderboard}
-        totalStudents={totalStudents}
-      />
+      {leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0 && (
+        <LeaderboardTable
+          leaderboard={leaderboard}
+          totalStudents={totalStudents}
+        />
+      )}
     </Container>
   );
 }
