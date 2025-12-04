@@ -69,7 +69,7 @@ const DatesTab = () => {
             <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
               <h5 className="mb-1">Tổng số mốc thời gian</h5>
               <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                Bao gồm tất cả mốc bắt đầu, kết thúc, thông báo, bài học,...
+                Bao gồm các mốc bắt đầu, kết thúc, thông báo và hoạt động quan trọng trong khóa học.
               </p>
               <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
                 {courseDateBlocks.length}
@@ -81,7 +81,7 @@ const DatesTab = () => {
             <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
               <h5 className="mb-1">Trạng thái khóa học</h5>
               <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                Dựa trên thông tin has_ended trong API dates
+                Cho bạn biết khóa học đang diễn ra hay đã kết thúc.
               </p>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
                 {hasEnded ? 'Khóa học đã kết thúc' : 'Khóa học đang diễn ra'}
@@ -93,7 +93,7 @@ const DatesTab = () => {
             <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
               <h5 className="mb-1">Tiến độ deadline</h5>
               <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                Thông tin từ dates_banner_info.missed_deadlines
+                Tình trạng bám sát các hạn nộp bài trong khóa học.
               </p>
               <div
                 style={{
@@ -102,7 +102,7 @@ const DatesTab = () => {
                   color: hasDeadlines ? '#dc2626' : '#16a34a',
                 }}
               >
-                {hasDeadlines ? 'Bạn đã bỏ lỡ một số hạn' : 'Bạn đang đúng tiến độ'}
+                {hasDeadlines ? 'Bạn đã bỏ lỡ một vài hạn nộp, hãy xem lại kế hoạch học.' : 'Bạn đang đúng tiến độ học tập, hãy tiếp tục phát huy!'}
               </div>
             </div>
           </div>
