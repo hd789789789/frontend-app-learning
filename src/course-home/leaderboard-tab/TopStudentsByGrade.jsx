@@ -92,6 +92,9 @@ function TopStudentsByGrade({ courseId }) {
         }
     }, [courseId, limit, fetchData]);
 
+    // Kiểm tra xem user có nằm trong danh sách students không
+    const isUserInList = students.some((s) => s.isCurrentUser);
+
     // Handle scroll để ẩn/hiện sticky user row
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -103,6 +106,13 @@ function TopStudentsByGrade({ courseId }) {
             return;
         }
 
+        // Nếu user KHÔNG nằm trong danh sách students → luôn hiển thị sticky ở dưới
+        if (!isUserInList) {
+            setShowStickyUser(true);
+            setStickyPosition("bottom");
+            return;
+        }
+
         // Nếu không có userRow (chưa render), không hiển thị sticky
         if (!userRow) {
             setShowStickyUser(false);
@@ -111,21 +121,22 @@ function TopStudentsByGrade({ courseId }) {
 
         const handleScroll = () => {
             if (!userRow) {
-                setShowStickyUser(false);
+                // User không trong danh sách → luôn hiển thị sticky ở dưới
+                if (!isUserInList && currentUserEntry) {
+                    setShowStickyUser(true);
+                    setStickyPosition("bottom");
+                } else {
+                    setShowStickyUser(false);
+                }
                 return;
             }
 
-            // Tính toán vị trí tương đối trong scroll container
-            const containerScrollTop = container.scrollTop;
-            const containerHeight = container.clientHeight;
-            const containerScrollBottom = containerScrollTop + containerHeight;
+            // Sử dụng getBoundingClientRect để tính vị trí chính xác
+            const containerRect = container.getBoundingClientRect();
+            const userRowRect = userRow.getBoundingClientRect();
 
-            const userRowOffsetTop = userRow.offsetTop;
-            const userRowHeight = userRow.offsetHeight;
-
-            // Kiểm tra xem user row có trong viewport không
-            const isUserRowVisible =
-                userRowOffsetTop >= containerScrollTop && userRowOffsetTop + userRowHeight <= containerScrollBottom;
+            // Kiểm tra xem user row có trong viewport của container không
+            const isUserRowVisible = userRowRect.top >= containerRect.top && userRowRect.bottom <= containerRect.bottom;
 
             if (isUserRowVisible) {
                 // User row đang hiển thị → ẩn sticky
@@ -135,11 +146,11 @@ function TopStudentsByGrade({ courseId }) {
                 setShowStickyUser(true);
 
                 // Xác định vị trí sticky: trên hay dưới
-                if (userRowOffsetTop < containerScrollTop) {
-                    // User row ở phía TRÊN (đã scroll qua) → sticky ở TRÊN
+                if (userRowRect.top < containerRect.top) {
+                    // User row ở phía TRÊN viewport (đã scroll qua) → sticky ở TRÊN
                     setStickyPosition("top");
                 } else {
-                    // User row ở phía DƯỚI (chưa scroll đến) → sticky ở DƯỚI
+                    // User row ở phía DƯỚI viewport (chưa scroll đến) → sticky ở DƯỚI
                     setStickyPosition("bottom");
                 }
             }
@@ -153,7 +164,7 @@ function TopStudentsByGrade({ courseId }) {
             container.removeEventListener("scroll", handleScroll);
             clearTimeout(timeoutId);
         };
-    }, [currentUserEntry, students]);
+    }, [currentUserEntry, students, isUserInList]);
 
     const handleRefresh = () => {
         fetchData();
