@@ -1,15 +1,30 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Container, Spinner, Alert } from "@openedx/paragon";
+import { useWindowSize } from "@openedx/paragon";
 import { getConfig } from "@edx/frontend-platform";
 import { getAuthenticatedHttpClient } from "@edx/frontend-platform/auth";
 import { camelCaseObject } from "@edx/frontend-platform";
+import { useContextId } from "../../data/hooks";
+import { useModel } from "../../generic/model-store";
 
 import BadgeSummary from "./BadgeSummary";
 import BadgeList from "./BadgeList";
 
+// Import Progress Tab components
+import ProgressHeader from "../progress-tab/ProgressHeader";
+import CourseCompletion from "../progress-tab/course-completion/CourseCompletion";
+import ProgressTabCertificateStatusSidePanelSlot from "../../plugin-slots/ProgressTabCertificateStatusSidePanelSlot";
+import ProgressTabCertificateStatusMainBodySlot from "../../plugin-slots/ProgressTabCertificateStatusMainBodySlot";
+import ProgressTabCourseGradeSlot from "../../plugin-slots/ProgressTabCourseGradeSlot";
+import ProgressTabGradeBreakdownSlot from "../../plugin-slots/ProgressTabGradeBreakdownSlot";
+import ProgressTabRelatedLinksSlot from "../../plugin-slots/ProgressTabRelatedLinksSlot";
+
 function BadgeTab() {
     const { courseId } = useParams();
+    const contextCourseId = useContextId();
+    const { disableProgressGraph } = useModel('progress', contextCourseId);
+    const windowWidth = useWindowSize().width;
     
     const [badgeData, setBadgeData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -155,6 +170,30 @@ function BadgeTab() {
                 <BadgeList chapters={badgeData.chapters || []} />
             ) : (
                 <Alert variant="warning">BadgeList component not loaded</Alert>
+            )}
+
+            {/* Progress Tab Content - Copied from ProgressTab */}
+            {windowWidth !== undefined && (
+                <>
+                    <div className="mt-5 pt-4 border-top">
+                        <ProgressHeader />
+                        <div className="row w-100 m-0 mt-3">
+                            {/* Main body */}
+                            <div className="col-12 col-md-8 p-0">
+                                {!disableProgressGraph && <CourseCompletion />}
+                                <ProgressTabCertificateStatusMainBodySlot />
+                                <ProgressTabCourseGradeSlot />
+                                <ProgressTabGradeBreakdownSlot />
+                            </div>
+
+                            {/* Side panel */}
+                            <div className="col-12 col-md-4 p-0 px-md-4">
+                                <ProgressTabCertificateStatusSidePanelSlot />
+                                <ProgressTabRelatedLinksSlot />
+                            </div>
+                        </div>
+                    </div>
+                </>
             )}
         </Container>
     );

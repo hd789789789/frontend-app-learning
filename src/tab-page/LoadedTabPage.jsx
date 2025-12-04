@@ -40,10 +40,11 @@ const LoadedTabPage = ({
     url: `/learning/course/${courseId}/badge`,
   };
   
-  // Thêm tab Thành tích sau tab Leaderboard (Học đua)
+  // Thêm tab Thành tích sau tab Leaderboard (Học đua) và ẩn tab Progress
   const tabs = React.useMemo(() => {
     if (!originalTabs) return [];
-    const tabsCopy = [...originalTabs];
+    // Filter out progress tab
+    const tabsCopy = originalTabs.filter(tab => tab.slug !== 'progress');
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
     if (leaderboardIndex !== -1) {
       // Chèn sau leaderboard
