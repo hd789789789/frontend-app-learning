@@ -32,15 +32,15 @@ const LoadedTabPage = ({
     hasCourseAuthorAccess,
   } = useModel('courseHomeMeta', courseId);
 
-  // Thêm tab Badge vào danh sách tabs
+  // Thêm tab Thành tích vào danh sách tabs
   // URL phải có prefix /learning giống như các tab khác
   const badgeTab = {
-    title: 'Badge',
+    title: 'Thành tích',
     slug: 'badge',
     url: `/learning/course/${courseId}/badge`,
   };
   
-  // Thêm tab Badge sau tab Leaderboard (Học đua)
+  // Thêm tab Thành tích sau tab Leaderboard (Học đua)
   const tabs = React.useMemo(() => {
     if (!originalTabs) return [];
     const tabsCopy = [...originalTabs];

@@ -66,7 +66,7 @@ function BadgeList({ chapters }) {
                             🎖️
                         </span>
                         <span className="font-weight-bold" style={{ fontSize: "1.1rem", color: "#333" }}>
-                            Danh sách Badge
+                            Danh sách Thành tích
                         </span>
                     </div>
                     <div className="text-muted" style={{ fontSize: "0.85rem" }}>
@@ -115,9 +115,9 @@ function BadgeList({ chapters }) {
                             <div style={{ fontSize: "3rem" }}>🎯</div>
                             <p className="mt-2">
                                 {filter === "completed"
-                                    ? "Chưa có badge nào hoàn thành"
+                                    ? "Chưa có thành tích nào hoàn thành"
                                     : filter === "incomplete"
-                                    ? "Tất cả badge đã hoàn thành! 🎉"
+                                    ? "Tất cả thành tích đã hoàn thành! 🎉"
                                     : "Không có dữ liệu"}
                             </p>
                         </div>

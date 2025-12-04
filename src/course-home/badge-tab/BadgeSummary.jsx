@@ -64,7 +64,7 @@ function BadgeSummary({ summary }) {
                 <Card.Body className="py-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
                         <span className="font-weight-bold" style={{ fontSize: "1rem" }}>
-                            Tiến độ hoàn thành Badge
+                            Tiến độ hoàn thành Thành tích
                         </span>
                         <span 
                             className="font-weight-bold" 
