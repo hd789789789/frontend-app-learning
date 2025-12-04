@@ -67,7 +67,24 @@ function BadgeTab() {
         return (
             <Container className="py-4">
                 <Alert variant="warning">
-                    Không có dữ liệu Badge cho khóa học này.
+                    <Alert.Heading>Không có dữ liệu Badge</Alert.Heading>
+                    <p>Không thể tải dữ liệu Badge cho khóa học này.</p>
+                    <p className="text-muted small">
+                        Có thể API badge chưa được cập nhật trên server. 
+                        Vui lòng liên hệ admin.
+                    </p>
+                    <hr />
+                    <p className="mb-0 small">
+                        <strong>Debug info:</strong> courseId = {courseId}
+                        <br />
+                        badgeData = {JSON.stringify(badgeData, null, 2)}
+                    </p>
+                    <button 
+                        className="btn btn-outline-warning btn-sm mt-2"
+                        onClick={fetchBadgeData}
+                    >
+                        Thử lại
+                    </button>
                 </Alert>
             </Container>
         );
