@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import { DataTable } from '@openedx/paragon';
 // import { Trophy, Person } from '@openedx/paragon/icons'; // Icons don't exist in this version
 
-function LeaderboardTable({ leaderboard, totalStudents }) {
+const LeaderboardTable = ({ leaderboard, totalStudents }) => {
   const getRankBadge = (rank) => {
-    if (rank === 1) return <span className="text-warning">🥇 #{rank}</span>;
-    if (rank === 2) return <span className="text-muted">🥈 #{rank}</span>;
-    if (rank === 3) return <span className="text-muted">🥉 #{rank}</span>;
+    if (rank === 1) { return <span className="text-warning">🥇 #{rank}</span>; }
+    if (rank === 2) { return <span className="text-muted">🥈 #{rank}</span>; }
+    if (rank === 3) { return <span className="text-muted">🥉 #{rank}</span>; }
     return <span className="text-muted">#{rank}</span>;
   };
 
@@ -80,7 +80,7 @@ function LeaderboardTable({ leaderboard, totalStudents }) {
       </DataTable>
     </div>
   );
-}
+};
 
 LeaderboardTable.propTypes = {
   leaderboard: PropTypes.arrayOf(
@@ -92,7 +92,7 @@ LeaderboardTable.propTypes = {
       letterGrade: PropTypes.string,
       isPassing: PropTypes.bool.isRequired,
       isCurrentUser: PropTypes.bool.isRequired,
-    })
+    }),
   ).isRequired,
   totalStudents: PropTypes.number.isRequired,
 };

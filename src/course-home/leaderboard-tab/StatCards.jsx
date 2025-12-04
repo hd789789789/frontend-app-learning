@@ -14,7 +14,7 @@ const cardHoverStyle = `
   }
 `;
 
-function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
+function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentStreak, bestStreak }) {
   const stats = [
     {
       value: totalStudents,
@@ -35,6 +35,16 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
       value: competingCount || 0,
       label: 'ĐANG THI ĐUA',
       color: '#34a853',
+    },
+    {
+      value: `${currentStreak || 0} ngày`,
+      label: 'STREAK HIỆN TẠI',
+      color: '#ff9800',
+    },
+    {
+      value: `${bestStreak || 0} ngày`,
+      label: 'STREAK CAO NHẤT CỦA BẠN',
+      color: '#f57c00',
     },
   ];
 
@@ -75,6 +85,8 @@ StatCards.propTypes = {
   avgGrade: PropTypes.number,
   maxGrade: PropTypes.number,
   competingCount: PropTypes.number,
+  currentStreak: PropTypes.number,
+  bestStreak: PropTypes.number,
 };
 
 StatCards.defaultProps = {
@@ -82,6 +94,8 @@ StatCards.defaultProps = {
   avgGrade: 0,
   maxGrade: 0,
   competingCount: 0,
+  currentStreak: 0,
+  bestStreak: 0,
 };
 
 export default StatCards;
