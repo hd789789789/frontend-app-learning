@@ -33,10 +33,11 @@ const LoadedTabPage = ({
   } = useModel('courseHomeMeta', courseId);
 
   // Thêm tab Badge vào danh sách tabs
+  // URL phải có prefix /learning giống như các tab khác
   const badgeTab = {
     title: 'Badge',
     slug: 'badge',
-    url: `/course/${courseId}/badge`,
+    url: `/learning/course/${courseId}/badge`,
   };
   
   // Thêm tab Badge sau tab Leaderboard (Học đua)
