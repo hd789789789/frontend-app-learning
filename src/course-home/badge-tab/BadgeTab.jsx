@@ -9,12 +9,35 @@ import BadgeSummary from "./BadgeSummary";
 import BadgeList from "./BadgeList";
 
 function BadgeTab() {
+    console.log("[BadgeTab] Component rendering...");
+    
     const { courseId } = useParams();
+    console.log("[BadgeTab] courseId from useParams:", courseId);
+    
     const [badgeData, setBadgeData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Early return if no courseId
+    if (!courseId) {
+        console.warn("[BadgeTab] No courseId found!");
+        return (
+            <Container className="py-4">
+                <Alert variant="warning">
+                    <Alert.Heading>Lỗi</Alert.Heading>
+                    <p>Không tìm thấy courseId trong URL.</p>
+                </Alert>
+            </Container>
+        );
+    }
+
+    // Debug: Log khi component mount
+    useEffect(() => {
+        console.log("[BadgeTab] Component mounted, courseId:", courseId);
+    }, [courseId]);
 
     const fetchBadgeData = useCallback(async () => {
+        console.log("[BadgeTab] fetchBadgeData called, courseId:", courseId);
         setLoading(true);
         setError(null);
         try {
@@ -64,11 +87,16 @@ function BadgeTab() {
         }
     }, [courseId, fetchBadgeData]);
 
+    // Always render something for debugging
+    console.log("[BadgeTab] Render state - loading:", loading, "error:", error, "badgeData:", badgeData);
+
     if (loading) {
+        console.log("[BadgeTab] Rendering loading state");
         return (
             <Container className="py-5 text-center">
                 <Spinner animation="border" variant="primary" />
                 <p className="mt-3 text-muted">Đang tải dữ liệu Badge...</p>
+                <p className="text-muted small">courseId: {courseId}</p>
             </Container>
         );
     }
