@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { Container, Spinner, Alert } from "@openedx/paragon";
 import { useWindowSize } from "@openedx/paragon";
 import { getConfig } from "@edx/frontend-platform";
@@ -7,6 +8,7 @@ import { getAuthenticatedHttpClient } from "@edx/frontend-platform/auth";
 import { camelCaseObject } from "@edx/frontend-platform";
 import { useContextId } from "../../data/hooks";
 import { useModel } from "../../generic/model-store";
+import { fetchProgressTab } from "../../course-home/data";
 
 import BadgeSummary from "./BadgeSummary";
 import BadgeList from "./BadgeList";
@@ -23,12 +25,16 @@ import ProgressTabRelatedLinksSlot from "../../plugin-slots/ProgressTabRelatedLi
 function BadgeTab() {
     const { courseId } = useParams();
     const contextCourseId = useContextId();
-    const { disableProgressGraph } = useModel('progress', contextCourseId);
+    const dispatch = useDispatch();
+    const progressModel = useModel('progress', contextCourseId);
     const windowWidth = useWindowSize().width;
     
     const [badgeData, setBadgeData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Check if progress data is loaded
+    const progressDataLoaded = progressModel && progressModel.completionSummary && progressModel.courseGrade;
     
     // Early return if no courseId
     if (!courseId) {
@@ -86,8 +92,10 @@ function BadgeTab() {
     useEffect(() => {
         if (courseId) {
             fetchBadgeData();
+            // Fetch progress data for Progress components
+            dispatch(fetchProgressTab(courseId));
         }
-    }, [courseId, fetchBadgeData]);
+    }, [courseId, fetchBadgeData, dispatch]);
 
     if (loading) {
         return (
@@ -173,14 +181,14 @@ function BadgeTab() {
             )}
 
             {/* Progress Tab Content - Copied from ProgressTab */}
-            {windowWidth !== undefined && (
+            {windowWidth !== undefined && progressDataLoaded && (
                 <>
                     <div className="mt-5 pt-4 border-top">
                         <ProgressHeader />
                         <div className="row w-100 m-0 mt-3">
                             {/* Main body */}
                             <div className="col-12 col-md-8 p-0">
-                                {!disableProgressGraph && <CourseCompletion />}
+                                {!progressModel.disableProgressGraph && <CourseCompletion />}
                                 <ProgressTabCertificateStatusMainBodySlot />
                                 <ProgressTabCourseGradeSlot />
                                 <ProgressTabGradeBreakdownSlot />
@@ -194,6 +202,14 @@ function BadgeTab() {
                         </div>
                     </div>
                 </>
+            )}
+            
+            {/* Show loading indicator for Progress section if data not loaded yet */}
+            {windowWidth !== undefined && !progressDataLoaded && (
+                <div className="mt-5 pt-4 border-top text-center">
+                    <Spinner animation="border" variant="secondary" size="sm" />
+                    <p className="mt-2 text-muted small">Đang tải dữ liệu tiến độ...</p>
+                </div>
             )}
         </Container>
     );
