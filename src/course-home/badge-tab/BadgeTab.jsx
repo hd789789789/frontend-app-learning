@@ -44,7 +44,7 @@ function BadgeTab() {
     if (!courseId) {
         console.warn("[BadgeTab] No courseId found!");
         return (
-            <Container className="py-4">
+            <Container className="py-4 px-2 px-md-4">
                 <Alert variant="warning">
                     <Alert.Heading>Lỗi</Alert.Heading>
                     <p>Không tìm thấy courseId trong URL.</p>
@@ -116,7 +116,7 @@ function BadgeTab() {
 
     if (loading) {
         return (
-            <Container className="py-5 text-center">
+            <Container className="py-5 px-2 px-md-4 text-center">
                 <Spinner animation="border" variant="primary" />
                 <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
                 <p className="text-muted small">courseId: {courseId}</p>
@@ -126,7 +126,7 @@ function BadgeTab() {
 
     if (error) {
         return (
-            <Container className="py-4">
+            <Container className="py-4 px-2 px-md-4">
                 <Alert variant="danger">
                     <Alert.Heading>Lỗi</Alert.Heading>
                     <p>{error}</p>
@@ -143,7 +143,7 @@ function BadgeTab() {
 
     if (!badgeData || !badgeData.success) {
         return (
-            <Container className="py-4">
+            <Container className="py-4 px-2 px-md-4">
                 <Alert variant="warning">
                     <Alert.Heading>Không có dữ liệu Thành tích</Alert.Heading>
                     <p>Không thể tải dữ liệu Thành tích cho khóa học này.</p>
@@ -169,7 +169,7 @@ function BadgeTab() {
     }
 
     return (
-        <Container className="py-4">
+        <Container className="py-4 px-2 px-md-4">
             {/* Page Title */}
             <div className="d-flex align-items-center mb-4">
                 <span style={{ fontSize: "2rem" }} className="mr-3">🎖️</span>
