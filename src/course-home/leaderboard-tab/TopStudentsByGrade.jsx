@@ -52,6 +52,7 @@ function TopStudentsByGrade({ courseId }) {
     const [currentUserEntry, setCurrentUserEntry] = useState(null);
     const [showStickyUser, setShowStickyUser] = useState(false);
     const [stickyPosition, setStickyPosition] = useState("top"); // 'top' hoặc 'bottom'
+    const [testMode, setTestMode] = useState(false); // Test mode với 100 mock users
     const scrollContainerRef = useRef(null);
     const userRowRef = useRef(null);
 
@@ -59,7 +60,8 @@ function TopStudentsByGrade({ courseId }) {
         setLoading(true);
         try {
             // Sử dụng API mới: /api/course_home/top-grades/{courseId}
-            const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}`;
+            const testParam = testMode ? "&test=true" : "";
+            const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}${testParam}`;
             const { data } = await getAuthenticatedHttpClient().get(url);
             const camelCased = camelCaseObject(data);
             console.log("[TopStudentsByGrade] Data:", camelCased);
@@ -84,13 +86,13 @@ function TopStudentsByGrade({ courseId }) {
         } finally {
             setLoading(false);
         }
-    }, [courseId, limit]);
+    }, [courseId, limit, testMode]);
 
     useEffect(() => {
         if (courseId) {
             fetchData();
         }
-    }, [courseId, limit, fetchData]);
+    }, [courseId, limit, testMode, fetchData]);
 
     // Kiểm tra xem user có nằm trong danh sách students không
     const isUserInList = students.some((s) => s.isCurrentUser);
@@ -263,22 +265,36 @@ function TopStudentsByGrade({ courseId }) {
                     <Card.Body className="p-0">
                         {/* Filter */}
                         <div className="px-3 py-2 border-bottom bg-light">
-                            <div className="d-flex align-items-center">
-                                <span className="text-muted mr-2" style={{ fontSize: "0.85rem" }}>
-                                    Hiển thị:
-                                </span>
-                                <Form.Control
-                                    as="select"
-                                    size="sm"
-                                    value={limit}
-                                    onChange={(e) => setLimit(Number(e.target.value))}
-                                    style={{ width: "auto", fontSize: "0.85rem" }}
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div className="d-flex align-items-center">
+                                    <span className="text-muted mr-2" style={{ fontSize: "0.85rem" }}>
+                                        Hiển thị:
+                                    </span>
+                                    <Form.Control
+                                        as="select"
+                                        size="sm"
+                                        value={limit}
+                                        onChange={(e) => setLimit(Number(e.target.value))}
+                                        style={{ width: "auto", fontSize: "0.85rem" }}
+                                    >
+                                        <option value={5}>Top 5</option>
+                                        <option value={10}>Top 10</option>
+                                        <option value={20}>Top 20</option>
+                                        <option value={50}>Top 50</option>
+                                    </Form.Control>
+                                </div>
+                                <label
+                                    className="d-flex align-items-center mb-0"
+                                    style={{ fontSize: "0.75rem", cursor: "pointer" }}
                                 >
-                                    <option value={5}>Top 5</option>
-                                    <option value={10}>Top 10</option>
-                                    <option value={20}>Top 20</option>
-                                    <option value={50}>Top 50</option>
-                                </Form.Control>
+                                    <input
+                                        type="checkbox"
+                                        checked={testMode}
+                                        onChange={(e) => setTestMode(e.target.checked)}
+                                        className="mr-1"
+                                    />
+                                    <span className="text-muted">Test 100</span>
+                                </label>
                             </div>
                         </div>
 
