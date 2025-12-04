@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Container, Row, Col, Card } from '@openedx/paragon';
+import { Container } from '@openedx/paragon';
 
 import messages from './messages';
 import Timeline from './timeline/Timeline';
@@ -26,12 +26,13 @@ const DatesTab = () => {
     org,
   } = useModel('courseHomeMeta', courseId);
 
+  const datesModel = useModel('dates', courseId) || {};
   const {
     courseDateBlocks,
     datesBannerInfo,
     hasEnded,
     learnerIsFullAccess,
-  } = useModel('dates', courseId);
+  } = datesModel;
 
   const hasDeadlines = datesBannerInfo && datesBannerInfo.missedDeadlines;
 
@@ -63,83 +64,73 @@ const DatesTab = () => {
 
       {/* Thẻ thông tin tổng quan, chỉ dùng dữ liệu chắc chắn có trong API dates */}
       {courseDateBlocks && courseDateBlocks.length > 0 && (
-        <Row className="mb-4">
-          <Col lg={4} md={6} className="mb-3">
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title className="mb-1">Tổng số mốc thời gian</Card.Title>
-                <Card.Subtitle className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                  Bao gồm tất cả mốc bắt đầu, kết thúc, thông báo, bài học,...
-                </Card.Subtitle>
-                <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
-                  {courseDateBlocks.length}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+        <div className="row mb-4">
+          <div className="col-lg-4 col-md-6 mb-3">
+            <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
+              <h5 className="mb-1">Tổng số mốc thời gian</h5>
+              <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
+                Bao gồm tất cả mốc bắt đầu, kết thúc, thông báo, bài học,...
+              </p>
+              <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                {courseDateBlocks.length}
+              </div>
+            </div>
+          </div>
 
-          <Col lg={4} md={6} className="mb-3">
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title className="mb-1">Trạng thái khóa học</Card.Title>
-                <Card.Subtitle className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                  Dựa trên thông tin has_ended trong API dates
-                </Card.Subtitle>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-                  {hasEnded ? 'Khóa học đã kết thúc' : 'Khóa học đang diễn ra'}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          <div className="col-lg-4 col-md-6 mb-3">
+            <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
+              <h5 className="mb-1">Trạng thái khóa học</h5>
+              <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
+                Dựa trên thông tin has_ended trong API dates
+              </p>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                {hasEnded ? 'Khóa học đã kết thúc' : 'Khóa học đang diễn ra'}
+              </div>
+            </div>
+          </div>
 
-          <Col lg={4} md={6} className="mb-3">
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title className="mb-1">Tiến độ deadline</Card.Title>
-                <Card.Subtitle className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
-                  Thông tin từ dates_banner_info.missed_deadlines
-                </Card.Subtitle>
-                <div
-                  style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    color: hasDeadlines ? '#dc2626' : '#16a34a',
-                  }}
-                >
-                  {hasDeadlines ? 'Bạn đã bỏ lỡ một số hạn' : 'Bạn đang đúng tiến độ'}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+          <div className="col-lg-4 col-md-6 mb-3">
+            <div className="h-100 shadow-sm border-0 bg-white rounded p-3">
+              <h5 className="mb-1">Tiến độ deadline</h5>
+              <p className="text-muted mb-2" style={{ fontSize: '0.85rem' }}>
+                Thông tin từ dates_banner_info.missed_deadlines
+              </p>
+              <div
+                style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: hasDeadlines ? '#dc2626' : '#16a34a',
+                }}
+              >
+                {hasDeadlines ? 'Bạn đã bỏ lỡ một số hạn' : 'Bạn đang đúng tiến độ'}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Khu vực alert & gợi ý lịch học */}
       {isSelfPaced && hasDeadlines && (
-        <Row className="mb-4">
-          <Col lg={12}>
-            <Card className="shadow-sm border-0">
-              <Card.Body>
-                <ShiftDatesAlert model="dates" fetch={fetchDatesTab} />
-                <SuggestedScheduleHeader />
-                <UpgradeToCompleteAlert logUpgradeLinkClick={logUpgradeLinkClick} />
-                <UpgradeToShiftDatesAlert logUpgradeLinkClick={logUpgradeLinkClick} model="dates" />
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        <div className="row mb-4">
+          <div className="col-lg-12">
+            <div className="shadow-sm border-0 bg-white rounded p-3">
+              <ShiftDatesAlert model="dates" fetch={fetchDatesTab} />
+              <SuggestedScheduleHeader />
+              <UpgradeToCompleteAlert logUpgradeLinkClick={logUpgradeLinkClick} />
+              <UpgradeToShiftDatesAlert logUpgradeLinkClick={logUpgradeLinkClick} model="dates" />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Timeline được đóng khung giống nội dung chính ở các tab khác */}
-      <Row>
-        <Col lg={12}>
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Timeline />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="row">
+        <div className="col-lg-12">
+          <div className="shadow-sm border-0 bg-white rounded p-3">
+            <Timeline />
+          </div>
+        </div>
+      </div>
     </Container>
   );
 };
