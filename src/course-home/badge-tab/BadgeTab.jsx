@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Container, Spinner, Alert } from "@openedx/paragon";
@@ -32,6 +32,10 @@ function BadgeTab() {
     const [badgeData, setBadgeData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Track if data has been fetched to prevent infinite loops
+    const progressFetchedRef = useRef(new Set());
+    const badgeFetchedRef = useRef(new Set());
     
     // Check if progress data is loaded
     const progressDataLoaded = progressModel && progressModel.completionSummary && progressModel.courseGrade;
@@ -89,17 +93,19 @@ function BadgeTab() {
         }
     }, [courseId]);
 
-    // Fetch badge data when courseId changes
+    // Fetch badge data when courseId changes (only once per courseId)
     useEffect(() => {
-        if (courseId) {
+        if (courseId && !badgeFetchedRef.current.has(courseId)) {
+            badgeFetchedRef.current.add(courseId);
             fetchBadgeData();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId]);
 
-    // Fetch progress data when courseId changes (only once)
+    // Fetch progress data when courseId changes (only once per courseId)
     useEffect(() => {
-        if (courseId) {
+        if (courseId && !progressFetchedRef.current.has(courseId)) {
+            progressFetchedRef.current.add(courseId);
             dispatch(fetchProgressTab(courseId));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
