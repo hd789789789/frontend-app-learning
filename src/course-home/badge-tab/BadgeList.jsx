@@ -97,7 +97,7 @@ function BadgeList({ chapters }) {
                                 ○ Chưa hoàn thành
                             </button>
                         </div>
-                        <label className="d-flex align-items-center mb-0" style={{ fontSize: "0.8rem", cursor: "pointer" }}>
+                        <label className="d-flex align-items-center mb-0 mt-2 mt-md-0" style={{ fontSize: "0.8rem", cursor: "pointer" }}>
                             <Form.Checkbox
                                 checked={showUnits}
                                 onChange={(e) => setShowUnits(e.target.checked)}
