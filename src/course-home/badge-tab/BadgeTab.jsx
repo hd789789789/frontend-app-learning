@@ -18,14 +18,41 @@ function BadgeTab() {
         setLoading(true);
         setError(null);
         try {
-            const url = `${getConfig().LMS_BASE_URL}/api/course_home/badge/${courseId}`;
-            const { data } = await getAuthenticatedHttpClient().get(url);
+            // Encode courseId properly for URL
+            const encodedCourseId = encodeURIComponent(courseId);
+            const url = `${getConfig().LMS_BASE_URL}/api/course_home/badge/${encodedCourseId}`;
+            console.log("[BadgeTab] Fetching from URL:", url);
+            
+            const response = await getAuthenticatedHttpClient().get(url);
+            const { data } = response;
+            
+            // Check if response is HTML instead of JSON (API not deployed)
+            if (typeof data === 'string' && (data.includes('<!DOCTYPE') || data.includes('<html'))) {
+                console.error("[BadgeTab] API returned HTML instead of JSON - API may not be deployed");
+                setError("API Badge chưa được deploy trên server. Vui lòng liên hệ admin để cập nhật backend.");
+                return;
+            }
+            
+            // Check if data is valid object
+            if (!data || typeof data !== 'object') {
+                console.error("[BadgeTab] Invalid response data:", data);
+                setError("Dữ liệu trả về không hợp lệ.");
+                return;
+            }
+            
             const camelCased = camelCaseObject(data);
             console.log("[BadgeTab] Data:", camelCased);
             setBadgeData(camelCased);
         } catch (err) {
             console.error("[BadgeTab] Error fetching data:", err);
-            setError("Không thể tải dữ liệu Badge. Vui lòng thử lại.");
+            const status = err?.response?.status;
+            if (status === 404) {
+                setError("API Badge không tồn tại trên server (404). Vui lòng deploy backend Badge API.");
+            } else if (status === 401 || status === 403) {
+                setError("Bạn không có quyền truy cập dữ liệu Badge.");
+            } else {
+                setError(`Không thể tải dữ liệu Badge: ${err.message}`);
+            }
         } finally {
             setLoading(false);
         }
