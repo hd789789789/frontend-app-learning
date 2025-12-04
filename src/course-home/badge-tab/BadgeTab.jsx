@@ -33,9 +33,9 @@ function BadgeTab() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Track if data has been fetched to prevent infinite loops
-    const progressFetchedRef = useRef(new Set());
-    const badgeFetchedRef = useRef(new Set());
+    // Use ref to track if progress has been fetched (won't cause re-renders)
+    const progressFetchedRef = useRef(false);
+    const lastCourseIdRef = useRef(null);
     
     // Check if progress data is loaded
     const progressDataLoaded = progressModel && progressModel.completionSummary && progressModel.courseGrade;
@@ -52,7 +52,6 @@ function BadgeTab() {
             </Container>
         );
     }
-
 
     const fetchBadgeData = useCallback(async () => {
         setLoading(true);
@@ -93,23 +92,27 @@ function BadgeTab() {
         }
     }, [courseId]);
 
-    // Fetch badge data when courseId changes (only once per courseId)
+    // Fetch badge data only once when component mounts or courseId changes
     useEffect(() => {
-        if (courseId && !badgeFetchedRef.current.has(courseId)) {
-            badgeFetchedRef.current.add(courseId);
-            fetchBadgeData();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseId]);
+        fetchBadgeData();
+    }, [fetchBadgeData]);
 
-    // Fetch progress data when courseId changes (only once per courseId)
+    // Fetch progress data only once when component mounts or courseId changes
     useEffect(() => {
-        if (courseId && !progressFetchedRef.current.has(courseId)) {
-            progressFetchedRef.current.add(courseId);
+        // Reset flag when courseId changes
+        if (courseId !== lastCourseIdRef.current) {
+            progressFetchedRef.current = false;
+            lastCourseIdRef.current = courseId;
+        }
+        
+        // Only fetch if not already fetched and not already loaded
+        const isLoaded = progressModel && progressModel.completionSummary && progressModel.courseGrade;
+        if (courseId && !progressFetchedRef.current && !isLoaded) {
+            progressFetchedRef.current = true;
             dispatch(fetchProgressTab(courseId));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseId]);
+    }, [courseId, dispatch]);
 
     if (loading) {
         return (
@@ -230,4 +233,3 @@ function BadgeTab() {
 }
 
 export default BadgeTab;
-
