@@ -89,13 +89,21 @@ function BadgeTab() {
         }
     }, [courseId]);
 
+    // Fetch badge data when courseId changes
     useEffect(() => {
         if (courseId) {
             fetchBadgeData();
-            // Fetch progress data for Progress components
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId]);
+
+    // Fetch progress data when courseId changes (only once)
+    useEffect(() => {
+        if (courseId) {
             dispatch(fetchProgressTab(courseId));
         }
-    }, [courseId, fetchBadgeData, dispatch]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId]);
 
     if (loading) {
         return (
