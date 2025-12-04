@@ -18,7 +18,11 @@ const TabContainer = (props) => {
   const { courseId: courseIdFromUrl, targetUserId } = useParams();
   const dispatch = useDispatch();
 
+  // Debug logs
+  console.log(`[TabContainer:${tab}] Rendering, courseIdFromUrl:`, courseIdFromUrl, "slice:", slice);
+
   useEffect(() => {
+    console.log(`[TabContainer:${tab}] useEffect triggered, dispatching fetch for:`, courseIdFromUrl);
     // The courseId from the URL is the course we WANT to load.
     if (isProgressTab) {
       dispatch(fetch(courseIdFromUrl, targetUserId));
@@ -34,6 +38,8 @@ const TabContainer = (props) => {
     courseId,
     courseStatus,
   } = useSelector(state => state[slice]);
+
+  console.log(`[TabContainer:${tab}] Redux state - courseId:`, courseId, "courseStatus:", courseStatus);
 
   return (
     <TabPage

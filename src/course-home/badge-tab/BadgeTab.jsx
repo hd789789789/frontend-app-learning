@@ -9,10 +9,27 @@ import BadgeSummary from "./BadgeSummary";
 import BadgeList from "./BadgeList";
 
 function BadgeTab() {
-    console.log("[BadgeTab] Component rendering...");
+    // Force log immediately - if this doesn't show, component is not rendering
+    console.log("[BadgeTab] ====== COMPONENT RENDERING ======");
+    console.log("[BadgeTab] React version:", React.version);
+    console.log("[BadgeTab] All imports successful");
     
-    const { courseId } = useParams();
-    console.log("[BadgeTab] courseId from useParams:", courseId);
+    let courseId;
+    try {
+        const params = useParams();
+        courseId = params?.courseId;
+        console.log("[BadgeTab] courseId from useParams:", courseId);
+    } catch (err) {
+        console.error("[BadgeTab] Error in useParams:", err);
+        return (
+            <Container className="py-4">
+                <Alert variant="danger">
+                    <Alert.Heading>Lỗi useParams</Alert.Heading>
+                    <p>{err.message}</p>
+                </Alert>
+            </Container>
+        );
+    }
     
     const [badgeData, setBadgeData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -161,10 +178,18 @@ function BadgeTab() {
             </div>
 
             {/* Summary Cards */}
-            <BadgeSummary summary={badgeData.summary} />
+            {BadgeSummary ? (
+                <BadgeSummary summary={badgeData.summary} />
+            ) : (
+                <Alert variant="warning">BadgeSummary component not loaded</Alert>
+            )}
 
             {/* Badge List */}
-            <BadgeList chapters={badgeData.chapters || []} />
+            {BadgeList ? (
+                <BadgeList chapters={badgeData.chapters || []} />
+            ) : (
+                <Alert variant="warning">BadgeList component not loaded</Alert>
+            )}
         </Container>
     );
 }
