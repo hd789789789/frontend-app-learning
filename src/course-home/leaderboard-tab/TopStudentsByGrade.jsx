@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Card, Form, Button, Spinner } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
@@ -17,6 +17,20 @@ const hoverStyles = `
     position: relative;
     z-index: 1;
   }
+  .sticky-user-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background-color: #e3f2fd !important;
+    border-top: 2px solid #1976d2;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .sticky-user-row.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+  }
 `;
 
 function TopStudentsByGrade({ courseId }) {
@@ -25,6 +39,11 @@ function TopStudentsByGrade({ courseId }) {
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(10);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentUserEntry, setCurrentUserEntry] = useState(null);
+  const [allStudents, setAllStudents] = useState([]); // Lưu tất cả students để tìm current user
+  const [showStickyUser, setShowStickyUser] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const userRowRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -34,8 +53,26 @@ function TopStudentsByGrade({ courseId }) {
       const { data } = await getAuthenticatedHttpClient().get(url);
       const camelCased = camelCaseObject(data);
       console.log('[TopStudentsByGrade] Data:', camelCased);
-      setStudents(camelCased.topStudents || []);
+      let topStudents = camelCased.topStudents || [];
       setSummary(camelCased.summary || {});
+      
+      // Lấy current user entry từ API (nếu không nằm trong top)
+      const currentUserInTop = topStudents.find(s => s.isCurrentUser);
+      const currentUserFromApi = camelCased.currentUserEntry || null;
+      
+      // Ưu tiên current user trong top, nếu không có thì dùng từ API
+      const currentUser = currentUserInTop || currentUserFromApi;
+      setCurrentUserEntry(currentUser);
+      
+      // Nếu current user không nằm trong top, thêm vào cuối danh sách để có thể scroll đến
+      if (!currentUserInTop && currentUserFromApi) {
+        topStudents = [...topStudents, currentUserFromApi];
+      }
+      
+      setStudents(topStudents);
+      
+      // Hiển thị sticky nếu current user không nằm trong top ban đầu
+      setShowStickyUser(!currentUserInTop && !!currentUserFromApi);
     } catch (error) {
       console.error('[TopStudentsByGrade] Error fetching data:', error);
       setStudents([]);
@@ -49,6 +86,38 @@ function TopStudentsByGrade({ courseId }) {
       fetchData();
     }
   }, [courseId, limit, fetchData]);
+
+  // Handle scroll để ẩn/hiện sticky user row khi scroll đến vị trí của user
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const userRow = userRowRef.current;
+    if (!container || !currentUserEntry || !userRow) return;
+
+    const handleScroll = () => {
+      // Nếu current user đã nằm trong top ban đầu → không cần sticky
+      const currentUserInTop = students.find((s, idx) => s.isCurrentUser && idx < limit);
+      if (currentUserInTop) {
+        setShowStickyUser(false);
+        return;
+      }
+
+      // Kiểm tra xem user row có trong viewport không
+      const containerRect = container.getBoundingClientRect();
+      const userRowRect = userRow.getBoundingClientRect();
+      
+      // Nếu user row đã vào viewport → ẩn sticky
+      const isUserRowVisible = userRowRect.top >= containerRect.top && 
+                               userRowRect.bottom <= containerRect.bottom + 50; // Thêm 50px buffer
+      
+      setShowStickyUser(!isUserRowVisible);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial state
+    setTimeout(handleScroll, 100); // Delay để đảm bảo DOM đã render
+    
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [currentUserEntry, students, limit]);
 
   const handleRefresh = () => {
     fetchData();
@@ -168,31 +237,82 @@ function TopStudentsByGrade({ courseId }) {
               <span className="ml-2 text-muted">Đang tải...</span>
             </div>
           ) : (
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div 
+              ref={scrollContainerRef}
+              style={{ maxHeight: '400px', overflowY: 'auto', position: 'relative' }}
+            >
               {students.length === 0 ? (
                 <div className="text-center py-4 text-muted">
                   Chưa có dữ liệu
                 </div>
               ) : (
-                students.map((student, index) => (
-                  <div
-                    key={student.userId || index}
-                    className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
-                    style={{ 
-                      backgroundColor: student.isCurrentUser 
-                        ? '#e3f2fd' 
-                        : (index % 2 === 0 ? '#fff' : '#f9f9f9')
-                    }}
-                  >
-                    <div className="mr-3" style={{ minWidth: '35px' }}>
-                      {getRankBadge(student.rank)}
+                <>
+                  {students.map((student, index) => (
+                    <div
+                      key={student.userId || index}
+                      ref={student.isCurrentUser ? userRowRef : null}
+                      className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
+                      style={{ 
+                        backgroundColor: student.isCurrentUser 
+                          ? '#e3f2fd' 
+                          : (index % 2 === 0 ? '#fff' : '#f9f9f9')
+                      }}
+                    >
+                      <div className="mr-3" style={{ minWidth: '35px' }}>
+                        {getRankBadge(student.rank)}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                          <span className="font-weight-semibold">
+                            {student.fullName || student.displayName}
+                          </span>
+                          {student.isCurrentUser && (
+                            <span
+                              className="ml-2 px-2 py-0"
+                              style={{
+                                backgroundColor: '#1976d2',
+                                color: '#fff',
+                                borderRadius: '10px',
+                                fontSize: '0.65rem',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              Bạn
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          @{student.username}
+                        </div>
+                      </div>
+                      <div
+                        className="font-weight-bold"
+                        style={{
+                          fontSize: '1rem',
+                          color: '#f57c00',
+                        }}
+                      >
+                        {student.gradePercentage?.toFixed(1) || student.gradePercent?.toFixed(1) || 0}/10
+                      </div>
                     </div>
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
-                        <span className="font-weight-semibold">
-                          {student.fullName || student.displayName}
-                        </span>
-                        {student.isCurrentUser && (
+                  ))}
+                  
+                  {/* Sticky user row nếu user không nằm trong top */}
+                  {currentUserEntry && showStickyUser && (
+                    <div
+                      className={`d-flex align-items-center px-3 py-2 border-top sticky-user-row`}
+                      style={{ 
+                        backgroundColor: '#e3f2fd',
+                      }}
+                    >
+                      <div className="mr-3" style={{ minWidth: '35px' }}>
+                        {getRankBadge(currentUserEntry.rank)}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                          <span className="font-weight-semibold">
+                            {currentUserEntry.fullName || currentUserEntry.displayName}
+                          </span>
                           <span
                             className="ml-2 px-2 py-0"
                             style={{
@@ -205,23 +325,23 @@ function TopStudentsByGrade({ courseId }) {
                           >
                             Bạn
                           </span>
-                        )}
+                        </div>
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          @{currentUserEntry.username}
+                        </div>
                       </div>
-                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                        @{student.username}
+                      <div
+                        className="font-weight-bold"
+                        style={{
+                          fontSize: '1rem',
+                          color: '#f57c00',
+                        }}
+                      >
+                        {currentUserEntry.gradePercentage?.toFixed(1) || currentUserEntry.gradePercent?.toFixed(1) || 0}/10
                       </div>
                     </div>
-                    <div
-                      className="font-weight-bold"
-                      style={{
-                        fontSize: '1rem',
-                        color: '#f57c00',
-                      }}
-                    >
-                      {student.gradePercentage?.toFixed(1) || student.gradePercent?.toFixed(1) || 0}%
-                    </div>
-                  </div>
-                ))
+                  )}
+                </>
               )}
             </div>
           )}

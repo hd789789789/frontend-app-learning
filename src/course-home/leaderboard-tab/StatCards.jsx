@@ -22,12 +22,12 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount }) {
       color: '#4285f4',
     },
     {
-      value: `${avgGrade?.toFixed(2) || 0}%`,
+      value: `${avgGrade?.toFixed(1) || 0}/10`,
       label: 'ĐIỂM TRUNG BÌNH',
       color: '#34a853',
     },
     {
-      value: `${maxGrade || 0}%`,
+      value: `${maxGrade?.toFixed(1) || 0}/10`,
       label: 'ĐIỂM CAO NHẤT',
       color: '#9c27b0',
     },
