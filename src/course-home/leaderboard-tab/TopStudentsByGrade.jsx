@@ -25,6 +25,7 @@ const hoverStyles = `
     border-top: 2px solid #1976d2;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     transition: opacity 0.3s ease, transform 0.3s ease;
+    margin-top: auto;
   }
   .sticky-user-row.hidden {
     opacity: 0;
@@ -42,6 +43,7 @@ function TopStudentsByGrade({ courseId }) {
   const [currentUserEntry, setCurrentUserEntry] = useState(null);
   const [allStudents, setAllStudents] = useState([]); // Lưu tất cả students để tìm current user
   const [showStickyUser, setShowStickyUser] = useState(false);
+  const [currentUserInTopInitially, setCurrentUserInTopInitially] = useState(false); // Lưu trạng thái ban đầu
   const scrollContainerRef = useRef(null);
   const userRowRef = useRef(null);
 
@@ -60,6 +62,10 @@ function TopStudentsByGrade({ courseId }) {
       const currentUserInTop = topStudents.find(s => s.isCurrentUser);
       const currentUserFromApi = camelCased.currentUserEntry || null;
       
+      // Lưu trạng thái ban đầu: user có nằm trong top không
+      const userInTopInitially = !!currentUserInTop;
+      setCurrentUserInTopInitially(userInTopInitially);
+      
       // Ưu tiên current user trong top, nếu không có thì dùng từ API
       const currentUser = currentUserInTop || currentUserFromApi;
       setCurrentUserEntry(currentUser);
@@ -72,7 +78,8 @@ function TopStudentsByGrade({ courseId }) {
       setStudents(topStudents);
       
       // Hiển thị sticky nếu current user không nằm trong top ban đầu
-      setShowStickyUser(!currentUserInTop && !!currentUserFromApi);
+      // Chỉ hiển thị sticky khi user không nằm trong top ban đầu
+      setShowStickyUser(!userInTopInitially && !!currentUserFromApi);
     } catch (error) {
       console.error('[TopStudentsByGrade] Error fetching data:', error);
       setStudents([]);
@@ -91,33 +98,51 @@ function TopStudentsByGrade({ courseId }) {
   useEffect(() => {
     const container = scrollContainerRef.current;
     const userRow = userRowRef.current;
-    if (!container || !currentUserEntry || !userRow) return;
+    
+    // Chỉ xử lý scroll nếu user không nằm trong top ban đầu
+    if (!container || !currentUserEntry || currentUserInTopInitially) {
+      setShowStickyUser(false);
+      return;
+    }
+
+    // Nếu không có userRow (chưa render), hiển thị sticky
+    if (!userRow) {
+      setShowStickyUser(true);
+      return;
+    }
 
     const handleScroll = () => {
-      // Nếu current user đã nằm trong top ban đầu → không cần sticky
-      const currentUserInTop = students.find((s, idx) => s.isCurrentUser && idx < limit);
-      if (currentUserInTop) {
-        setShowStickyUser(false);
+      if (!userRow) {
+        setShowStickyUser(true);
         return;
       }
 
-      // Kiểm tra xem user row có trong viewport không
-      const containerRect = container.getBoundingClientRect();
-      const userRowRect = userRow.getBoundingClientRect();
+      // Tính toán vị trí tương đối trong scroll container
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const containerScrollBottom = containerScrollTop + containerHeight;
       
-      // Nếu user row đã vào viewport → ẩn sticky
-      const isUserRowVisible = userRowRect.top >= containerRect.top && 
-                               userRowRect.bottom <= containerRect.bottom + 50; // Thêm 50px buffer
+      const userRowOffsetTop = userRow.offsetTop;
+      const userRowHeight = userRow.offsetHeight;
+      const userRowBottom = userRowOffsetTop + userRowHeight;
+      
+      // Kiểm tra xem user row có trong viewport không
+      // Nếu user row đã vào viewport (có thể thấy được) → ẩn sticky
+      const isUserRowVisible = userRowOffsetTop >= containerScrollTop - 10 && 
+                               userRowOffsetTop <= containerScrollBottom + 10;
       
       setShowStickyUser(!isUserRowVisible);
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
-    // Check initial state
-    setTimeout(handleScroll, 100); // Delay để đảm bảo DOM đã render
+    // Check initial state sau khi render
+    const timeoutId = setTimeout(handleScroll, 200);
     
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [currentUserEntry, students, limit]);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [currentUserEntry, currentUserInTopInitially, students]);
 
   const handleRefresh = () => {
     fetchData();
@@ -239,7 +264,7 @@ function TopStudentsByGrade({ courseId }) {
           ) : (
             <div 
               ref={scrollContainerRef}
-              style={{ maxHeight: '400px', overflowY: 'auto', position: 'relative' }}
+              style={{ maxHeight: '400px', overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}
             >
               {students.length === 0 ? (
                 <div className="text-center py-4 text-muted">
@@ -247,26 +272,30 @@ function TopStudentsByGrade({ courseId }) {
                 </div>
               ) : (
                 <>
-                  {students.map((student, index) => (
-                    <div
-                      key={student.userId || index}
-                      ref={student.isCurrentUser ? userRowRef : null}
-                      className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
-                      style={{ 
-                        backgroundColor: student.isCurrentUser 
-                          ? '#e3f2fd' 
-                          : (index % 2 === 0 ? '#fff' : '#f9f9f9')
-                      }}
-                    >
-                      <div className="mr-3" style={{ minWidth: '35px' }}>
-                        {getRankBadge(student.rank)}
-                      </div>
-                      <div className="flex-grow-1">
-                        <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
-                          <span className="font-weight-semibold">
-                            {student.fullName || student.displayName}
-                          </span>
-                          {student.isCurrentUser && (
+                  <div style={{ flex: '1 1 auto' }}>
+                    {students.map((student, index) => {
+                      // Set ref cho current user entry (dù ở đâu trong danh sách)
+                      const isCurrentUser = student.isCurrentUser;
+                      return (
+                      <div
+                        key={student.userId || index}
+                        ref={isCurrentUser ? userRowRef : null}
+                        className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
+                        style={{ 
+                          backgroundColor: isCurrentUser 
+                            ? '#e3f2fd' 
+                            : (index % 2 === 0 ? '#fff' : '#f9f9f9')
+                        }}
+                      >
+                        <div className="mr-3" style={{ minWidth: '35px' }}>
+                          {getRankBadge(student.rank)}
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                            <span className="font-weight-semibold">
+                              {student.fullName || student.displayName}
+                            </span>
+                          {isCurrentUser && (
                             <span
                               className="ml-2 px-2 py-0"
                               style={{
@@ -295,7 +324,9 @@ function TopStudentsByGrade({ courseId }) {
                         {student.gradePercentage?.toFixed(1) || student.gradePercent?.toFixed(1) || 0}/10
                       </div>
                     </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                   
                   {/* Sticky user row nếu user không nằm trong top */}
                   {currentUserEntry && showStickyUser && (
@@ -303,6 +334,7 @@ function TopStudentsByGrade({ courseId }) {
                       className={`d-flex align-items-center px-3 py-2 border-top sticky-user-row`}
                       style={{ 
                         backgroundColor: '#e3f2fd',
+                        flexShrink: 0,
                       }}
                     >
                       <div className="mr-3" style={{ minWidth: '35px' }}>
