@@ -26,11 +26,33 @@ const LoadedTabPage = ({
     celebrations,
     org,
     originalUserIsStaff,
-    tabs,
+    tabs: originalTabs,
     title,
     verifiedMode,
     hasCourseAuthorAccess,
   } = useModel('courseHomeMeta', courseId);
+
+  // Thêm tab Badge vào danh sách tabs
+  const badgeTab = {
+    title: 'Badge',
+    slug: 'badge',
+    url: `/course/${courseId}/badge`,
+  };
+  
+  // Thêm tab Badge sau tab Leaderboard (Học đua)
+  const tabs = React.useMemo(() => {
+    if (!originalTabs) return [];
+    const tabsCopy = [...originalTabs];
+    const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
+    if (leaderboardIndex !== -1) {
+      // Chèn sau leaderboard
+      tabsCopy.splice(leaderboardIndex + 1, 0, badgeTab);
+    } else {
+      // Nếu không có leaderboard, thêm vào cuối
+      tabsCopy.push(badgeTab);
+    }
+    return tabsCopy;
+  }, [originalTabs, courseId]);
 
   // Logistration and enrollment alerts are only really used for the outline tab, but loaded here to put them above
   // breadcrumbs when they are visible.

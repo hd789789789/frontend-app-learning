@@ -110,6 +110,10 @@ export function fetchDiscussionTab(courseId) {
   return fetchTab(courseId, 'discussion');
 }
 
+export function fetchBadgeTab(courseId) {
+  return fetchTab(courseId, 'badge');
+}
+
 export function dismissWelcomeMessage(courseId) {
   return async () => postDismissWelcomeMessage(courseId);
 }

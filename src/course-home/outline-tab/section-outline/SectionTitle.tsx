@@ -4,6 +4,7 @@ import { Icon } from '@openedx/paragon';
 import { CheckCircle, CheckCircleOutline, DisabledVisible } from '@openedx/paragon/icons';
 
 import messages from '../messages';
+import BadgeIcon from './BadgeIcon';
 
 interface Props {
   complete: boolean;
@@ -34,8 +35,9 @@ const SectionTitle: React.FC<Props> = ({ complete, hideFromTOC, title }) => {
           />
         )}
       </div>
-      <div className="col-7 ml-3 p-0 font-weight-bold text-dark-500">
-        <span className="align-middle col-6">{title}</span>
+      <div className="col-7 ml-3 p-0 font-weight-bold text-dark-500 d-flex align-items-center">
+        <span className="align-middle">{title}</span>
+        <BadgeIcon type="chapter" isCompleted={complete} size="sm" />
         <span className="sr-only">
           , {intl.formatMessage(complete ? messages.completedSection : messages.incompleteSection)}
         </span>

@@ -19,10 +19,11 @@ import CoursewareRedirectLandingPage from "./courseware/CoursewareRedirectLandin
 import DatesTab from "./course-home/dates-tab";
 import GoalUnsubscribe from "./course-home/goal-unsubscribe";
 import LeaderboardTab from "./course-home/leaderboard-tab";
+import { BadgeTab } from "./course-home/badge-tab";
 import ProgressTab from "./course-home/progress-tab/ProgressTab";
 import { TabContainer } from "./tab-page";
 
-import { fetchDatesTab, fetchLeaderboardTab, fetchOutlineTab, fetchProgressTab } from "./course-home/data";
+import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab } from "./course-home/data";
 import { fetchCourse } from "./courseware/data";
 import { store } from "./store";
 import NoticesProvider from "./generic/notices";
@@ -145,6 +146,20 @@ subscribe(APP_READY, () => {
                                                     slice="courseHome"
                                                 >
                                                     <LeaderboardTab />
+                                                </TabContainer>
+                                            </DecodePageRoute>
+                                        }
+                                    />
+                                    <Route
+                                        path={DECODE_ROUTES.BADGE}
+                                        element={
+                                            <DecodePageRoute>
+                                                <TabContainer
+                                                    tab="badge"
+                                                    fetch={fetchBadgeTab}
+                                                    slice="courseHome"
+                                                >
+                                                    <BadgeTab />
                                                 </TabContainer>
                                             </DecodePageRoute>
                                         }

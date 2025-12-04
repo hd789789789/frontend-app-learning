@@ -7,6 +7,7 @@ import { CheckCircleOutline, CheckCircle } from '@openedx/paragon/icons';
 import EffortEstimate from '../../../shared/effort-estimate';
 import messages from '../messages';
 import { useContextId } from '../../../data/hooks';
+import BadgeIcon from './BadgeIcon';
 
 interface Props {
   complete: boolean;
@@ -49,8 +50,9 @@ const SequenceTitle: React.FC<Props> = ({
           />
         )}
       </div>
-      <div className="col-10 p-0 ml-3 text-break">
+      <div className="col-10 p-0 ml-3 text-break d-flex align-items-center flex-wrap">
         <span className="align-middle">{displayTitle}</span>
+        <BadgeIcon type="section" isCompleted={complete} size="sm" />
         <span className="sr-only">
           , {intl.formatMessage(complete ? messages.completedAssignment : messages.incompleteAssignment)}
         </span>
