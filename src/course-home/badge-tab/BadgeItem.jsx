@@ -20,7 +20,7 @@ const BadgeIcon = ({ type, isCompleted, size = "md" }) => {
             label: "Chương",
         },
         section: {
-            icon: "📚",
+            icon: "🏅",
             completedBg: "linear-gradient(135deg, #4caf50 0%, #81c784 100%)",
             incompleteBg: "#e0e0e0",
             label: "Bài",

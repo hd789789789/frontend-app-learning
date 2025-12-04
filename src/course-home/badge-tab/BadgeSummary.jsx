@@ -36,7 +36,7 @@ function BadgeSummary({ summary }) {
             bgColor: "#fff9e6",
         },
         {
-            icon: "📚",
+            icon: "🏅",
             label: "Bài",
             completed: summary?.completedSections || 0,
             total: summary?.totalSections || 0,

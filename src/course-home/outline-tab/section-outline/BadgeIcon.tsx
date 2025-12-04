@@ -22,7 +22,7 @@ const BadgeIcon: React.FC<Props> = ({ type, isCompleted, size = 'sm' }) => {
       label: 'Chuong',
     },
     section: {
-      icon: '📚',
+      icon: '🏅',
       completedBg: 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)',
       label: 'Bai',
     },
