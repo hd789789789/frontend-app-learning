@@ -52,41 +52,12 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   const userRowRef = useRef(null);
   const fetchKeyRef = useRef(null);
   const lastCourseIdRef = useRef(null);
+  const onSummaryChangeRef = useRef(onSummaryChange);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const testParam = testMode ? "&test=true" : "";
-      const modeParam = `&mode=${mode}`;
-      const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-streak/${courseId}?limit=${limit}${modeParam}${testParam}`;
-      const { data } = await getAuthenticatedHttpClient().get(url);
-      const camelCased = camelCaseObject(data);
-
-      const topStudents = camelCased.topStudents || [];
-      setSummary(camelCased.summary || {});
-
-      const currentUserInTop = topStudents.find((s) => s.isCurrentUser);
-      const currentUserFromApi = camelCased.currentUserEntry || null;
-      const currentUser = currentUserInTop || currentUserFromApi || null;
-      setCurrentUserEntry(currentUser);
-
-      if (onSummaryChange && currentUser) {
-        onSummaryChange({
-          currentStreak: currentUser.currentStreak || 0,
-          longestEverStreak: currentUser.longestEverStreak || 0,
-        });
-      }
-
-      setStudents(topStudents);
-      setShowStickyUser(false);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("[TopStudentsByStreak] Error fetching data:", error);
-      setStudents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [courseId, limit, mode, testMode]);
+  // Keep onSummaryChange ref up to date
+  useEffect(() => {
+    onSummaryChangeRef.current = onSummaryChange;
+  }, [onSummaryChange]);
 
   useEffect(() => {
     // Reset fetch key when courseId changes
@@ -103,11 +74,95 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     const currentFetchKey = `${courseId}-${limit}-${mode}-${testMode}`;
 
     // Only fetch if we haven't fetched with this exact combination
-    if (fetchKeyRef.current !== currentFetchKey) {
-      fetchKeyRef.current = currentFetchKey;
-      fetchData();
+    if (fetchKeyRef.current === currentFetchKey) {
+      return;
     }
-  }, [courseId, limit, mode, testMode, fetchData]);
+
+    fetchKeyRef.current = currentFetchKey;
+
+    // Fetch data directly in useEffect to avoid dependency issues
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const testParam = testMode ? "&test=true" : "";
+        const modeParam = `&mode=${mode}`;
+        const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-streak/${courseId}?limit=${limit}${modeParam}${testParam}`;
+        const { data } = await getAuthenticatedHttpClient().get(url);
+        const camelCased = camelCaseObject(data);
+
+        const topStudents = camelCased.topStudents || [];
+        setSummary(camelCased.summary || {});
+
+        const currentUserInTop = topStudents.find((s) => s.isCurrentUser);
+        const currentUserFromApi = camelCased.currentUserEntry || null;
+        const currentUser = currentUserInTop || currentUserFromApi || null;
+        setCurrentUserEntry(currentUser);
+
+        if (onSummaryChangeRef.current && currentUser) {
+          onSummaryChangeRef.current({
+            currentStreak: currentUser.currentStreak || 0,
+            longestEverStreak: currentUser.longestEverStreak || 0,
+          });
+        }
+
+        setStudents(topStudents);
+        setShowStickyUser(false);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("[TopStudentsByStreak] Error fetching data:", error);
+        setStudents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [courseId, limit, mode, testMode]);
+
+  const handleRefresh = () => {
+    // Reset fetch key to force a new fetch
+    const currentFetchKey = `${courseId}-${limit}-${mode}-${testMode}`;
+    fetchKeyRef.current = null;
+    
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const testParam = testMode ? "&test=true" : "";
+        const modeParam = `&mode=${mode}`;
+        const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-streak/${courseId}?limit=${limit}${modeParam}${testParam}`;
+        const { data } = await getAuthenticatedHttpClient().get(url);
+        const camelCased = camelCaseObject(data);
+
+        const topStudents = camelCased.topStudents || [];
+        setSummary(camelCased.summary || {});
+
+        const currentUserInTop = topStudents.find((s) => s.isCurrentUser);
+        const currentUserFromApi = camelCased.currentUserEntry || null;
+        const currentUser = currentUserInTop || currentUserFromApi || null;
+        setCurrentUserEntry(currentUser);
+
+        if (onSummaryChangeRef.current && currentUser) {
+          onSummaryChangeRef.current({
+            currentStreak: currentUser.currentStreak || 0,
+            longestEverStreak: currentUser.longestEverStreak || 0,
+          });
+        }
+
+        setStudents(topStudents);
+        setShowStickyUser(false);
+        // Update fetch key after successful fetch
+        fetchKeyRef.current = currentFetchKey;
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("[TopStudentsByStreak] Error fetching data:", error);
+        setStudents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  };
 
   const isUserInList = students.some((s) => s.isCurrentUser);
 
@@ -169,10 +224,6 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
       clearTimeout(timeoutId);
     };
   }, [currentUserEntry, students, isUserInList]);
-
-  const handleRefresh = () => {
-    fetchData();
-  };
 
   const getRankBadge = (rank) => {
     if (rank === 1) {
