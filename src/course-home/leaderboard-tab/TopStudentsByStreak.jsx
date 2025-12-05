@@ -50,6 +50,8 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   const [testMode, setTestMode] = useState(false);
   const scrollContainerRef = useRef(null);
   const userRowRef = useRef(null);
+  const fetchKeyRef = useRef(null);
+  const lastCourseIdRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -84,10 +86,25 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     } finally {
       setLoading(false);
     }
-  }, [courseId, limit, mode, testMode, onSummaryChange]);
+  }, [courseId, limit, mode, testMode]);
 
   useEffect(() => {
-    if (courseId) {
+    // Reset fetch key when courseId changes
+    if (lastCourseIdRef.current !== courseId) {
+      fetchKeyRef.current = null;
+      lastCourseIdRef.current = courseId;
+    }
+
+    if (!courseId) {
+      return;
+    }
+
+    // Create a unique key for this fetch combination
+    const currentFetchKey = `${courseId}-${limit}-${mode}-${testMode}`;
+
+    // Only fetch if we haven't fetched with this exact combination
+    if (fetchKeyRef.current !== currentFetchKey) {
+      fetchKeyRef.current = currentFetchKey;
       fetchData();
     }
   }, [courseId, limit, mode, testMode, fetchData]);
