@@ -41,10 +41,64 @@ const LoadedTabPage = ({
   };
   
   // Thêm tab Thành tích sau tab Leaderboard (Học đua) và ẩn tab Progress
+  // Đảm bảo tab Discussions hiển thị với URL đúng định dạng
   const tabs = React.useMemo(() => {
     if (!originalTabs) return [];
     // Filter out progress tab
-    const tabsCopy = originalTabs.filter(tab => tab.slug !== 'progress');
+    let tabsCopy = originalTabs.filter(tab => tab.slug !== 'progress');
+    
+    // Cập nhật URL và title cho các tab
+    tabsCopy = tabsCopy.map(tab => {
+      // Đổi tên tab Discussion thành "Thảo luận"
+      if (tab.slug === 'discussion') {
+        // Cập nhật URL để sử dụng định dạng learning route
+        // Nếu URL cũ là /courses/.../discussion/forum/, chuyển thành /learning/course/.../discussion/forum/
+        let discussionUrl = tab.url;
+        if (discussionUrl) {
+          // Nếu URL chứa /courses/.../discussion/, chuyển sang định dạng learning
+          if (discussionUrl.includes('/courses/') && discussionUrl.includes('/discussion/')) {
+            // Extract path sau /discussion/ từ URL cũ
+            const match = discussionUrl.match(/\/discussion\/(.+)$/);
+            const discussionPath = match ? match[1] : 'forum/';
+            discussionUrl = `/learning/course/${courseId}/discussion/${discussionPath}`;
+          } else if (!discussionUrl.includes('/learning/') && !discussionUrl.includes('/course/')) {
+            // Nếu URL không có prefix, thêm learning prefix
+            const pathMatch = discussionUrl.match(/discussion\/(.+)$/);
+            const discussionPath = pathMatch ? pathMatch[1] : 'forum/';
+            discussionUrl = `/learning/course/${courseId}/discussion/${discussionPath}`;
+          }
+        } else {
+          // Nếu không có URL, tạo URL mặc định
+          discussionUrl = `/learning/course/${courseId}/discussion/forum/`;
+        }
+        return {
+          ...tab,
+          url: discussionUrl,
+          title: 'Thảo luận',
+        };
+      }
+      // Đổi tên tab Dates thành "Ngày"
+      if (tab.slug === 'dates') {
+        return {
+          ...tab,
+          title: 'Ngày',
+        };
+      }
+      return tab;
+    });
+    
+    // Đảm bảo tab discussion có trong danh sách, nếu không có thì thêm vào
+    const hasDiscussionTab = tabsCopy.some(tab => tab.slug === 'discussion');
+    if (!hasDiscussionTab) {
+      const discussionTab = {
+        title: 'Thảo luận',
+        slug: 'discussion',
+        url: `/learning/course/${courseId}/discussion/forum/`,
+        type: 'discussion',
+      };
+      tabsCopy.push(discussionTab);
+    }
+    
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
     if (leaderboardIndex !== -1) {
       // Chèn sau leaderboard
