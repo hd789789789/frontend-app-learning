@@ -49,28 +49,11 @@ const LoadedTabPage = ({
     
     // Cập nhật URL và title cho các tab
     tabsCopy = tabsCopy.map(tab => {
-      // Đổi tên tab Discussion thành "Thảo luận"
+      // Đổi tên tab Discussion thành "Thảo luận" và redirect đến discussions MFE
       if (tab.slug === 'discussion') {
-        // Cập nhật URL để sử dụng định dạng learning route
-        // Nếu URL cũ là /courses/.../discussion/forum/, chuyển thành /learning/course/.../discussion/forum/
-        let discussionUrl = tab.url;
-        if (discussionUrl) {
-          // Nếu URL chứa /courses/.../discussion/, chuyển sang định dạng learning
-          if (discussionUrl.includes('/courses/') && discussionUrl.includes('/discussion/')) {
-            // Extract path sau /discussion/ từ URL cũ
-            const match = discussionUrl.match(/\/discussion\/(.+)$/);
-            const discussionPath = match ? match[1] : 'forum/';
-            discussionUrl = `/learning/course/${courseId}/discussion/${discussionPath}`;
-          } else if (!discussionUrl.includes('/learning/') && !discussionUrl.includes('/course/')) {
-            // Nếu URL không có prefix, thêm learning prefix
-            const pathMatch = discussionUrl.match(/discussion\/(.+)$/);
-            const discussionPath = pathMatch ? pathMatch[1] : 'forum/';
-            discussionUrl = `/learning/course/${courseId}/discussion/${discussionPath}`;
-          }
-        } else {
-          // Nếu không có URL, tạo URL mặc định
-          discussionUrl = `/learning/course/${courseId}/discussion/forum/`;
-        }
+        // URL sẽ là /learning/course/:courseId/discussion để trigger DiscussionTab component
+        // DiscussionTab sẽ redirect đến discussions MFE
+        const discussionUrl = `/learning/course/${courseId}/discussion/posts`;
         return {
           ...tab,
           url: discussionUrl,

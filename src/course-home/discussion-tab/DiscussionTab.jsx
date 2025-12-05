@@ -1,65 +1,28 @@
 import { getConfig } from '@edx/frontend-platform';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useParams, generatePath, useNavigate } from 'react-router-dom';
-import { useIFrameHeight, useIFramePluginEvents } from '../../generic/hooks';
+import { useParams } from 'react-router-dom';
 
 const DiscussionTab = () => {
   const { courseId } = useSelector(state => state.courseHome);
   const { path } = useParams();
-  const [originalPath] = useState(path || 'posts');
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-
-  const [, iFrameHeight] = useIFrameHeight();
   
-  // Handle navigation events from discussions iframe
-  useIFramePluginEvents({
-    'discussions.navigate': (payload) => {
-      const basePath = generatePath('/course/:courseId/discussion', { courseId });
-      navigate(`${basePath}/${payload.path}`);
-    },
-  });
-  
-  // Xây dựng URL: nếu có path thì thêm vào, không thì chỉ dùng courseId
-  // Format: {DISCUSSIONS_MFE_BASE_URL}/{courseId}/{path} hoặc {DISCUSSIONS_MFE_BASE_URL}/{courseId}
-  const discussionsBaseUrl = getConfig().DISCUSSIONS_MFE_BASE_URL;
-  const discussionsUrl = originalPath 
-    ? `${discussionsBaseUrl}/${courseId}/${originalPath}`
-    : `${discussionsBaseUrl}/${courseId}/posts`;
-  
-  // Handle iframe load
-  const handleIframeLoad = () => {
-    setIsLoading(false);
-  };
-
-  // Update URL when path changes
+  // Redirect đến discussions MFE thay vì dùng iframe
   useEffect(() => {
-    setIsLoading(true);
-  }, [path, courseId]);
+    const discussionsBaseUrl = getConfig().DISCUSSIONS_MFE_BASE_URL;
+    const discussionPath = path || 'posts';
+    const discussionsUrl = `${discussionsBaseUrl}/${courseId}/${discussionPath}`;
+    
+    // Redirect đến discussions MFE
+    window.location.href = discussionsUrl;
+  }, [courseId, path]);
   
+  // Hiển thị loading trong khi redirect
   return (
-    <div className="d-flex flex-column w-100 position-relative" style={{ minHeight: '60rem' }}>
-      {isLoading && (
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '10rem' }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="sr-only">Đang tải...</span>
-          </div>
-        </div>
-      )}
-      <iframe
-        src={discussionsUrl}
-        className="d-flex w-100 border-0"
-        height={iFrameHeight}
-        style={{ 
-          minHeight: '60rem',
-          display: isLoading ? 'none' : 'flex',
-          border: 'none',
-        }}
-        title="discussion"
-        onLoad={handleIframeLoad}
-        allow="clipboard-write"
-      />
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60rem' }}>
+      <div className="spinner-border text-primary" role="status">
+        <span className="sr-only">Đang chuyển hướng đến trang thảo luận...</span>
+      </div>
     </div>
   );
 };
