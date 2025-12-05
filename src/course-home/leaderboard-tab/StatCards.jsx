@@ -53,7 +53,7 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
       <style>{cardHoverStyle}</style>
       <div className="row mb-4">
         {stats.map((stat, index) => (
-          <div key={index} className="col-md-3 col-sm-6 mb-3">
+          <div key={index} className="col-lg-4 col-md-4 col-sm-6 mb-3">
             <Card 
               className="h-100 text-center shadow-sm stat-card-hover" 
               style={{ borderRadius: '12px' }}
