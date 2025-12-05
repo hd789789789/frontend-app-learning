@@ -50,9 +50,9 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   const [testMode, setTestMode] = useState(false);
   const scrollContainerRef = useRef(null);
   const userRowRef = useRef(null);
-  const fetchKeyRef = useRef(null);
-  const lastCourseIdRef = useRef(null);
   const onSummaryChangeRef = useRef(onSummaryChange);
+  const isFetchingRef = useRef(false);
+  const lastParamsRef = useRef({ courseId: null, limit: null, mode: null, testMode: null });
 
   // Keep onSummaryChange ref up to date
   useEffect(() => {
@@ -60,25 +60,25 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   }, [onSummaryChange]);
 
   useEffect(() => {
-    // Reset fetch key when courseId changes
-    if (lastCourseIdRef.current !== courseId) {
-      fetchKeyRef.current = null;
-      lastCourseIdRef.current = courseId;
-    }
-
     if (!courseId) {
       return;
     }
 
-    // Create a unique key for this fetch combination
-    const currentFetchKey = `${courseId}-${limit}-${mode}-${testMode}`;
+    // Check if any parameter actually changed
+    const paramsChanged = 
+      lastParamsRef.current.courseId !== courseId ||
+      lastParamsRef.current.limit !== limit ||
+      lastParamsRef.current.mode !== mode ||
+      lastParamsRef.current.testMode !== testMode;
 
-    // Only fetch if we haven't fetched with this exact combination
-    if (fetchKeyRef.current === currentFetchKey) {
+    // If nothing changed or already fetching, skip
+    if (!paramsChanged || isFetchingRef.current) {
       return;
     }
 
-    fetchKeyRef.current = currentFetchKey;
+    // Update last params
+    lastParamsRef.current = { courseId, limit, mode, testMode };
+    isFetchingRef.current = true;
 
     // Fetch data directly in useEffect to avoid dependency issues
     const fetchData = async () => {
@@ -111,8 +111,11 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
         // eslint-disable-next-line no-console
         console.error("[TopStudentsByStreak] Error fetching data:", error);
         setStudents([]);
+        // Reset params on error so we can retry
+        lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
@@ -120,9 +123,14 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   }, [courseId, limit, mode, testMode]);
 
   const handleRefresh = () => {
-    // Reset fetch key to force a new fetch
-    const currentFetchKey = `${courseId}-${limit}-${mode}-${testMode}`;
-    fetchKeyRef.current = null;
+    // Prevent multiple simultaneous refreshes
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    // Reset last params to force a new fetch
+    lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
+    isFetchingRef.current = true;
     
     const fetchData = async () => {
       setLoading(true);
@@ -150,14 +158,16 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
 
         setStudents(topStudents);
         setShowStickyUser(false);
-        // Update fetch key after successful fetch
-        fetchKeyRef.current = currentFetchKey;
+        // Update last params after successful fetch
+        lastParamsRef.current = { courseId, limit, mode, testMode };
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("[TopStudentsByStreak] Error fetching data:", error);
         setStudents([]);
+        lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     };
 

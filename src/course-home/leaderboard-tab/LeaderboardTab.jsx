@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { camelCaseObject, getConfig } from '@edx/frontend-platform';
@@ -78,13 +78,13 @@ const LeaderboardTab = () => {
     );
   }
 
-  const handleStreakSummaryChange = ({ currentStreak, longestEverStreak }) => {
+  const handleStreakSummaryChange = useCallback(({ currentStreak, longestEverStreak }) => {
     setSummaryData((prev) => ({
       ...prev,
       currentStreak: currentStreak || 0,
       bestStreak: longestEverStreak || 0,
     }));
-  };
+  }, []);
 
   return (
     <Container fluid className="py-4 px-3 px-md-4" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
