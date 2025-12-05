@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { Routes, Route } from "react-router-dom";
 
 import { Helmet } from "react-helmet";
-import { fetchDiscussionTab, fetchLiveTab, fetchTeamsTab } from "./course-home/data/thunks";
+import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
 import DiscussionTab from "./course-home/discussion-tab/DiscussionTab";
 import TeamsTab from "./course-home/teams-tab/TeamsTab";
 
