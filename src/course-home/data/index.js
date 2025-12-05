@@ -4,6 +4,7 @@ export {
   fetchBadgeTab,
   fetchOutlineTab,
   fetchProgressTab,
+  fetchTeamsTab,
   resetDeadlines,
   deprecatedSaveCourseGoal,
   saveWeeklyLearningGoal,

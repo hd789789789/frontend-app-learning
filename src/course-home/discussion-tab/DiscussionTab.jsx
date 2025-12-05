@@ -7,7 +7,7 @@ import { useIFrameHeight, useIFramePluginEvents } from '../../generic/hooks';
 const DiscussionTab = () => {
   const { courseId } = useSelector(state => state.courseHome);
   const { path } = useParams();
-  const [originalPath] = useState(path);
+  const [originalPath] = useState(path || 'posts');
   const navigate = useNavigate();
 
   const [, iFrameHeight] = useIFrameHeight();
@@ -17,7 +17,14 @@ const DiscussionTab = () => {
       navigate(`${basePath}/${payload.path}`);
     },
   });
-  const discussionsUrl = `${getConfig().DISCUSSIONS_MFE_BASE_URL}/${courseId}/${originalPath}`;
+  
+  // Xây dựng URL: nếu có path thì thêm vào, không thì chỉ dùng courseId
+  // Format: {DISCUSSIONS_MFE_BASE_URL}/{courseId}/{path} hoặc {DISCUSSIONS_MFE_BASE_URL}/{courseId}
+  const discussionsBaseUrl = getConfig().DISCUSSIONS_MFE_BASE_URL;
+  const discussionsUrl = originalPath 
+    ? `${discussionsBaseUrl}/${courseId}/${originalPath}`
+    : `${discussionsBaseUrl}/${courseId}/posts`;
+  
   return (
     <iframe
       src={discussionsUrl}

@@ -6,6 +6,7 @@ export const DECODE_ROUTES = {
   LEADERBOARD: '/course/:courseId/leaderboard',
   BADGE: '/course/:courseId/badge',
   DISCUSSION: '/course/:courseId/discussion/:path/*',
+  TEAMS: '/course/:courseId/teams',
   PROGRESS: [
     '/course/:courseId/progress/:targetUserId/',
     '/course/:courseId/progress',

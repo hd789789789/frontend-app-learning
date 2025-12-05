@@ -84,6 +84,28 @@ const LoadedTabPage = ({
           title: 'Ngày',
         };
       }
+      // Đổi tên tab Teams thành "Nhóm" và cập nhật URL
+      if (tab.slug === 'teams' || tab.type === 'teams') {
+        // Cập nhật URL để sử dụng định dạng learning route
+        let teamsUrl = tab.url;
+        if (teamsUrl) {
+          // Nếu URL chứa /courses/.../teams_dashboard, chuyển sang định dạng learning
+          if (teamsUrl.includes('/courses/') && teamsUrl.includes('/teams_dashboard')) {
+            teamsUrl = `/learning/course/${courseId}/teams`;
+          } else if (!teamsUrl.includes('/learning/') && !teamsUrl.includes('/course/')) {
+            // Nếu URL không có prefix, thêm learning prefix
+            teamsUrl = `/learning/course/${courseId}/teams`;
+          }
+        } else {
+          // Nếu không có URL, tạo URL mặc định
+          teamsUrl = `/learning/course/${courseId}/teams`;
+        }
+        return {
+          ...tab,
+          url: teamsUrl,
+          title: 'Nhóm',
+        };
+      }
       return tab;
     });
     

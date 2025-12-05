@@ -110,6 +110,10 @@ export function fetchDiscussionTab(courseId) {
   return fetchTab(courseId, 'discussion');
 }
 
+export function fetchTeamsTab(courseId) {
+  return fetchTab(courseId, 'teams');
+}
+
 export function fetchBadgeTab(courseId) {
   return fetchTab(courseId, 'badge');
 }
