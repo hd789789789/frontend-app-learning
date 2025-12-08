@@ -70,12 +70,27 @@
   color: white;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(139, 58, 98, 0.3);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .streak-calendar-day-completed {
   background: var(--success-color, #2ecc71);
   color: white;
   font-weight: 500;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(139, 58, 98, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(139, 58, 98, 0.5);
+  }
 }
 
 .streak-calendar-day-future {

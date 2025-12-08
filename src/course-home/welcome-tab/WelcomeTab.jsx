@@ -6,6 +6,9 @@ import { useModel } from '../../generic/model-store';
 import Timeline from '../dates-tab/timeline/Timeline';
 import { fetchDatesTab } from '../data';
 import StreakCalendar from './StreakCalendar';
+import GroupStreaks from './GroupStreaks';
+import StudyTip from './StudyTip';
+import ReferralWidget from './ReferralWidget';
 import './WelcomeTab.scss';
 
 const WelcomeTab = () => {
@@ -83,9 +86,8 @@ const WelcomeTab = () => {
     classRank: 0,
   };
 
-  // Use daily quests from API or fallback to empty array
+  // Use daily quests from API or fallback to mock data
   const dailyQuests = welcomeData.dailyQuests || [
-    // Fallback mock data if API doesn't return quests yet
     {
       id: 1,
       title: 'Hoàn thành 1 bài học',
@@ -107,6 +109,36 @@ const WelcomeTab = () => {
       completed: false,
       icon: '🎯',
       gradient: 'warning',
+    },
+  ];
+
+  // Mock data for group streaks
+  const groupStreaks = [
+    {
+      id: 1,
+      name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
+      streakDays: 5,
+      members: [
+        { id: 1, initial: 'A', color: '#E86C5D' },
+        { id: 2, initial: 'B', color: '#3498DB' },
+        { id: 3, initial: 'C', color: '#2ECC71' },
+      ],
+      additionalMembers: 5,
+      status: 'in_progress',
+      message: '💪 Tiếp tục học hôm nay để giữ chuỗi nhóm!',
+    },
+    {
+      id: 2,
+      name: 'Chinh phục Toán 7',
+      streakDays: 10,
+      members: [
+        { id: 4, initial: 'D', color: '#8B3A62' },
+        { id: 5, initial: 'E', color: '#E67E22' },
+        { id: 6, initial: 'F', color: '#16A085' },
+      ],
+      additionalMembers: 2,
+      status: 'all_completed',
+      message: '✓ Tất cả thành viên đã học hôm nay',
     },
   ];
 
@@ -280,6 +312,12 @@ const WelcomeTab = () => {
             streakDays={userStats.streakDays} 
             lastDayOfStreak={userStats.lastDayOfStreak}
           />
+          
+          <GroupStreaks groups={groupStreaks} />
+          
+          <StudyTip />
+          
+          <ReferralWidget />
         </Col>
       </Row>
     </Container>

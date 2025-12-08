@@ -16,12 +16,15 @@ const StreakCalendar = ({ streakDays, lastDayOfStreak }) => {
     
     // Calculate which days are completed
     const completedDates = new Set();
-    if (lastDayOfStreak) {
+    if (lastDayOfStreak && streakDays > 0) {
       const lastDay = new Date(lastDayOfStreak);
-      // Mark all days from startDate to lastDay as completed if they're within streak
+      // Mark all days in the streak as completed
+      // Start from the last day and go back (streakDays - 1) days
       for (let i = 0; i < streakDays; i++) {
         const date = new Date(lastDay);
         date.setDate(lastDay.getDate() - i);
+        // Normalize to date only (remove time)
+        date.setHours(0, 0, 0, 0);
         completedDates.add(date.toDateString());
       }
     }
@@ -39,14 +42,18 @@ const StreakCalendar = ({ streakDays, lastDayOfStreak }) => {
     currentDate.setDate(currentDate.getDate() - daysToMonday);
     
     // Generate 21 days (3 weeks)
+    const todayNormalized = new Date(today);
+    todayNormalized.setHours(0, 0, 0, 0);
+    
     for (let i = 0; i < 21; i++) {
       const date = new Date(currentDate);
       date.setDate(currentDate.getDate() + i);
+      date.setHours(0, 0, 0, 0);
       
       const dateStr = date.toDateString();
-      const isToday = dateStr === today.toDateString();
+      const isToday = dateStr === todayNormalized.toDateString();
       const isCompleted = completedDates.has(dateStr);
-      const isFuture = date > today;
+      const isFuture = date > todayNormalized;
       
       days.push({
         type: 'day',
