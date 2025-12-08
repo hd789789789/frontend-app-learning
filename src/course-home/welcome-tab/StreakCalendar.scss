@@ -66,16 +66,16 @@
 }
 
 .streak-calendar-day-today {
-  background: var(--primary-color, #8b3a62);
-  color: white;
+  background: #8b3a62 !important;
+  color: white !important;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(139, 58, 98, 0.3);
   animation: pulse 2s ease-in-out infinite;
 }
 
 .streak-calendar-day-completed {
-  background: var(--success-color, #2ecc71);
-  color: white;
+  background: #2ecc71 !important;
+  color: white !important;
   font-weight: 500;
   transition: transform 0.2s ease;
   

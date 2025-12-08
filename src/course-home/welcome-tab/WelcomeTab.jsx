@@ -87,30 +87,44 @@ const WelcomeTab = () => {
   };
 
   // Use daily quests from API or fallback to mock data
-  const dailyQuests = welcomeData.dailyQuests || [
-    {
-      id: 1,
-      title: 'Hoàn thành 1 bài học',
-      description: 'Học ít nhất 1 bài để duy trì chuỗi',
-      reward: '+20 XP',
-      progress: 1,
-      total: 1,
-      completed: true,
-      icon: '📚',
-      gradient: 'primary',
-    },
-    {
-      id: 2,
-      title: 'Làm 5 bài tập thực hành',
-      description: 'Rèn luyện kỹ năng với bài tập',
-      reward: '+50 XP • 💰 +30 Điểm',
-      progress: 2,
-      total: 5,
-      completed: false,
-      icon: '🎯',
-      gradient: 'warning',
-    },
-  ];
+  // Always show mock data for now (until API is ready)
+  const dailyQuests = welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0 
+    ? welcomeData.dailyQuests 
+    : [
+        {
+          id: 1,
+          title: 'Hoàn thành 1 bài học',
+          description: 'Học ít nhất 1 bài để duy trì chuỗi',
+          reward: '+20 XP',
+          progress: 1,
+          total: 1,
+          completed: true,
+          icon: '📚',
+          gradient: 'primary',
+        },
+        {
+          id: 2,
+          title: 'Làm 5 bài tập thực hành',
+          description: 'Rèn luyện kỹ năng với bài tập',
+          reward: '+50 XP • 💰 +30 Điểm',
+          progress: 2,
+          total: 5,
+          completed: false,
+          icon: '🎯',
+          gradient: 'warning',
+        },
+        {
+          id: 3,
+          title: 'Tham gia thảo luận',
+          description: 'Đăng ít nhất 1 bài viết trong diễn đàn',
+          reward: '+30 XP • 💰 +20 Điểm',
+          progress: 0,
+          total: 1,
+          completed: false,
+          icon: '💬',
+          gradient: 'primary',
+        },
+      ];
 
   // Mock data for group streaks
   const groupStreaks = [

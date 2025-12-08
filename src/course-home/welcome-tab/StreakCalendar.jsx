@@ -88,16 +88,33 @@ const StreakCalendar = ({ streakDays, lastDayOfStreak }) => {
             }
             
             const dayClasses = ['streak-calendar-day'];
+            let dayStyle = {};
+            
             if (item.isToday) {
               dayClasses.push('streak-calendar-day-today');
+              dayStyle = {
+                background: '#8b3a62',
+                color: 'white',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(139, 58, 98, 0.3)',
+              };
             } else if (item.isCompleted) {
               dayClasses.push('streak-calendar-day-completed');
+              dayStyle = {
+                background: '#2ecc71',
+                color: 'white',
+                fontWeight: 500,
+              };
             } else if (item.isFuture) {
               dayClasses.push('streak-calendar-day-future');
+              dayStyle = {
+                border: '1px dashed #e0e0e0',
+                opacity: 0.6,
+              };
             }
             
             return (
-              <div key={`day-${index}`} className={dayClasses.join(' ')}>
+              <div key={`day-${index}`} className={dayClasses.join(' ')} style={dayStyle}>
                 {item.date}
               </div>
             );
