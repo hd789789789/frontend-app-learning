@@ -10,8 +10,8 @@ const StudyTip = ({ tip = null }) => {
   };
 
   return (
-    <Card className="study-tip-card">
-      <Card.Body>
+    <Card className="study-tip-card" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+      <Card.Body style={{ padding: '1.5rem' }}>
         <h3 className="study-tip-title">{displayTip.title}</h3>
         <p className="study-tip-content">{displayTip.content}</p>
       </Card.Body>

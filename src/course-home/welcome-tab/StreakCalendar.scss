@@ -59,24 +59,26 @@
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 500;
-  background: transparent;
+  background: transparent !important;
   border: 1px solid transparent;
-  color: var(--text-muted, #7f8c8d);
+  color: #7f8c8d;
   transition: all 0.2s ease;
 }
 
 .streak-calendar-day-today {
   background: #8b3a62 !important;
+  background-color: #8b3a62 !important;
   color: white !important;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(139, 58, 98, 0.3);
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(139, 58, 98, 0.3) !important;
   animation: pulse 2s ease-in-out infinite;
 }
 
 .streak-calendar-day-completed {
   background: #2ecc71 !important;
+  background-color: #2ecc71 !important;
   color: white !important;
-  font-weight: 500;
+  font-weight: 500 !important;
   transition: transform 0.2s ease;
   
   &:hover {
