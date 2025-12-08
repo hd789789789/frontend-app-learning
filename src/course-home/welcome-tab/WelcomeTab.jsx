@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Container, Spinner, Alert } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { camelCaseObject } from '@edx/frontend-platform';
+import Timeline from '../dates-tab/timeline/Timeline';
+import { fetchDatesTab } from '../data';
 import './WelcomeTab.scss';
 
 const WelcomeTab = () => {
   const { courseId } = useParams();
+  const dispatch = useDispatch();
   const {
     title,
     org,
@@ -17,6 +21,10 @@ const WelcomeTab = () => {
   const [welcomeData, setWelcomeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Fetch dates data để dùng Timeline component
+  const datesModel = useModel('dates', courseId) || {};
+  const { courseDateBlocks } = datesModel;
 
   useEffect(() => {
     const fetchWelcomeData = async () => {
@@ -59,8 +67,12 @@ const WelcomeTab = () => {
 
     if (courseId) {
       fetchWelcomeData();
+      // Fetch dates data nếu chưa có
+      if (!courseDateBlocks) {
+        dispatch(fetchDatesTab(courseId));
+      }
     }
-  }, [courseId]);
+  }, [courseId, dispatch, courseDateBlocks]);
 
   if (loading) {
     return (
@@ -137,22 +149,7 @@ const WelcomeTab = () => {
     },
   ];
 
-  // Format important dates from API
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-    const dayName = days[date.getDay()];
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${dayName}, ${day}/${month}/${year}`;
-  };
-
-  const importantDates = (welcomeData.importantDates || []).map(dateItem => ({
-    ...dateItem,
-    formattedDate: formatDate(dateItem.date),
-  }));
+  // Dates data đã được fetch và lưu trong model store
 
   const scrollToDailyQuests = () => {
     const element = document.getElementById('daily-quests-section');
@@ -252,38 +249,17 @@ const WelcomeTab = () => {
         </div>
       </div>
 
-      {/* Important Dates Section */}
+      {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
       <h3 className="section-title">📌 Ngày quan trọng</h3>
       <div className="important-dates-card">
-        <div className="timeline-container">
-          <div className="timeline-line" />
-          
-          <div className="timeline-items">
-                            {importantDates.map((dateItem, index) => (
-              <div key={index} className="timeline-item">
-                <div className={`timeline-dot timeline-dot-${dateItem.status}`} />
-                <div className="timeline-content">
-                  <div className="timeline-date-row">
-                    <div className="timeline-date">{dateItem.formattedDate || dateItem.date}</div>
-                    {dateItem.daysLeft && (
-                      <div className="timeline-badge timeline-badge-warning">
-                        Còn {dateItem.daysLeft} ngày
-                      </div>
-                    )}
-                    {dateItem.status === 'today' && (
-                      <div className="timeline-badge timeline-badge-today">
-                        Hôm nay
-                      </div>
-                    )}
-                  </div>
-                  <div className={`timeline-title ${dateItem.status === 'future' ? 'timeline-title-future' : ''}`}>
-                    {dateItem.title}
-                  </div>
-                </div>
-              </div>
-            ))}
+        {courseDateBlocks && courseDateBlocks.length > 0 ? (
+          <Timeline />
+        ) : (
+          <div className="text-center py-4 text-muted">
+            <Spinner animation="border" size="sm" className="mr-2" />
+            <span>Đang tải ngày quan trọng...</span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Invite Friends Section */}
