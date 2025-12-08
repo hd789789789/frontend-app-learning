@@ -36,12 +36,17 @@ const LeaderboardTab = () => {
         const camelCased = camelCaseObject(data);
 
         if (camelCased.summary) {
-          setSummaryData({
+          // Preserve existing streak values when updating summary
+          setSummaryData((prev) => ({
+            ...prev,
             totalStudents: camelCased.summary.totalStudents || 0,
             avgGrade: camelCased.summary.avgGrade || 0,
             maxGrade: camelCased.summary.maxGrade || 0,
             competingCount: camelCased.summary.topCount || 10,
-  });
+            // Keep existing streak values, don't reset to 0
+            currentStreak: prev.currentStreak,
+            bestStreak: prev.bestStreak,
+          }));
         }
       } catch (error) {
         // eslint-disable-next-line no-console
