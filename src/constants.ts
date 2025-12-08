@@ -1,6 +1,7 @@
 export const DECODE_ROUTES = {
   ACCESS_DENIED: '/course/:courseId/access-denied',
   HOME: '/course/:courseId/home',
+  WELCOME: '/course/:courseId/welcome',
   LIVE: '/course/:courseId/live',
   DATES: '/course/:courseId/dates',
   LEADERBOARD: '/course/:courseId/leaderboard',

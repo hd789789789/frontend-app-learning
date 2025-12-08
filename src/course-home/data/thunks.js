@@ -15,6 +15,7 @@ import {
   getLiveTabIframe,
   getCoursewareSearchEnabled,
   searchCourseContentFromAPI,
+  getWelcomeTabData,
 } from './api';
 
 import {
@@ -116,6 +117,10 @@ export function fetchTeamsTab(courseId) {
 
 export function fetchBadgeTab(courseId) {
   return fetchTab(courseId, 'badge');
+}
+
+export function fetchWelcomeTab(courseId) {
+  return fetchTab(courseId, 'welcome', getWelcomeTabData);
 }
 
 export function dismissWelcomeMessage(courseId) {

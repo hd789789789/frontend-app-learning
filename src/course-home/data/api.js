@@ -536,3 +536,21 @@ export async function searchCourseContentFromAPI(courseId, searchKeyword, option
 
   return camelCaseObject(response);
 }
+
+export async function getWelcomeTabData(courseId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/course_home/welcome/${courseId}`;
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    return camelCaseObject(data);
+  } catch (error) {
+    const httpErrorStatus = error?.response?.status;
+    if (httpErrorStatus === 401 || httpErrorStatus === 403) {
+      return { success: false, userStats: {}, importantDates: [], dailyQuests: [] };
+    }
+    if (httpErrorStatus === 404) {
+      // API might not be deployed yet, return empty data
+      return { success: false, userStats: {}, importantDates: [], dailyQuests: [] };
+    }
+    throw error;
+  }
+}

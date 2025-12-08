@@ -22,9 +22,10 @@ import GoalUnsubscribe from "./course-home/goal-unsubscribe";
 import LeaderboardTab from "./course-home/leaderboard-tab";
 import { BadgeTab } from "./course-home/badge-tab";
 import ProgressTab from "./course-home/progress-tab/ProgressTab";
+import WelcomeTab from "./course-home/welcome-tab";
 import { TabContainer } from "./tab-page";
 
-import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab, fetchTeamsTab } from "./course-home/data";
+import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab, fetchTeamsTab, fetchWelcomeTab } from "./course-home/data";
 import { fetchCourse } from "./courseware/data";
 import { store } from "./store";
 import NoticesProvider from "./generic/notices";
@@ -90,6 +91,16 @@ subscribe(APP_READY, () => {
                                         element={
                                             <DecodePageRoute>
                                                 <CourseAccessErrorPage />
+                                            </DecodePageRoute>
+                                        }
+                                    />
+                                    <Route
+                                        path={DECODE_ROUTES.WELCOME}
+                                        element={
+                                            <DecodePageRoute>
+                                                <TabContainer tab="welcome" fetch={fetchWelcomeTab} slice="courseHome">
+                                                    <WelcomeTab />
+                                                </TabContainer>
                                             </DecodePageRoute>
                                         }
                                     />

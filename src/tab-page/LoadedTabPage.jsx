@@ -32,6 +32,13 @@ const LoadedTabPage = ({
     hasCourseAuthorAccess,
   } = useModel('courseHomeMeta', courseId);
 
+  // Thêm tab Chào mừng vào đầu danh sách tabs
+  const welcomeTab = {
+    title: 'Chào mừng',
+    slug: 'welcome',
+    url: `/learning/course/${courseId}/welcome`,
+  };
+
   // Thêm tab Thành tích vào danh sách tabs
   // URL phải có prefix /learning giống như các tab khác
   const badgeTab = {
@@ -112,6 +119,10 @@ const LoadedTabPage = ({
       // Nếu không có leaderboard, thêm vào cuối
       tabsCopy.push(badgeTab);
     }
+    
+    // Thêm tab Chào mừng vào đầu danh sách
+    tabsCopy.unshift(welcomeTab);
+    
     return tabsCopy;
   }, [originalTabs, courseId]);
 
