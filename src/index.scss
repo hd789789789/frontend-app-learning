@@ -470,7 +470,7 @@ div#main-content {
     
     // Fix for mobile: add padding-top to prevent sticky header from covering content
     @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
-        padding-top: 80px !important;
+        padding-top: 10px !important;
     }
 }
 

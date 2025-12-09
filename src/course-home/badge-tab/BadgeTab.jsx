@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, memo } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Container, Spinner, Alert, Row, Col } from "@openedx/paragon";
@@ -10,6 +10,89 @@ import StudyTip from "../welcome-tab/StudyTip";
 import ReferralWidget from "../welcome-tab/ReferralWidget";
 import CompletionDonutChart from "../progress-tab/course-completion/CompletionDonutChart";
 import './BadgeTab.scss';
+
+// Circular Progress Component - Memoized to prevent unnecessary re-renders
+const CircularProgress = memo(({ percent }) => {
+  // SVG circle calculations
+  const radius = 100;
+  const circumference = Math.PI * radius * 2; // 2 * PI * r
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+  
+  // Outer ring calculations (larger circle)
+  const outerRadius = 110;
+  const outerCircumference = Math.PI * outerRadius * 2;
+  const outerStrokeDashoffset = outerCircumference - (percent / 100) * outerCircumference;
+  
+  return (
+    <div className="circular-progress-wrapper">
+      <svg 
+        width="250" 
+        height="250" 
+        viewBox="0 0 250 250"
+        className="progress-svg"
+      >
+        {/* Outer background circle */}
+        <circle 
+          cx="125" 
+          cy="125" 
+          r={outerRadius}
+          fill="none"
+          stroke="#F0F0F0"
+          strokeWidth="8"
+        />
+        {/* Outer progress circle */}
+        <circle 
+          cx="125" 
+          cy="125" 
+          r={outerRadius}
+          fill="none"
+          stroke="#2ECC71"
+          strokeWidth="8"
+          strokeDasharray={outerCircumference}
+          strokeDashoffset={outerStrokeDashoffset}
+          strokeLinecap="round"
+          transform="rotate(-90 125 125)"
+          className="progress-circle-outer"
+          opacity="0.3"
+        />
+        {/* Inner background circle */}
+        <circle 
+          cx="125" 
+          cy="125" 
+          r={radius}
+          fill="none"
+          stroke="#E0E0E0"
+          strokeWidth="20"
+        />
+        {/* Inner progress circle */}
+        <circle 
+          cx="125" 
+          cy="125" 
+          r={radius}
+          fill="none"
+          stroke="#2ECC71"
+          strokeWidth="20"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform="rotate(-90 125 125)"
+          className="progress-circle-fill"
+        />
+      </svg>
+      {/* Text overlay */}
+      <div className="progress-text-overlay">
+        <div className="progress-percentage-text">
+          {percent}%
+        </div>
+        <div className="progress-label-text">
+          Hoàn thành
+        </div>
+      </div>
+    </div>
+  );
+});
+
+CircularProgress.displayName = 'CircularProgress';
 
 // Mock data for achievements tab
 const mockStats = {
@@ -170,6 +253,8 @@ function BadgeTab() {
 
   // Fetch progress and welcome data if available - only once per courseId
   useEffect(() => {
+    if (!courseId) return;
+    
     // Reset refs when courseId changes
     if (courseId !== lastCourseIdRef.current) {
       progressFetchedRef.current = false;
@@ -177,24 +262,20 @@ function BadgeTab() {
       lastCourseIdRef.current = courseId;
     }
     
-    if (!courseId) return;
-    
-    // Fetch progress data only if not loaded and not already fetched
-    // Check both the ref and the actual data to avoid duplicate fetches
-    if (!progressDataLoaded && !progressFetchedRef.current) {
+    // Fetch progress data only once per courseId
+    if (!progressFetchedRef.current) {
       progressFetchedRef.current = true;
       dispatch(fetchProgressTab(courseId));
     }
     
-    // Fetch welcome data only if not loaded and not already fetched
-    if (!welcomeDataLoaded && !welcomeFetchedRef.current) {
+    // Fetch welcome data only once per courseId
+    if (!welcomeFetchedRef.current) {
       welcomeFetchedRef.current = true;
       dispatch(fetchWelcomeTab(courseId));
     }
-    // Only depend on courseId and dispatch - progressDataLoaded and welcomeDataLoaded 
-    // are checked inside but not in dependencies to prevent re-runs
+    // Only depend on courseId and dispatch to prevent unnecessary re-runs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, dispatch]);
+  }, [courseId]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
@@ -213,28 +294,50 @@ function BadgeTab() {
     real: rewards.filter(r => r.type === 'real').length,
   };
 
-  // Get progress data for display (moved before useMemo to avoid duplicate declaration)
-  const completionSummary = progressModel?.completionSummary || {};
-  const courseGrade = progressModel?.courseGrade || {};
-  const sectionScores = progressModel?.sectionScores || [];
+  // Get progress data for display - memoized to prevent recalculation
+  const completionSummary = useMemo(() => {
+    return progressModel?.completionSummary || {};
+  }, [progressModel?.completionSummary]);
+  
+  const courseGrade = useMemo(() => {
+    return progressModel?.courseGrade || {};
+  }, [progressModel?.courseGrade]);
+  
+  const sectionScores = useMemo(() => {
+    return progressModel?.sectionScores || [];
+  }, [progressModel?.sectionScores]);
   
   // Calculate total lessons by counting subsections from section_scores
   // This is more accurate than using completion_summary which might miss some subsections
-  const totalLessons = sectionScores.reduce((total, section) => {
-    return total + (section.subsections?.length || 0);
-  }, 0);
+  // Use useMemo to prevent recalculation on every render
+  const totalLessons = useMemo(() => {
+    return sectionScores.reduce((total, section) => {
+      return total + (section.subsections?.length || 0);
+    }, 0);
+  }, [sectionScores]);
   
-  // Get counts from completion_summary for status breakdown
-  const completeCount = completionSummary.completeCount || 0;
-  const incompleteCount = completionSummary.incompleteCount || 0;
-  const lockedCount = completionSummary.lockedCount || 0;
+  // Get counts from completion_summary for status breakdown - memoized
+  const completeCount = useMemo(() => completionSummary.completeCount || 0, [completionSummary.completeCount]);
+  const incompleteCount = useMemo(() => completionSummary.incompleteCount || 0, [completionSummary.incompleteCount]);
+  const lockedCount = useMemo(() => completionSummary.lockedCount || 0, [completionSummary.lockedCount]);
   
   const completedLessons = completeCount;
   const inProgressLessons = incompleteCount;
   const notStartedLessons = lockedCount;
   
-  // Get grade data
-  const currentGrade = courseGrade.percent || 0;
+  // Calculate progress percentage - memoized to prevent recalculation
+  const progressPercent = useMemo(() => {
+    const calculatedPercent = totalLessons > 0 
+      ? Math.round((completedLessons / totalLessons) * 100)
+      : 0;
+    
+    // Use API percent if available and valid, otherwise use calculated
+    const displayPercent = completionPercent > 0 ? Math.round(completionPercent) : calculatedPercent;
+    return Math.max(0, Math.min(100, displayPercent));
+  }, [totalLessons, completedLessons, completionPercent]);
+  
+  // Get grade data - memoized
+  const currentGrade = useMemo(() => courseGrade.percent || 0, [courseGrade.percent]);
   const passingGrade = 50; // Mock data - should come from API
 
     if (loading) {
@@ -286,94 +389,7 @@ function BadgeTab() {
             <h3 className="progress-section-title">📈 Tiến độ</h3>
             <div className="progress-overview">
               <div className="circular-progress">
-                {(() => {
-                  // Calculate percentage from actual data
-                  const calculatedPercent = totalLessons > 0 
-                    ? Math.round((completedLessons / totalLessons) * 100)
-                    : 0;
-                  
-                  // Use API percent if available and valid, otherwise use calculated
-                  const displayPercent = completionPercent > 0 ? Math.round(completionPercent) : calculatedPercent;
-                  const percent = Math.max(0, Math.min(100, displayPercent));
-                  
-                  // SVG circle calculations
-                  const radius = 100;
-                  const circumference = Math.PI * radius * 2; // 2 * PI * r
-                  const strokeDashoffset = circumference - (percent / 100) * circumference;
-                  
-                  // Outer ring calculations (larger circle)
-                  const outerRadius = 110;
-                  const outerCircumference = Math.PI * outerRadius * 2;
-                  const outerStrokeDashoffset = outerCircumference - (percent / 100) * outerCircumference;
-                  
-                  return (
-                    <div className="circular-progress-wrapper">
-                      <svg 
-                        width="250" 
-                        height="250" 
-                        viewBox="0 0 250 250"
-                        className="progress-svg"
-                      >
-                        {/* Outer background circle */}
-                        <circle 
-                          cx="125" 
-                          cy="125" 
-                          r={outerRadius}
-                          fill="none"
-                          stroke="#F0F0F0"
-                          strokeWidth="8"
-                        />
-                        {/* Outer progress circle */}
-                        <circle 
-                          cx="125" 
-                          cy="125" 
-                          r={outerRadius}
-                          fill="none"
-                          stroke="#2ECC71"
-                          strokeWidth="8"
-                          strokeDasharray={outerCircumference}
-                          strokeDashoffset={outerStrokeDashoffset}
-                          strokeLinecap="round"
-                          transform="rotate(-90 125 125)"
-                          className="progress-circle-outer"
-                          opacity="0.3"
-                        />
-                        {/* Inner background circle */}
-                        <circle 
-                          cx="125" 
-                          cy="125" 
-                          r={radius}
-                          fill="none"
-                          stroke="#E0E0E0"
-                          strokeWidth="20"
-                        />
-                        {/* Inner progress circle */}
-                        <circle 
-                          cx="125" 
-                          cy="125" 
-                          r={radius}
-                          fill="none"
-                          stroke="#2ECC71"
-                          strokeWidth="20"
-                          strokeDasharray={circumference}
-                          strokeDashoffset={strokeDashoffset}
-                          strokeLinecap="round"
-                          transform="rotate(-90 125 125)"
-                          className="progress-circle-fill"
-                        />
-                      </svg>
-                      {/* Text overlay */}
-                      <div className="progress-text-overlay">
-                        <div className="progress-percentage-text">
-                          {percent}%
-                        </div>
-                        <div className="progress-label-text">
-                          Hoàn thành
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <CircularProgress percent={progressPercent} />
               </div>
               <div className="progress-stats">
                 <div className="progress-stats-section">
