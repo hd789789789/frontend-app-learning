@@ -314,20 +314,13 @@ const BadgeTab = memo(function BadgeTab() {
     
     // If both data are loaded, mark as mounted and skip all fetches
     if (isProgressLoaded && isWelcomeLoaded) {
-      if (!hasMountedRef.current) {
-        console.log(`[BadgeTab] Both data loaded, marking as mounted for courseId: ${courseId}`);
+      if (!hasMountedRef.current || !dataFetchedRef.current) {
+        console.log(`[BadgeTab] Both data loaded, marking as mounted and fetched for courseId: ${courseId}`);
         hasMountedRef.current = true;
         dataFetchedRef.current = true;
       }
       console.log(`[BadgeTab] All data already loaded, skipping fetches`);
       return; // Early return to prevent unnecessary fetches
-    }
-    
-    // If we've already fetched data for this courseId, don't fetch again
-    // Check this BEFORE checking if data is loaded, to prevent re-fetching
-    if (dataFetchedRef.current && !courseIdChanged) {
-      console.log(`[BadgeTab] Data already fetched for courseId: ${courseId}, skipping all fetches`);
-      return;
     }
     
     // Mark as mounted after first check (only once per courseId)
@@ -336,7 +329,16 @@ const BadgeTab = memo(function BadgeTab() {
       hasMountedRef.current = true;
     }
     
-    console.log(`[BadgeTab] Data check - isProgressLoaded: ${isProgressLoaded}, isWelcomeLoaded: ${isWelcomeLoaded}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current}`);
+    // If we've already fetched data for this courseId and courseId hasn't changed, don't fetch again
+    // Check this AFTER checking if data is loaded, to prevent re-fetching
+    // Use a combination of dataFetchedRef and fetching flags to determine if we should skip
+    const shouldSkipFetch = dataFetchedRef.current && !courseIdChanged && (progressFetchingRef.current || welcomeFetchingRef.current || isProgressLoaded || isWelcomeLoaded);
+    if (shouldSkipFetch) {
+      console.log(`[BadgeTab] Data already fetched or fetching for courseId: ${courseId}, skipping all fetches (dataFetched: ${dataFetchedRef.current}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current})`);
+      return;
+    }
+    
+    console.log(`[BadgeTab] Data check - isProgressLoaded: ${isProgressLoaded}, isWelcomeLoaded: ${isWelcomeLoaded}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current}, dataFetched: ${dataFetchedRef.current}`);
     
     // Only fetch progress data if:
     // 1. Data is not already loaded
@@ -344,7 +346,7 @@ const BadgeTab = memo(function BadgeTab() {
     if (!isProgressLoaded && !progressFetchingRef.current) {
       console.log(`[BadgeTab] Fetching progress data for courseId: ${courseId}`);
       progressFetchingRef.current = true;
-      dataFetchedRef.current = true; // Mark as fetched
+      dataFetchedRef.current = true; // Mark as fetched immediately to prevent re-fetch
       const promise = dispatch(fetchProgressTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
@@ -365,7 +367,7 @@ const BadgeTab = memo(function BadgeTab() {
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
       console.log(`[BadgeTab] Fetching welcome data for courseId: ${courseId}`);
       welcomeFetchingRef.current = true;
-      dataFetchedRef.current = true; // Mark as fetched
+      dataFetchedRef.current = true; // Mark as fetched immediately to prevent re-fetch
       const promise = dispatch(fetchWelcomeTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
@@ -379,9 +381,10 @@ const BadgeTab = memo(function BadgeTab() {
     } else {
       console.log(`[BadgeTab] Skipping welcome fetch - isWelcomeLoaded: ${isWelcomeLoaded}, welcomeFetching: ${welcomeFetchingRef.current}`);
     }
+    
     // Only depend on courseId and dispatch - don't depend on models to prevent re-runs
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, dispatch]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
