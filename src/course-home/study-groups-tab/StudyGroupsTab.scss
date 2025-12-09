@@ -5,6 +5,10 @@
   color: #1f2430;
 }
 
+.study-groups-sidebar > * {
+  margin-bottom: 1rem;
+}
+
 .groups-header {
   display: flex;
   justify-content: space-between;
@@ -134,6 +138,37 @@
 .members-list {
   display: grid;
   gap: 0.5rem;
+}
+
+.member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e8eaf5;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  background: #fff;
+}
+
+.member-info {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.member-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.member-badge {
+  background: #3f51b5;
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.8rem;
 }
 
 .member-section {

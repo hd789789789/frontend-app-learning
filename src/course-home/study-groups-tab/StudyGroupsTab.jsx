@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Badge, Container, ProgressBar } from '@openedx/paragon';
+import { Badge, Container, ProgressBar, Row, Col } from '@openedx/paragon';
+import { useParams } from 'react-router-dom';
+import { useModel } from '../../generic/model-store';
+import StreakCalendar from '../welcome-tab/StreakCalendar';
+import GroupStreaks from '../welcome-tab/GroupStreaks';
+import StudyTip from '../welcome-tab/StudyTip';
+import ReferralWidget from '../welcome-tab/ReferralWidget';
 
 import './StudyGroupsTab.scss';
 
@@ -230,25 +236,61 @@ const GroupCard = ({ group }) => {
 };
 
 const StudyGroupsTab = () => {
+  const { courseId } = useParams();
+  const welcomeModel = useModel('welcome', courseId) || {};
+  const userStats = welcomeModel.userStats || {
+    streakDays: 12,
+    lastDayOfStreak: null,
+  };
+
   const groups = useMemo(() => GROUPS_MOCK, []);
+  const groupStreaks = useMemo(() => groups.map((group, idx) => ({
+    id: idx + 1,
+    name: group.name,
+    streakDays: group.streak,
+    members: group.membersList.slice(0, 3).map((m, mIdx) => ({
+      id: `${group.id}-${mIdx}`,
+      initial: m.initials.slice(0, 2),
+      color: m.color,
+    })),
+    additionalMembers: Math.max(group.members - 3, 0),
+    status: 'in_progress',
+    message: '💪 Giữ streak nhóm hôm nay nhé!',
+  })), [groups]);
 
   return (
     <Container className="study-groups-tab px-0">
-      <div className="groups-header">
-        <h2>Nhóm học tập</h2>
-        <button className="btn btn-primary">+ Tạo nhóm mới</button>
-      </div>
+      <Row>
+        <Col lg={8} md={12}>
+          <div className="groups-header">
+            <h2>Nhóm học tập</h2>
+            <button className="btn btn-primary">+ Tạo nhóm mới</button>
+          </div>
 
-      <section className="panel">
-        <div className="panel-head">
-          <h3>Nhóm của bạn</h3>
-        </div>
-        <div className="group-list">
-          {groups.map(group => (
-            <GroupCard key={group.id} group={group} />
-          ))}
-        </div>
-      </section>
+          <section className="panel">
+            <div className="panel-head">
+              <h3>Nhóm của bạn</h3>
+            </div>
+            <div className="group-list">
+              {groups.map(group => (
+                <GroupCard key={group.id} group={group} />
+              ))}
+            </div>
+          </section>
+        </Col>
+
+        <Col lg={4} md={12} className="mt-3 mt-lg-0">
+          <div className="study-groups-sidebar">
+            <StreakCalendar
+              streakDays={userStats.streakDays}
+              lastDayOfStreak={userStats.lastDayOfStreak}
+            />
+            <GroupStreaks groups={groupStreaks} />
+            <StudyTip />
+            <ReferralWidget />
+          </div>
+        </Col>
+      </Row>
     </Container>
   );
 };

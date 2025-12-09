@@ -28,7 +28,7 @@ const TabContainer = (props) => {
   const lastFetchKeyRef = useRef(null);
 
   useEffect(() => {
-    const fetchKey = `${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
+    const fetchKey = `${tab || ''}::${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
     if (lastFetchKeyRef.current === fetchKey) {
       return;
     }
@@ -46,7 +46,7 @@ const TabContainer = (props) => {
       dispatch(fetch(courseIdFromUrl));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseIdFromUrl, targetUserId, isProgressTab]);
+  }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 
   // Avoid flashing loader for badge tab when course is already the active one
   const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && courseId === courseIdFromUrl)
