@@ -50,14 +50,13 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={outerRadius}
           fill="none"
-          stroke="#8B3A62"
+          stroke="#81C784"
           strokeWidth="8"
           strokeDasharray={outerCircumference}
           strokeDashoffset={outerStrokeDashoffset}
           strokeLinecap="round"
           transform="rotate(-90 125 125)"
           className="progress-circle-outer"
-          opacity="0.6"
           style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
         {/* Inner background circle */}
@@ -75,7 +74,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={radius}
           fill="none"
-          stroke="#8B3A62"
+          stroke="#2ECC71"
           strokeWidth="20"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -98,7 +97,9 @@ const CircularProgress = memo(({ percent = 0 }) => {
   );
 }, (prevProps, nextProps) => {
   // Custom comparison function - only re-render if percent actually changes
-  return prevProps.percent === nextProps.percent;
+  const prevPercent = Math.round(prevProps.percent || 0);
+  const nextPercent = Math.round(nextProps.percent || 0);
+  return prevPercent === nextPercent;
 });
 
 CircularProgress.displayName = 'CircularProgress';
@@ -207,9 +208,10 @@ const mockRewards = [
 const BadgeTab = memo(function BadgeTab() {
     const { courseId } = useParams();
     const dispatch = useDispatch();
+  // Use stable selectors to prevent re-renders
+  const courseStatus = useSelector((state) => state.courseHome?.courseStatus || 'loading');
   const progressModel = useModel('progress', courseId);
   const welcomeModel = useModel('welcome', courseId);
-  const { courseStatus } = useSelector((state) => state.courseHome);
     
   const [rewardFilter, setRewardFilter] = useState('all');
   const [rewards] = useState(mockRewards);
@@ -265,16 +267,16 @@ const BadgeTab = memo(function BadgeTab() {
 
   // Fetch progress and welcome data only if not already loaded - prevent duplicate API calls
   // Use a single useEffect with proper dependency management to prevent multiple calls
-  useEffect(() => {
+    useEffect(() => {
     if (!courseId) return;
-    
+
     // Reset refs when courseId changes
-    if (courseId !== lastCourseIdRef.current) {
+        if (courseId !== lastCourseIdRef.current) {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
-      lastCourseIdRef.current = courseId;
-    }
-    
+            lastCourseIdRef.current = courseId;
+        }
+        
     // Check if data is already loaded (check inside useEffect to avoid dependency issues)
     const isProgressLoaded = !!(progressModel && progressModel.completionSummary);
     const isWelcomeLoaded = !!(welcomeModel && welcomeModel.userStats);
@@ -315,8 +317,8 @@ const BadgeTab = memo(function BadgeTab() {
     }
     // Only depend on courseId and dispatch to prevent unnecessary re-runs
     // Check data loaded status inside effect to avoid dependency on changing values
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, dispatch]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);

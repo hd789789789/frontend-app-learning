@@ -234,8 +234,20 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* Redirect from /course/:courseId to /course/:courseId/home (welcome tab) */}
-                                    {/* This must be before COURSEWARE routes to match first */}
+                                    {/* COURSEWARE routes - must be before redirect to match specific paths */}
+                                    {DECODE_ROUTES.COURSEWARE.map((route) => (
+                                        <Route
+                                            key={route}
+                                            path={route}
+                                            element={
+                                                <DecodePageRoute>
+                                                    <CoursewareContainer />
+                                                </DecodePageRoute>
+                                            }
+                                        />
+                                    ))}
+                                    {/* Redirect from exact /course/:courseId (no additional path) to /course/:courseId/home (welcome tab) */}
+                                    {/* This must be after COURSEWARE routes so specific paths match first */}
                                     <Route
                                         path="/course/:courseId"
                                         element={
@@ -244,23 +256,6 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {DECODE_ROUTES.COURSEWARE.map((route) => {
-                                        // Skip the /course/:courseId route as we handle it above with redirect
-                                        if (route === '/course/:courseId') {
-                                            return null;
-                                        }
-                                        return (
-                                            <Route
-                                                key={route}
-                                                path={route}
-                                                element={
-                                                    <DecodePageRoute>
-                                                        <CoursewareContainer />
-                                                    </DecodePageRoute>
-                                                }
-                                            />
-                                        );
-                                    })}
                                 </Routes>
                             </TextReplacerProvider>
                         </UserMessagesProvider>
