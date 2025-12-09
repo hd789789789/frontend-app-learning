@@ -3,36 +3,39 @@ import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
 import './GroupStreaks.scss';
 
-const GroupStreaks = ({ groups = [] }) => {
-  // Mock data if empty
-  const displayGroups = groups.length > 0 ? groups : [
-    {
-      id: 1,
-      name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
-      streakDays: 5,
-      members: [
-        { id: 1, initial: 'A', color: '#E86C5D' },
-        { id: 2, initial: 'B', color: '#3498DB' },
-        { id: 3, initial: 'C', color: '#2ECC71' },
-      ],
-      additionalMembers: 5,
-      status: 'in_progress',
-      message: '💪 Tiếp tục học hôm nay để giữ chuỗi nhóm!',
-    },
-    {
-      id: 2,
-      name: 'Chinh phục Toán 7',
-      streakDays: 10,
-      members: [
-        { id: 4, initial: 'D', color: '#8B3A62' },
-        { id: 5, initial: 'E', color: '#E67E22' },
-        { id: 6, initial: 'F', color: '#16A085' },
-      ],
-      additionalMembers: 2,
-      status: 'all_completed',
-      message: '✓ Tất cả thành viên đã học hôm nay',
-    },
-  ];
+const fallbackGroups = [
+  {
+    id: 1,
+    name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
+    streakDays: 5,
+    members: [
+      { id: 1, initial: 'A', color: '#E86C5D' },
+      { id: 2, initial: 'B', color: '#3498DB' },
+      { id: 3, initial: 'C', color: '#2ECC71' },
+    ],
+    additionalMembers: 5,
+    status: 'in_progress',
+    message: '💪 Tiếp tục học hôm nay để giữ chuỗi nhóm!',
+  },
+  {
+    id: 2,
+    name: 'Chinh phục Toán 7',
+    streakDays: 10,
+    members: [
+      { id: 4, initial: 'D', color: '#8B3A62' },
+      { id: 5, initial: 'E', color: '#E67E22' },
+      { id: 6, initial: 'F', color: '#16A085' },
+    ],
+    additionalMembers: 2,
+    status: 'all_completed',
+    message: '✓ Tất cả thành viên đã học hôm nay',
+  },
+];
+
+const GroupStreaks = ({ groups = [], disableFallback = false }) => {
+  const displayGroups = (!disableFallback && (!groups || groups.length === 0))
+    ? fallbackGroups
+    : groups;
 
   return (
     <Card className="group-streaks-card">
@@ -86,10 +89,12 @@ GroupStreaks.propTypes = {
     status: PropTypes.string,
     message: PropTypes.string,
   })),
+  disableFallback: PropTypes.bool,
 };
 
 GroupStreaks.defaultProps = {
   groups: [],
+  disableFallback: false,
 };
 
 export default GroupStreaks;

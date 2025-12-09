@@ -230,20 +230,29 @@
   font-weight: 700;
 }
 
-.post-actions {
+.create-post-actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
   flex-wrap: wrap;
 }
 
 .post-action-btn {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border: 1px solid #e5e7f0;
   background: #ffffff;
   border-radius: 8px;
-  padding: 0.35rem 0.6rem;
+  padding: 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.post-submit {
+  padding: 0.45rem 1.2rem;
 }
 
 .create-post-textarea {

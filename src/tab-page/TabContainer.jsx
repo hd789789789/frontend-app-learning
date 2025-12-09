@@ -29,20 +29,36 @@ const TabContainer = (props) => {
 
   useEffect(() => {
     const fetchKey = `${tab || ''}::${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
+    // Debug: trace effect inputs and decisions
+    console.log('[TabContainer] useEffect', {
+      tab,
+      courseIdFromUrl,
+      targetUserId,
+      isProgressTab,
+      courseId,
+      courseStatus,
+      fetchKey,
+      lastFetchKey: lastFetchKeyRef.current,
+    });
+
     if (lastFetchKeyRef.current === fetchKey) {
+      console.log('[TabContainer] Skip dispatch - same fetchKey');
       return;
     }
 
     // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
     if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
+      console.log('[TabContainer] Skip dispatch - already loaded same course');
       lastFetchKeyRef.current = fetchKey;
       return;
     }
 
     lastFetchKeyRef.current = fetchKey;
     if (isProgressTab) {
+      console.log('[TabContainer] Dispatching fetch progress tab', { courseIdFromUrl, targetUserId });
       dispatch(fetch(courseIdFromUrl, targetUserId));
     } else {
+      console.log('[TabContainer] Dispatching fetch tab', { tab, courseIdFromUrl });
       dispatch(fetch(courseIdFromUrl));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,6 +68,9 @@ const TabContainer = (props) => {
   const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && courseId === courseIdFromUrl)
     ? 'loaded'
     : courseStatus;
+  if (courseStatus !== effectiveCourseStatus) {
+    console.log('[TabContainer] Override courseStatus for badge tab', { courseStatus, effectiveCourseStatus, tab, courseId, courseIdFromUrl });
+  }
 
   return (
     <TabPage
