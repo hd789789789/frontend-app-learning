@@ -230,9 +230,10 @@ const BadgeTab = memo(function BadgeTab() {
   const [rewards] = useState(mockRewards);
     
   // Use refs to track if we've already initiated fetch to prevent multiple fetches
+  // Initialize lastCourseIdRef with current courseId to prevent false "courseId changed" detection
+  const lastCourseIdRef = useRef(courseId);
   const progressFetchingRef = useRef(false);
   const welcomeFetchingRef = useRef(false);
-  const lastCourseIdRef = useRef(null);
   const hasMountedRef = useRef(false);
     
   // Check loading state - only show loading spinner if courseStatus is explicitly 'loading'
@@ -286,23 +287,28 @@ const BadgeTab = memo(function BadgeTab() {
   // Fetch progress and welcome data only once when component mounts or courseId changes
   // Use refs to prevent multiple simultaneous fetches and re-renders
   useEffect(() => {
-    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}`);
+    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}, renderCount: ${renderCountRef.current}`);
     
     if (!courseId) {
       console.log(`[BadgeTab] No courseId, skipping fetch`);
       return;
     }
 
-    // Reset refs when courseId changes
-    if (courseId !== lastCourseIdRef.current) {
+    // Reset refs when courseId changes (only if actually changed)
+    const courseIdChanged = courseId !== lastCourseIdRef.current;
+    if (courseIdChanged) {
       console.log(`[BadgeTab] CourseId changed from ${lastCourseIdRef.current} to ${courseId}, resetting refs`);
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
-      lastCourseIdRef.current = courseId;
       hasMountedRef.current = false;
+    } else {
+      console.log(`[BadgeTab] CourseId unchanged: ${courseId}, keeping refs`);
     }
     
-    // Mark as mounted after first check
+    // Always update lastCourseIdRef to current courseId
+    lastCourseIdRef.current = courseId;
+    
+    // Mark as mounted after first check (only once per courseId)
     if (!hasMountedRef.current) {
       console.log(`[BadgeTab] First mount for courseId: ${courseId}`);
       hasMountedRef.current = true;
