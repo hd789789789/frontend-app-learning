@@ -288,7 +288,7 @@ const BadgeTab = memo(function BadgeTab() {
   // Fetch progress and welcome data only once when component mounts or courseId changes
   // Use refs to prevent multiple simultaneous fetches and re-renders
   useEffect(() => {
-    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}, renderCount: ${renderCountRef.current}`);
+    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}, renderCount: ${renderCountRef.current}, dataFetched: ${dataFetchedRef.current}`);
     
     if (!courseId) {
       console.log(`[BadgeTab] No courseId, skipping fetch`);
@@ -324,8 +324,9 @@ const BadgeTab = memo(function BadgeTab() {
     }
     
     // If we've already fetched data for this courseId, don't fetch again
-    if (dataFetchedRef.current) {
-      console.log(`[BadgeTab] Data already fetched for courseId: ${courseId}, skipping`);
+    // Check this BEFORE checking if data is loaded, to prevent re-fetching
+    if (dataFetchedRef.current && !courseIdChanged) {
+      console.log(`[BadgeTab] Data already fetched for courseId: ${courseId}, skipping all fetches`);
       return;
     }
     
