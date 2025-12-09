@@ -276,47 +276,62 @@ function BadgeTab() {
             <div className="progress-overview">
               <div className="circular-progress">
                 {(() => {
+                  // Calculate percentage from actual data
+                  const calculatedPercent = totalLessons > 0 
+                    ? Math.round((completedLessons / totalLessons) * 100)
+                    : 0;
+                  
+                  // Use API percent if available and valid, otherwise use calculated
+                  const displayPercent = completionPercent > 0 ? Math.round(completionPercent) : calculatedPercent;
+                  const percent = Math.max(0, Math.min(100, displayPercent));
+                  
+                  // SVG circle calculations
                   const radius = 100;
-                  const circumference = 2 * Math.PI * radius;
-                  const percent = Math.max(0, Math.min(100, completionPercent || 0));
-                  const offset = circumference - (percent / 100) * circumference;
+                  const circumference = Math.PI * radius * 2; // 2 * PI * r
+                  const strokeDashoffset = circumference - (percent / 100) * circumference;
                   
                   return (
-                    <svg width="250" height="250" viewBox="0 0 250 250">
-                      <circle 
-                        className="progress-circle-bg" 
-                        cx="125" 
-                        cy="125" 
-                        r={radius}
-                        fill="none"
-                        stroke="#E0E0E0"
-                        strokeWidth="20"
-                      />
-                      <circle 
-                        className="progress-circle" 
-                        cx="125" 
-                        cy="125" 
-                        r={radius}
-                        fill="none"
-                        stroke="#2ECC71"
-                        strokeWidth="20"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        strokeLinecap="round"
-                        transform="rotate(-90 125 125)"
-                        style={{
-                          transition: 'stroke-dashoffset 0.5s ease',
-                        }}
-                      />
-                      <g className="progress-text">
-                        <text x="125" y="115" textAnchor="middle" className="progress-percentage">
-                          {Math.round(percent)}%
-                        </text>
-                        <text x="125" y="145" textAnchor="middle" className="progress-label">
+                    <div className="circular-progress-wrapper">
+                      <svg 
+                        width="250" 
+                        height="250" 
+                        viewBox="0 0 250 250"
+                        className="progress-svg"
+                      >
+                        {/* Background circle */}
+                        <circle 
+                          cx="125" 
+                          cy="125" 
+                          r={radius}
+                          fill="none"
+                          stroke="#E0E0E0"
+                          strokeWidth="20"
+                        />
+                        {/* Progress circle */}
+                        <circle 
+                          cx="125" 
+                          cy="125" 
+                          r={radius}
+                          fill="none"
+                          stroke="#2ECC71"
+                          strokeWidth="20"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={strokeDashoffset}
+                          strokeLinecap="round"
+                          transform="rotate(-90 125 125)"
+                          className="progress-circle-fill"
+                        />
+                      </svg>
+                      {/* Text overlay */}
+                      <div className="progress-text-overlay">
+                        <div className="progress-percentage-text">
+                          {percent}%
+                        </div>
+                        <div className="progress-label-text">
                           Hoàn thành
-                        </text>
-                      </g>
-                    </svg>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
