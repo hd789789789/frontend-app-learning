@@ -119,6 +119,10 @@ export function fetchBadgeTab(courseId) {
   return fetchTab(courseId, 'badge');
 }
 
+export function fetchStudyGroupsTab(courseId) {
+  return fetchTab(courseId, 'study-groups');
+}
+
 export function fetchWelcomeTab(courseId) {
   return fetchTab(courseId, 'welcome', getWelcomeTabData);
 }

@@ -18,6 +18,13 @@ const TabContainer = (props) => {
   const { courseId: courseIdFromUrl, targetUserId } = useParams();
   const dispatch = useDispatch();
 
+  // The courseId from the store is the course we HAVE loaded.  If the URL changes,
+  // we don't want the application to adjust to it until it has actually loaded the new data.
+  const {
+    courseId,
+    courseStatus,
+  } = useSelector(state => state[slice]);
+
   useEffect(() => {
     // The courseId from the URL is the course we WANT to load.
     console.log(`[TabContainer] useEffect triggered - tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}, isProgressTab: ${isProgressTab}`);
@@ -37,13 +44,6 @@ const TabContainer = (props) => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, courseId, courseStatus]);
-
-  // The courseId from the store is the course we HAVE loaded.  If the URL changes,
-  // we don't want the application to adjust to it until it has actually loaded the new data.
-  const {
-    courseId,
-    courseStatus,
-  } = useSelector(state => state[slice]);
 
   return (
     <TabPage

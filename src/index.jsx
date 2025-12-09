@@ -8,6 +8,7 @@ import { Helmet } from "react-helmet";
 import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
 import DiscussionTab from "./course-home/discussion-tab/DiscussionTab";
 import TeamsTab from "./course-home/teams-tab/TeamsTab";
+import { StudyGroupsTab } from "./course-home/study-groups-tab";
 
 import messages from "./i18n";
 import { UserMessagesProvider } from "./generic/user-messages";
@@ -25,7 +26,7 @@ import ProgressTab from "./course-home/progress-tab/ProgressTab";
 import WelcomeTab from "./course-home/welcome-tab";
 import { TabContainer } from "./tab-page";
 
-import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab, fetchTeamsTab, fetchWelcomeTab } from "./course-home/data";
+import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab, fetchTeamsTab, fetchWelcomeTab, fetchStudyGroupsTab } from "./course-home/data";
 import { fetchCourse } from "./courseware/data";
 import { store } from "./store";
 import NoticesProvider from "./generic/notices";
@@ -206,6 +207,20 @@ subscribe(APP_READY, () => {
                                                     slice="courseHome"
                                                 >
                                                     <TeamsTab />
+                                                </TabContainer>
+                                            </DecodePageRoute>
+                                        }
+                                    />
+                                    <Route
+                                        path={DECODE_ROUTES.STUDY_GROUPS}
+                                        element={
+                                            <DecodePageRoute>
+                                                <TabContainer
+                                                    tab="study-groups"
+                                                    fetch={fetchStudyGroupsTab}
+                                                    slice="courseHome"
+                                                >
+                                                    <StudyGroupsTab />
                                                 </TabContainer>
                                             </DecodePageRoute>
                                         }

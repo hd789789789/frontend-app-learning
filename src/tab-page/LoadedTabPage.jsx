@@ -46,6 +46,12 @@ const LoadedTabPage = ({
     slug: 'badge',
     url: `/learning/course/${courseId}/badge`,
   };
+
+  const studyGroupsTab = {
+    title: 'Nhóm học tập',
+    slug: 'study-groups',
+    url: `/learning/course/${courseId}/study-groups`,
+  };
   
   // Thêm tab Thành tích sau tab Leaderboard (Học đua) và ẩn tab Progress
   // Đảm bảo tab Discussions hiển thị với URL đúng định dạng
@@ -113,18 +119,19 @@ const LoadedTabPage = ({
     
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
     if (leaderboardIndex !== -1) {
-      // Chèn sau leaderboard
-      tabsCopy.splice(leaderboardIndex + 1, 0, badgeTab);
+      // Chèn Nhóm học tập và Thành tích cạnh leaderboard
+      tabsCopy.splice(leaderboardIndex, 0, studyGroupsTab);
+      tabsCopy.splice(leaderboardIndex + 2, 0, badgeTab);
     } else {
       // Nếu không có leaderboard, thêm vào cuối
-      tabsCopy.push(badgeTab);
+      tabsCopy.push(studyGroupsTab, badgeTab);
     }
     
     // Thêm tab Chào mừng vào đầu danh sách
     tabsCopy.unshift(welcomeTab);
     
     return tabsCopy;
-  }, [originalTabs, courseId]);
+  }, [originalTabs, courseId, badgeTab, studyGroupsTab, welcomeTab]);
 
   // Logistration and enrollment alerts are only really used for the outline tab, but loaded here to put them above
   // breadcrumbs when they are visible.

@@ -7,6 +7,7 @@ export const DECODE_ROUTES = {
   DATES: '/course/:courseId/dates',
   LEADERBOARD: '/course/:courseId/leaderboard',
   BADGE: '/course/:courseId/badge',
+  STUDY_GROUPS: '/course/:courseId/study-groups',
   DISCUSSION: '/course/:courseId/discussion/:path/*',
   TEAMS: '/course/:courseId/teams',
   PROGRESS: [

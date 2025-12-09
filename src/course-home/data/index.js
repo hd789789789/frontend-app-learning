@@ -2,6 +2,7 @@ export {
   fetchDatesTab,
   fetchLeaderboardTab,
   fetchBadgeTab,
+  fetchStudyGroupsTab,
   fetchOutlineTab,
   fetchProgressTab,
   fetchTeamsTab,
