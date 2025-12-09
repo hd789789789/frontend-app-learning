@@ -127,8 +127,15 @@ function BadgeTab() {
     const lastCourseIdRef = useRef(null);
     
   const loading = courseStatus === 'loading';
-  const progressDataLoaded = progressModel && progressModel.completionSummary;
-  const welcomeDataLoaded = welcomeModel && welcomeModel.userStats;
+  
+  // Use useMemo to prevent recalculation on every render
+  const progressDataLoaded = useMemo(() => {
+    return !!(progressModel && progressModel.completionSummary);
+  }, [progressModel?.completionSummary]);
+  
+  const welcomeDataLoaded = useMemo(() => {
+    return !!(welcomeModel && welcomeModel.userStats);
+  }, [welcomeModel?.userStats]);
   
   // Get real user stats from welcome API if available
   const welcomeData = welcomeModel || {};
@@ -162,28 +169,32 @@ function BadgeTab() {
   }), [userStats.streakDays, userStats.classRank]);
 
   // Fetch progress and welcome data if available - only once per courseId
-    useEffect(() => {
+  useEffect(() => {
     // Reset refs when courseId changes
-        if (courseId !== lastCourseIdRef.current) {
-            progressFetchedRef.current = false;
+    if (courseId !== lastCourseIdRef.current) {
+      progressFetchedRef.current = false;
       welcomeFetchedRef.current = false;
-            lastCourseIdRef.current = courseId;
-        }
-        
-    if (courseId) {
-      // Fetch progress data only if not loaded and not already fetched
-      if (!progressDataLoaded && !progressFetchedRef.current) {
-            progressFetchedRef.current = true;
-            dispatch(fetchProgressTab(courseId));
-        }
-      
-      // Fetch welcome data only if not loaded and not already fetched
-      if (!welcomeDataLoaded && !welcomeFetchedRef.current) {
-        welcomeFetchedRef.current = true;
-        dispatch(fetchWelcomeTab(courseId));
-      }
+      lastCourseIdRef.current = courseId;
     }
-  }, [courseId, dispatch, progressDataLoaded, welcomeDataLoaded]);
+    
+    if (!courseId) return;
+    
+    // Fetch progress data only if not loaded and not already fetched
+    // Check both the ref and the actual data to avoid duplicate fetches
+    if (!progressDataLoaded && !progressFetchedRef.current) {
+      progressFetchedRef.current = true;
+      dispatch(fetchProgressTab(courseId));
+    }
+    
+    // Fetch welcome data only if not loaded and not already fetched
+    if (!welcomeDataLoaded && !welcomeFetchedRef.current) {
+      welcomeFetchedRef.current = true;
+      dispatch(fetchWelcomeTab(courseId));
+    }
+    // Only depend on courseId and dispatch - progressDataLoaded and welcomeDataLoaded 
+    // are checked inside but not in dependencies to prevent re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
@@ -290,6 +301,11 @@ function BadgeTab() {
                   const circumference = Math.PI * radius * 2; // 2 * PI * r
                   const strokeDashoffset = circumference - (percent / 100) * circumference;
                   
+                  // Outer ring calculations (larger circle)
+                  const outerRadius = 110;
+                  const outerCircumference = Math.PI * outerRadius * 2;
+                  const outerStrokeDashoffset = outerCircumference - (percent / 100) * outerCircumference;
+                  
                   return (
                     <div className="circular-progress-wrapper">
                       <svg 
@@ -298,7 +314,31 @@ function BadgeTab() {
                         viewBox="0 0 250 250"
                         className="progress-svg"
                       >
-                        {/* Background circle */}
+                        {/* Outer background circle */}
+                        <circle 
+                          cx="125" 
+                          cy="125" 
+                          r={outerRadius}
+                          fill="none"
+                          stroke="#F0F0F0"
+                          strokeWidth="8"
+                        />
+                        {/* Outer progress circle */}
+                        <circle 
+                          cx="125" 
+                          cy="125" 
+                          r={outerRadius}
+                          fill="none"
+                          stroke="#2ECC71"
+                          strokeWidth="8"
+                          strokeDasharray={outerCircumference}
+                          strokeDashoffset={outerStrokeDashoffset}
+                          strokeLinecap="round"
+                          transform="rotate(-90 125 125)"
+                          className="progress-circle-outer"
+                          opacity="0.3"
+                        />
+                        {/* Inner background circle */}
                         <circle 
                           cx="125" 
                           cy="125" 
@@ -307,7 +347,7 @@ function BadgeTab() {
                           stroke="#E0E0E0"
                           strokeWidth="20"
                         />
-                        {/* Progress circle */}
+                        {/* Inner progress circle */}
                         <circle 
                           cx="125" 
                           cy="125" 
