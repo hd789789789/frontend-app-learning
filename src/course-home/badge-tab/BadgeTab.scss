@@ -926,7 +926,8 @@
 .progress-circle-outer {
   transition: stroke-dashoffset 0.5s ease;
   transform-origin: center;
-  opacity: 0.6;
+  opacity: 1 !important; // Ensure outer ring is visible
+  visibility: visible !important;
 }
 
 .progress-circle-fill {

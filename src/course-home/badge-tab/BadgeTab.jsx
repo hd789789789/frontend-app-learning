@@ -35,7 +35,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
         className="progress-svg"
         style={{ display: 'block' }}
       >
-        {/* Outer background circle */}
+        {/* Outer background circle - always visible */}
         <circle 
           cx="125" 
           cy="125" 
@@ -43,8 +43,9 @@ const CircularProgress = memo(({ percent = 0 }) => {
           fill="none"
           stroke="#F0F0F0"
           strokeWidth="8"
+          style={{ opacity: 1 }}
         />
-        {/* Outer progress circle */}
+        {/* Outer progress circle - shows progress */}
         <circle 
           cx="125" 
           cy="125" 
@@ -57,7 +58,11 @@ const CircularProgress = memo(({ percent = 0 }) => {
           strokeLinecap="round"
           transform="rotate(-90 125 125)"
           className="progress-circle-outer"
-          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          style={{ 
+            transition: 'stroke-dashoffset 0.5s ease',
+            opacity: 1,
+            visibility: 'visible'
+          }}
         />
         {/* Inner background circle */}
         <circle 
@@ -265,30 +270,43 @@ const BadgeTab = memo(function BadgeTab() {
     classRank: userStats.classRank || mockStats.classRank,
   }), [userStats.streakDays, userStats.classRank]);
 
+  // Mark component as mounted after first render
+    useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
+
   // Fetch progress and welcome data only once when component mounts or courseId changes
-  // Use refs to prevent multiple simultaneous fetches
-  useEffect(() => {
+  // Use refs to prevent multiple simultaneous fetches and re-renders
+    useEffect(() => {
     if (!courseId) return;
 
     // Reset refs when courseId changes
-    if (courseId !== lastCourseIdRef.current) {
+        if (courseId !== lastCourseIdRef.current) {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
-      lastCourseIdRef.current = courseId;
+            lastCourseIdRef.current = courseId;
+      hasMountedRef.current = false; // Reset mount flag on course change
     }
     
-    // Check if data is already loaded in model store
-    const isProgressLoaded = !!(progressModel?.completionSummary);
-    const isWelcomeLoaded = !!(welcomeModel?.userStats);
+    // Check if data is already loaded in model store - use stable references
+    const currentProgressModel = progressModel;
+    const currentWelcomeModel = welcomeModel;
+    const isProgressLoaded = !!(currentProgressModel?.completionSummary);
+    const isWelcomeLoaded = !!(currentWelcomeModel?.userStats);
     
     // Only fetch progress data if:
     // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isProgressLoaded && !progressFetchingRef.current) {
       progressFetchingRef.current = true;
-      dispatch(fetchProgressTab(courseId)).finally(() => {
+      const promise = dispatch(fetchProgressTab(courseId));
+      if (promise && typeof promise.finally === 'function') {
+        promise.finally(() => {
+          progressFetchingRef.current = false;
+        });
+      } else {
         progressFetchingRef.current = false;
-      });
+      }
     }
     
     // Only fetch welcome data if:
@@ -296,12 +314,18 @@ const BadgeTab = memo(function BadgeTab() {
     // 2. We haven't already initiated a fetch for this courseId
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
       welcomeFetchingRef.current = true;
-      dispatch(fetchWelcomeTab(courseId)).finally(() => {
+      const promise = dispatch(fetchWelcomeTab(courseId));
+      if (promise && typeof promise.finally === 'function') {
+        promise.finally(() => {
+          welcomeFetchingRef.current = false;
+        });
+      } else {
         welcomeFetchingRef.current = false;
-      });
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, dispatch]);
+    // Only depend on courseId and dispatch - don't depend on models to prevent re-runs
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);

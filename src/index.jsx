@@ -49,8 +49,17 @@ const CourseHomeRedirect = () => {
     const pathname = location.pathname;
     const expectedBasePath = `/course/${courseId}`;
     
-    // If pathname is exactly the base path, redirect to home
-    if (pathname === expectedBasePath || pathname === `${expectedBasePath}/`) {
+    // Check if pathname matches exactly /course/:courseId or /course/:courseId/
+    // But NOT /course/:courseId/course or any other sub-path
+    const isExactMatch = pathname === expectedBasePath || pathname === `${expectedBasePath}/`;
+    
+    // Also check that it's not matching a sub-path by checking if there are more segments
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const expectedSegments = expectedBasePath.split('/').filter(Boolean);
+    const isSubPath = pathSegments.length > expectedSegments.length;
+    
+    // Only redirect if it's an exact match and not a sub-path
+    if (isExactMatch && !isSubPath) {
         return <Navigate to={`/course/${courseId}/home`} replace />;
     }
     
@@ -247,8 +256,8 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* COURSEWARE routes - must be before redirect to match specific paths */}
-                                    {DECODE_ROUTES.COURSEWARE.map((route) => (
+                                    {/* COURSEWARE routes - filter out /course/:courseId to prevent conflict with redirect */}
+                                    {DECODE_ROUTES.COURSEWARE.filter(route => route !== '/course/:courseId').map((route) => (
                                         <Route
                                             key={route}
                                             path={route}
