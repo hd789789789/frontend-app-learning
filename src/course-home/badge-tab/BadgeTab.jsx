@@ -224,7 +224,8 @@ const BadgeTab = memo(function BadgeTab() {
   // Use refs to track if we've already initiated fetch to prevent multiple fetches
   const progressFetchingRef = useRef(false);
   const welcomeFetchingRef = useRef(false);
-    const lastCourseIdRef = useRef(null);
+  const lastCourseIdRef = useRef(null);
+  const hasMountedRef = useRef(false);
     
   // Check loading state - only show loading spinner if courseStatus is explicitly 'loading'
   // Don't show loading if we're just waiting for data to populate

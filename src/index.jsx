@@ -40,7 +40,7 @@ import PageNotFound from "./generic/PageNotFound";
 // THÊM IMPORT NÀY
 import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 
-// Component to redirect from /course/:courseId to /course/:courseId/home
+// Component to redirect from /course/:courseId to /course/:courseId/course (OUTLINE tab - default)
 // Only redirect if we're at the exact base course path (not a sub-path)
 const CourseHomeRedirect = () => {
     const { courseId } = useParams();
@@ -59,8 +59,9 @@ const CourseHomeRedirect = () => {
     const isSubPath = pathSegments.length > expectedSegments.length;
     
     // Only redirect if it's an exact match and not a sub-path
+    // Redirect to OUTLINE (course) tab as default
     if (isExactMatch && !isSubPath) {
-        return <Navigate to={`/course/${courseId}/home`} replace />;
+        return <Navigate to={`/course/${courseId}/course`} replace />;
     }
     
     // Otherwise, don't redirect (shouldn't happen if routes are set up correctly)
