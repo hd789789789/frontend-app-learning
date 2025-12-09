@@ -50,14 +50,14 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={outerRadius}
           fill="none"
-          stroke="#2ECC71"
+          stroke="#8B3A62"
           strokeWidth="8"
           strokeDasharray={outerCircumference}
           strokeDashoffset={outerStrokeDashoffset}
           strokeLinecap="round"
           transform="rotate(-90 125 125)"
           className="progress-circle-outer"
-          opacity="0.3"
+          opacity="0.6"
           style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
         {/* Inner background circle */}
@@ -75,7 +75,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={radius}
           fill="none"
-          stroke="#2ECC71"
+          stroke="#8B3A62"
           strokeWidth="20"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -203,7 +203,8 @@ const mockRewards = [
   },
 ];
 
-function BadgeTab() {
+// Memoize BadgeTab to prevent unnecessary re-renders
+const BadgeTab = memo(function BadgeTab() {
     const { courseId } = useParams();
     const dispatch = useDispatch();
   const progressModel = useModel('progress', courseId);
@@ -1027,6 +1028,8 @@ function BadgeTab() {
       </Row>
         </Container>
     );
-}
+});
+
+BadgeTab.displayName = 'BadgeTab';
 
 export default BadgeTab;

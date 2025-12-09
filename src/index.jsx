@@ -2,7 +2,7 @@ import { APP_INIT_ERROR, APP_READY, subscribe, initialize, mergeConfig, getConfi
 import { AppProvider, ErrorPage, PageWrap } from "@edx/frontend-platform/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 
 import { Helmet } from "react-helmet";
 import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
@@ -39,6 +39,12 @@ import PageNotFound from "./generic/PageNotFound";
 
 // THÊM IMPORT NÀY
 import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
+
+// Component to redirect from /course/:courseId to /course/:courseId/home
+const CourseHomeRedirect = () => {
+    const { courseId } = useParams();
+    return <Navigate to={`/course/${courseId}/home`} replace />;
+};
 
 subscribe(APP_READY, () => {
     const root = createRoot(document.getElementById("root"));
@@ -228,17 +234,33 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {DECODE_ROUTES.COURSEWARE.map((route) => (
-                                        <Route
-                                            key={route}
-                                            path={route}
-                                            element={
-                                                <DecodePageRoute>
-                                                    <CoursewareContainer />
-                                                </DecodePageRoute>
-                                            }
-                                        />
-                                    ))}
+                                    {/* Redirect from /course/:courseId to /course/:courseId/home (welcome tab) */}
+                                    {/* This must be before COURSEWARE routes to match first */}
+                                    <Route
+                                        path="/course/:courseId"
+                                        element={
+                                            <DecodePageRoute>
+                                                <CourseHomeRedirect />
+                                            </DecodePageRoute>
+                                        }
+                                    />
+                                    {DECODE_ROUTES.COURSEWARE.map((route) => {
+                                        // Skip the /course/:courseId route as we handle it above with redirect
+                                        if (route === '/course/:courseId') {
+                                            return null;
+                                        }
+                                        return (
+                                            <Route
+                                                key={route}
+                                                path={route}
+                                                element={
+                                                    <DecodePageRoute>
+                                                        <CoursewareContainer />
+                                                    </DecodePageRoute>
+                                                }
+                                            />
+                                        );
+                                    })}
                                 </Routes>
                             </TextReplacerProvider>
                         </UserMessagesProvider>
