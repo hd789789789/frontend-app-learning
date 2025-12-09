@@ -204,14 +204,14 @@ function BadgeTab() {
   const [rewardFilter, setRewardFilter] = useState('all');
   const [rewards] = useState(mockRewards);
     
-  // Use refs to track if we've already fetched to prevent multiple fetches
-    const progressFetchedRef = useRef(false);
-  const welcomeFetchedRef = useRef(false);
+  // Use refs to track if we've already initiated fetch to prevent multiple fetches
+  const progressFetchingRef = useRef(false);
+  const welcomeFetchingRef = useRef(false);
     const lastCourseIdRef = useRef(null);
     
   const loading = courseStatus === 'loading';
   
-  // Use useMemo to prevent recalculation on every render
+  // Check if data is already loaded in model store
   const progressDataLoaded = useMemo(() => {
     return !!(progressModel && progressModel.completionSummary);
   }, [progressModel?.completionSummary]);
@@ -251,31 +251,47 @@ function BadgeTab() {
     classRank: userStats.classRank || mockStats.classRank,
   }), [userStats.streakDays, userStats.classRank]);
 
-  // Fetch progress and welcome data if available - only once per courseId
+  // Fetch progress and welcome data only if not already loaded - prevent duplicate API calls
   useEffect(() => {
     if (!courseId) return;
     
     // Reset refs when courseId changes
     if (courseId !== lastCourseIdRef.current) {
-      progressFetchedRef.current = false;
-      welcomeFetchedRef.current = false;
+      progressFetchingRef.current = false;
+      welcomeFetchingRef.current = false;
       lastCourseIdRef.current = courseId;
     }
     
-    // Fetch progress data only once per courseId
-    if (!progressFetchedRef.current) {
-      progressFetchedRef.current = true;
-      dispatch(fetchProgressTab(courseId));
+    // Check if data is already loaded (check inside useEffect to avoid dependency issues)
+    const isProgressLoaded = !!(progressModel && progressModel.completionSummary);
+    const isWelcomeLoaded = !!(welcomeModel && welcomeModel.userStats);
+    
+    // Only fetch progress data if:
+    // 1. Data is not already loaded in model store
+    // 2. We haven't already initiated a fetch for this courseId
+    if (!isProgressLoaded && !progressFetchingRef.current) {
+      progressFetchingRef.current = true;
+      dispatch(fetchProgressTab(courseId)).finally(() => {
+        // Reset fetching flag after fetch completes (success or failure)
+        // This allows retry if needed, but prevents multiple simultaneous calls
+        progressFetchingRef.current = false;
+      });
     }
     
-    // Fetch welcome data only once per courseId
-    if (!welcomeFetchedRef.current) {
-      welcomeFetchedRef.current = true;
-      dispatch(fetchWelcomeTab(courseId));
+    // Only fetch welcome data if:
+    // 1. Data is not already loaded in model store
+    // 2. We haven't already initiated a fetch for this courseId
+    if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
+      welcomeFetchingRef.current = true;
+      dispatch(fetchWelcomeTab(courseId)).finally(() => {
+        // Reset fetching flag after fetch completes (success or failure)
+        welcomeFetchingRef.current = false;
+      });
     }
     // Only depend on courseId and dispatch to prevent unnecessary re-runs
+    // Check data loaded status inside effect to avoid dependency on changing values
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId]);
+  }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
