@@ -511,6 +511,10 @@ div#main-content {
     max-width: 100% !important;
 }
 
+.outline-sidebar-wrapper.bg-white.m-0.fixed-top.w-100.vh-100 {
+    top: 65px;
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
 @import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
