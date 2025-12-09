@@ -202,19 +202,9 @@ function BadgeTab() {
     real: rewards.filter(r => r.type === 'real').length,
   };
 
-    if (loading) {
-        return (
-      <Container className="badge-tab py-5 px-2 px-md-4 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
-            </Container>
-        );
-    }
-
-  // Get progress data for display
+  // Get progress data for display (moved before useMemo to avoid duplicate declaration)
   const completionSummary = progressModel?.completionSummary || {};
   const courseGrade = progressModel?.courseGrade || {};
-  const completionPercent = completionSummary.percent || 0;
   const totalLessons = (completionSummary.completeCount || 0) + (completionSummary.incompleteCount || 0) + (completionSummary.lockedCount || 0);
   const completedLessons = completionSummary.completeCount || 0;
   const inProgressLessons = completionSummary.incompleteCount || 0;
@@ -223,6 +213,15 @@ function BadgeTab() {
   // Get grade data
   const currentGrade = courseGrade.percent || 0;
   const passingGrade = 50; // Mock data - should come from API
+
+  if (loading) {
+    return (
+      <Container className="badge-tab py-5 px-2 px-md-4 text-center">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
+      </Container>
+    );
+  }
   
   // Mock group streaks data (same as WelcomeTab)
   const groupStreaks = [
