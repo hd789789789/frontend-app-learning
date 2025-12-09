@@ -7,17 +7,13 @@ import {
   Col,
 } from '@openedx/paragon';
 
+import { useParams } from 'react-router-dom';
+import { useModel } from '../../generic/model-store';
 import StreakCalendar from '../welcome-tab/StreakCalendar';
 import GroupStreaks from '../welcome-tab/GroupStreaks';
 import StudyTip from '../welcome-tab/StudyTip';
 import ReferralWidget from '../welcome-tab/ReferralWidget';
 import './StudyGroupsTab.scss';
-
-const HERO_TIPS = [
-  'Kết nối bạn học để cùng giải bài khó và ôn thi.',
-  'Chia sẻ tiến độ, giữ streak nhóm và động viên nhau mỗi ngày.',
-  'Đặt mục tiêu tuần và tổng kết nhanh ngay trong nhóm.',
-];
 
 const GROUPS_MOCK = [
   {
@@ -85,38 +81,6 @@ const GROUPS_MOCK = [
     ],
   },
 ];
-
-const SUGGESTED_GROUPS = [
-  {
-    id: 's1',
-    name: 'Nhóm luyện đề cuối kỳ',
-    members: 18,
-    progress: 65,
-    focus: 'Ôn tập tổng hợp, chữa đề mỗi tuần',
-    tags: ['Giải đề', 'Ghi chú chung'],
-  },
-  {
-    id: 's2',
-    name: 'Nhóm giữ streak 30 ngày',
-    members: 9,
-    progress: 54,
-    focus: 'Check-in hằng ngày, nhắc học và thưởng badge',
-    tags: ['Motivation', 'Daily check-in'],
-  },
-  {
-    id: 's3',
-    name: 'Nhóm hỗ trợ bài khó',
-    members: 22,
-    progress: 70,
-    focus: 'Đặt câu hỏi và nhận giải đáp nhanh từ bạn bè',
-    tags: ['Hỏi đáp', 'Tài liệu'],
-  },
-];
-
-const sidebarUserStats = {
-  streakDays: 12,
-  lastDayOfStreak: '2025-12-08',
-};
 
 const QuickStat = ({ icon, label, value, tone }) => (
   <div className={`quick-stat ${tone || ''}`}>
@@ -226,24 +190,79 @@ const GroupCardWithCollapse = ({ group }) => {
             </div>
           </div>
 
-          <Row className="mt-3">
-            <Col md={5}>
-              <div className="section-title">Thành viên</div>
-              <div className="member-list">
-                {group.featuredMembers.map(member => (
-                  <MemberChip key={member.name} member={member} />
-                ))}
+          <div className="member-section">
+            <div className="member-section-head">
+              <span>Thành viên ({group.members})</span>
+              <button type="button" className="btn btn-primary btn-sm">+ Thêm</button>
+            </div>
+            <div className="member-list">
+              {group.featuredMembers.map(member => (
+                <MemberChip key={member.name} member={member} />
+              ))}
+            </div>
+            <div className="member-more">Xem thêm thành viên...</div>
+          </div>
+
+          <div className="discussion-actions">
+            <button type="button" className="btn btn-primary w-100">💬 Thảo luận</button>
+          </div>
+
+          <div className="discussion-container">
+            <div className="create-post-box">
+              <div className="create-post-input">
+                <div className="user-avatar">PI</div>
+                <textarea className="create-post-textarea" placeholder="Chia sẻ suy nghĩ của bạn với nhóm..." rows="1" />
               </div>
-            </Col>
-            <Col md={7}>
-              <div className="section-title">Hoạt động gần đây</div>
-              <div className="post-list">
-                {group.posts.map(post => (
-                  <PostSnippet key={post.id} post={post} />
-                ))}
+              <div className="post-actions">
+                <button className="post-action-btn">
+                  <span>📷</span>
+                  <span>Ảnh/Video</span>
+                </button>
+                <button className="post-action-btn">
+                  <span>📎</span>
+                  <span>File</span>
+                </button>
+                <button className="post-action-btn">
+                  <span style={{ color: 'var(--primary)' }}>✉️ Đăng</span>
+                </button>
               </div>
-            </Col>
-          </Row>
+            </div>
+
+            <div className="discussion-feed">
+              {group.posts.map(post => (
+                <div key={post.id} className="feed-post">
+                  <div className="post-header">
+                    <div className="user-avatar" style={{ background: post.color }}>{post.initials}</div>
+                    <div className="post-author-info">
+                      <div className="post-author-name">{post.author}</div>
+                      <div className="post-time">{post.time} • 👥 Nhóm</div>
+                    </div>
+                    <button className="icon-button">⋯</button>
+                  </div>
+                  <div className="post-content">{post.summary}</div>
+                  <div className="post-reactions">
+                    <button className="reaction-btn liked">
+                      <span className="reaction-icon">❤️</span>
+                      <span>{post.reactions}</span>
+                    </button>
+                    <button className="reaction-btn">
+                      <span>💬</span>
+                      <span>{post.comments} bình luận</span>
+                    </button>
+                    <button className="reaction-btn">
+                      <span>📤</span>
+                      <span>Chia sẻ</span>
+                    </button>
+                  </div>
+                  <div className="comment-input-wrapper">
+                    <div className="user-avatar small">PI</div>
+                    <input type="text" className="comment-input" placeholder="Viết bình luận..." />
+                    <button className="send-comment-btn">Gửi</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </div>
@@ -270,8 +289,14 @@ const SuggestionCard = ({ suggestion }) => (
 );
 
 const StudyGroupsTab = () => {
+  const { courseId } = useParams();
+  const welcomeModel = useModel('welcome', courseId) || {};
+  const userStats = welcomeModel.userStats || {
+    streakDays: 12,
+    lastDayOfStreak: null,
+  };
+
   const myGroups = useMemo(() => GROUPS_MOCK, []);
-  const suggestedGroups = useMemo(() => SUGGESTED_GROUPS, []);
   const groupStreaks = useMemo(() => myGroups.map((group, idx) => ({
     id: idx + 1,
     name: group.name,
@@ -296,7 +321,6 @@ const StudyGroupsTab = () => {
               <p className="header-sub">Học cùng nhau để cùng tiến bộ!</p>
             </div>
             <div className="groups-actions">
-              <button type="button" className="btn btn-outline-primary">Tìm nhóm</button>
               <button type="button" className="btn btn-primary">+ Tạo nhóm mới</button>
             </div>
           </div>
@@ -308,8 +332,8 @@ const StudyGroupsTab = () => {
                 <h3>Các nhóm bạn đang tham gia</h3>
               </div>
               <div className="panel-actions">
-                <button type="button" className="btn btn-outline-primary btn-sm">Mời bạn bè</button>
-                <button type="button" className="btn btn-outline-secondary btn-sm">Quản lý nhóm</button>
+                <button type="button" className="btn btn-outline-primary btn-sm">Mời thành viên</button>
+                <button type="button" className="btn btn-outline-secondary btn-sm">Tùy chọn</button>
               </div>
             </div>
             <div className="group-list">
@@ -318,27 +342,13 @@ const StudyGroupsTab = () => {
               ))}
             </div>
           </section>
-
-          <section className="panel">
-            <div className="panel-head">
-              <div>
-                <div className="panel-eyebrow">Gợi ý cho bạn</div>
-                <h3>Khám phá nhóm học tập nổi bật</h3>
-              </div>
-            </div>
-            <div className="suggestions-grid">
-              {suggestedGroups.map(suggestion => (
-                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-              ))}
-            </div>
-          </section>
         </Col>
 
         <Col lg={4} md={12} className="mt-3 mt-lg-0">
           <div className="study-groups-sidebar">
             <StreakCalendar
-              streakDays={sidebarUserStats.streakDays}
-              lastDayOfStreak={sidebarUserStats.lastDayOfStreak}
+              streakDays={userStats.streakDays}
+              lastDayOfStreak={userStats.lastDayOfStreak}
             />
             <GroupStreaks groups={groupStreaks} />
             <StudyTip />

@@ -237,13 +237,6 @@ const BadgeTab = memo(function BadgeTab() {
   const hasMountedRef = useRef(false);
   const dataFetchedRef = useRef(false); // Track if we've already fetched data for this courseId
     
-  // Track fetching state without hiding the whole layout to avoid flicker
-  const loading = courseStatus === 'loading' && !progressModel && !welcomeModel;
-  const isFetching =
-    loading ||
-    (!progressDataLoaded && progressFetchingRef.current) ||
-    (!welcomeDataLoaded && welcomeFetchingRef.current);
-  
   // Check if data is already loaded in model store - memoize to prevent recalculation
   const progressDataLoaded = useMemo(() => {
     const loaded = !!(progressModel?.completionSummary);
@@ -256,6 +249,13 @@ const BadgeTab = memo(function BadgeTab() {
     console.log(`[BadgeTab] welcomeDataLoaded calculated: ${loaded} - render #${renderCountRef.current}, userStats: ${!!welcomeModel?.userStats}`);
     return loaded;
   }, [welcomeModel?.userStats]);
+  
+  // Track fetching state without hiding the whole layout to avoid flicker
+  const loading = courseStatus === 'loading' && !progressModel && !welcomeModel;
+  const isFetching =
+    loading ||
+    (!progressDataLoaded && progressFetchingRef.current) ||
+    (!welcomeDataLoaded && welcomeFetchingRef.current);
   
   // Get real user stats from welcome API if available
   const welcomeData = welcomeModel || {};
