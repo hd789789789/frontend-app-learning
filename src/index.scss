@@ -83,6 +83,11 @@
 .sequence-navigation-container {
     display: flex;
     align-items: flex-start;
+    
+    // Fix for mobile: prevent sticky header from covering navigation
+    @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+        padding-top: 72px; // Account for sticky header height
+    }
 }
 
 .notification-btn {
@@ -467,6 +472,27 @@ ol.list-unstyled > li > div > div.row.w-100.m-0 {
 
 div#main-content {
     min-height: 70vh;
+}
+
+// Fix for mobile: prevent sticky header from covering breadcrumbs and navigation
+@media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+    // Add padding-top to the wrapper containing breadcrumbs and navigation
+    .position-relative.d-flex.align-items-xl-center.mb-4.mt-1 {
+        padding-top: 72px; // Account for sticky header height
+        margin-top: 0 !important; // Remove small margin-top since we're using padding
+    }
+    
+    // If breadcrumbs wrapper exists, remove padding from sequence-navigation-container
+    // to avoid double spacing
+    .position-relative.d-flex.align-items-xl-center.mb-4.mt-1 ~ .sequence-container .sequence-navigation-container {
+        padding-top: 0;
+    }
+    
+    // Ensure breadcrumb navigation is visible
+    nav[aria-label="breadcrumb"] {
+        position: relative;
+        z-index: 1;
+    }
 }
 
 .text-right.small.py-1 > .text-gray-500 {
