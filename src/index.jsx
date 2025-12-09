@@ -45,26 +45,23 @@ import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 const CourseHomeRedirect = () => {
     const { courseId } = useParams();
     const location = useLocation();
-    // Only redirect if pathname is exactly /course/:courseId (no additional path segments)
     const pathname = location.pathname;
     const expectedBasePath = `/course/${courseId}`;
     
-    // Check if pathname matches exactly /course/:courseId or /course/:courseId/
-    // But NOT /course/:courseId/course or any other sub-path
-    const isExactMatch = pathname === expectedBasePath || pathname === `${expectedBasePath}/`;
+    // Normalize pathname - remove trailing slash for comparison
+    const normalizedPathname = pathname.endsWith('/') && pathname.length > expectedBasePath.length + 1 
+        ? pathname.slice(0, -1) 
+        : pathname;
+    const normalizedBasePath = expectedBasePath;
     
-    // Also check that it's not matching a sub-path by checking if there are more segments
-    const pathSegments = pathname.split('/').filter(Boolean);
-    const expectedSegments = expectedBasePath.split('/').filter(Boolean);
-    const isSubPath = pathSegments.length > expectedSegments.length;
-    
-    // Only redirect if it's an exact match and not a sub-path
-    // Redirect to OUTLINE (course) tab as default
-    if (isExactMatch && !isSubPath) {
+    // Only redirect if pathname is exactly /course/:courseId (no additional path segments)
+    // This means pathname should be exactly /course/:courseId or /course/:courseId/
+    // But NOT /course/:courseId/course, /course/:courseId/welcome, etc.
+    if (normalizedPathname === normalizedBasePath || normalizedPathname === `${normalizedBasePath}/`) {
         return <Navigate to={`/course/${courseId}/course`} replace />;
     }
     
-    // Otherwise, don't redirect (shouldn't happen if routes are set up correctly)
+    // Otherwise, don't redirect - let other routes handle it
     return null;
 };
 
@@ -132,7 +129,7 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* OUTLINE route must be BEFORE redirect to ensure it matches first */}
+                                    {/* OUTLINE route - must be before redirect to ensure it matches first */}
                                     <Route
                                         path={DECODE_ROUTES.OUTLINE}
                                         element={
@@ -269,9 +266,10 @@ subscribe(APP_READY, () => {
                                             }
                                         />
                                     ))}
-                                    {/* Redirect from exact /course/:courseId (no additional path) to /course/:courseId/home (welcome tab) */}
+                                    {/* Redirect from exact /course/:courseId (no additional path) to /course/:courseId/course (OUTLINE tab) */}
                                     {/* This must be AFTER all specific routes (OUTLINE, COURSEWARE, etc.) so specific paths match first */}
                                     {/* React Router v6 matches routes in order, so this will only match if no other route matched */}
+                                    {/* IMPORTANT: This route will match /course/:courseId but NOT /course/:courseId/course or other sub-paths */}
                                     <Route
                                         path="/course/:courseId"
                                         element={

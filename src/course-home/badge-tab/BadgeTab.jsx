@@ -231,13 +231,13 @@ const BadgeTab = memo(function BadgeTab() {
   // Don't show loading if we're just waiting for data to populate
   const loading = courseStatus === 'loading' && !progressModel && !welcomeModel;
   
-  // Check if data is already loaded in model store
+  // Check if data is already loaded in model store - memoize to prevent recalculation
   const progressDataLoaded = useMemo(() => {
-    return !!(progressModel && progressModel.completionSummary);
+    return !!(progressModel?.completionSummary);
   }, [progressModel?.completionSummary]);
-  
+
   const welcomeDataLoaded = useMemo(() => {
-    return !!(welcomeModel && welcomeModel.userStats);
+    return !!(welcomeModel?.userStats);
   }, [welcomeModel?.userStats]);
   
   // Get real user stats from welcome API if available
@@ -271,29 +271,27 @@ const BadgeTab = memo(function BadgeTab() {
     classRank: userStats.classRank || mockStats.classRank,
   }), [userStats.streakDays, userStats.classRank]);
 
-  // Mark component as mounted after first render
-    useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
-
   // Fetch progress and welcome data only once when component mounts or courseId changes
   // Use refs to prevent multiple simultaneous fetches and re-renders
-    useEffect(() => {
+  useEffect(() => {
     if (!courseId) return;
 
     // Reset refs when courseId changes
-        if (courseId !== lastCourseIdRef.current) {
+    if (courseId !== lastCourseIdRef.current) {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
-            lastCourseIdRef.current = courseId;
-      hasMountedRef.current = false; // Reset mount flag on course change
+      lastCourseIdRef.current = courseId;
+      hasMountedRef.current = false;
+    }
+    
+    // Mark as mounted after first check
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
     }
     
     // Check if data is already loaded in model store - use stable references
-    const currentProgressModel = progressModel;
-    const currentWelcomeModel = welcomeModel;
-    const isProgressLoaded = !!(currentProgressModel?.completionSummary);
-    const isWelcomeLoaded = !!(currentWelcomeModel?.userStats);
+    const isProgressLoaded = !!(progressModel?.completionSummary);
+    const isWelcomeLoaded = !!(welcomeModel?.userStats);
     
     // Only fetch progress data if:
     // 1. Data is not already loaded
@@ -325,8 +323,8 @@ const BadgeTab = memo(function BadgeTab() {
       }
     }
     // Only depend on courseId and dispatch - don't depend on models to prevent re-runs
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
