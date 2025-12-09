@@ -21,6 +21,13 @@ const TabContainer = (props) => {
   useEffect(() => {
     // The courseId from the URL is the course we WANT to load.
     console.log(`[TabContainer] useEffect triggered - tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}, isProgressTab: ${isProgressTab}`);
+
+    // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
+    if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
+      console.log(`[TabContainer] Skipping fetch - already loaded courseId: ${courseId}`);
+      return;
+    }
+
     if (isProgressTab) {
       console.log(`[TabContainer] Dispatching fetch for progress tab: ${courseIdFromUrl}, targetUserId: ${targetUserId}`);
       dispatch(fetch(courseIdFromUrl, targetUserId));
@@ -29,7 +36,7 @@ const TabContainer = (props) => {
       dispatch(fetch(courseIdFromUrl));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseIdFromUrl, targetUserId]);
+  }, [courseIdFromUrl, targetUserId, courseId, courseStatus]);
 
   // The courseId from the store is the course we HAVE loaded.  If the URL changes,
   // we don't want the application to adjust to it until it has actually loaded the new data.
