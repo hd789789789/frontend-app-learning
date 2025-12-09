@@ -254,47 +254,59 @@ function BadgeTab() {
   ];
 
         return (
-    <Container className="badge-tab py-4 px-0 px-md-1">
+    <Container className="badge-tab py-4 px-0">
       <Row className="mx-0">
         {/* Main Content */}
-        <Col lg={8} md={12} className="px-2 px-md-3">
+        <Col lg={8} md={12} className="px-1 px-md-2">
           {/* Progress Section - Moved to top */}
           <div className="progress-section">
             <h3 className="progress-section-title">📈 Tiến độ</h3>
             <div className="progress-overview">
               <div className="circular-progress">
-                <svg width="250" height="250" viewBox="0 0 250 250">
-                  <circle 
-                    className="progress-circle-bg" 
-                    cx="125" 
-                    cy="125" 
-                    r="100"
-                    fill="none"
-                    stroke="#E0E0E0"
-                    strokeWidth="20"
-                  />
-                  <circle 
-                    className="progress-circle" 
-                    cx="125" 
-                    cy="125" 
-                    r="100"
-                    fill="none"
-                    stroke="#2ECC71"
-                    strokeWidth="20"
-                    strokeDasharray={2 * Math.PI * 100}
-                    strokeDashoffset={2 * Math.PI * 100 * (1 - completionPercent / 100)}
-                    strokeLinecap="round"
-                    transform="rotate(-90 125 125)"
-                  />
-                  <g className="progress-text">
-                    <text x="125" y="115" textAnchor="middle" className="progress-percentage">
-                      {Math.round(completionPercent)}%
-                    </text>
-                    <text x="125" y="145" textAnchor="middle" className="progress-label">
-                      Hoàn thành
-                    </text>
-                  </g>
-                </svg>
+                {(() => {
+                  const radius = 100;
+                  const circumference = 2 * Math.PI * radius;
+                  const percent = Math.max(0, Math.min(100, completionPercent || 0));
+                  const offset = circumference - (percent / 100) * circumference;
+                  
+                  return (
+                    <svg width="250" height="250" viewBox="0 0 250 250">
+                      <circle 
+                        className="progress-circle-bg" 
+                        cx="125" 
+                        cy="125" 
+                        r={radius}
+                        fill="none"
+                        stroke="#E0E0E0"
+                        strokeWidth="20"
+                      />
+                      <circle 
+                        className="progress-circle" 
+                        cx="125" 
+                        cy="125" 
+                        r={radius}
+                        fill="none"
+                        stroke="#2ECC71"
+                        strokeWidth="20"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        transform="rotate(-90 125 125)"
+                        style={{
+                          transition: 'stroke-dashoffset 0.5s ease',
+                        }}
+                      />
+                      <g className="progress-text">
+                        <text x="125" y="115" textAnchor="middle" className="progress-percentage">
+                          {Math.round(percent)}%
+                        </text>
+                        <text x="125" y="145" textAnchor="middle" className="progress-label">
+                          Hoàn thành
+                        </text>
+                      </g>
+                    </svg>
+                  );
+                })()}
               </div>
               <div className="progress-stats">
                 <div className="progress-stats-section">
@@ -864,7 +876,7 @@ function BadgeTab() {
         </Col>
 
         {/* Sidebar */}
-        <Col lg={4} md={12} className="px-2 px-md-3">
+        <Col lg={4} md={12} className="px-1 px-md-2">
           <StreakCalendar 
             streakDays={stats.streakDays} 
             lastDayOfStreak={userStats.lastDayOfStreak}
