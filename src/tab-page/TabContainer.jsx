@@ -48,11 +48,16 @@ const TabContainer = (props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, isProgressTab]);
 
+  // Avoid flashing loader for badge tab when course is already the active one
+  const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && courseId === courseIdFromUrl)
+    ? 'loaded'
+    : courseStatus;
+
   return (
     <TabPage
       activeTabSlug={tab}
       courseId={courseId}
-      courseStatus={courseStatus}
+      courseStatus={effectiveCourseStatus}
       metadataModel={`${slice}Meta`}
     >
       {courseId && <OuterExamTimer courseId={courseId} />}
