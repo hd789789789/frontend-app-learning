@@ -214,18 +214,14 @@ const BadgeTab = memo(function BadgeTab() {
     const { courseId } = useParams();
     const dispatch = useDispatch();
   
-  // Debug: Track render count
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
-  console.log(`[BadgeTab] Render #${renderCountRef.current} - courseId: ${courseId}`);
   
   // Use stable selectors to prevent re-renders
   const courseStatus = useSelector((state) => state.courseHome?.courseStatus || 'loading');
   const progressModel = useModel('progress', courseId);
   const welcomeModel = useModel('welcome', courseId);
   
-  console.log(`[BadgeTab] Render #${renderCountRef.current} - courseStatus: ${courseStatus}, progressModel: ${!!progressModel}, welcomeModel: ${!!welcomeModel}`);
-    
   const [rewardFilter, setRewardFilter] = useState('all');
   const [rewards] = useState(mockRewards);
     
@@ -240,13 +236,11 @@ const BadgeTab = memo(function BadgeTab() {
   // Check if data is already loaded in model store - memoize to prevent recalculation
   const progressDataLoaded = useMemo(() => {
     const loaded = !!(progressModel?.completionSummary);
-    console.log(`[BadgeTab] progressDataLoaded calculated: ${loaded} - render #${renderCountRef.current}, completionSummary: ${!!progressModel?.completionSummary}`);
     return loaded;
   }, [progressModel?.completionSummary]);
 
   const welcomeDataLoaded = useMemo(() => {
     const loaded = !!(welcomeModel?.userStats);
-    console.log(`[BadgeTab] welcomeDataLoaded calculated: ${loaded} - render #${renderCountRef.current}, userStats: ${!!welcomeModel?.userStats}`);
     return loaded;
   }, [welcomeModel?.userStats]);
   
@@ -291,24 +285,19 @@ const BadgeTab = memo(function BadgeTab() {
   // Fetch progress and welcome data only once when component mounts or courseId changes
   // Use refs to prevent multiple simultaneous fetches and re-renders
   useEffect(() => {
-    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}, renderCount: ${renderCountRef.current}, dataFetched: ${dataFetchedRef.current}`);
-    
     if (!courseId) {
-      console.log(`[BadgeTab] No courseId, skipping fetch`);
       return;
     }
 
     // Reset refs when courseId changes (only if actually changed)
     const courseIdChanged = courseId !== lastCourseIdRef.current;
     if (courseIdChanged) {
-      console.log(`[BadgeTab] CourseId changed from ${lastCourseIdRef.current} to ${courseId}, resetting refs`);
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
       hasMountedRef.current = false;
       dataFetchedRef.current = false;
       lastCourseIdRef.current = courseId;
     } else {
-      console.log(`[BadgeTab] CourseId unchanged: ${courseId}, keeping refs`);
     }
     
     // Check if data is already loaded in model store - use stable references
@@ -318,17 +307,14 @@ const BadgeTab = memo(function BadgeTab() {
     // If both data are loaded, mark as mounted and skip all fetches
     if (isProgressLoaded && isWelcomeLoaded) {
       if (!hasMountedRef.current || !dataFetchedRef.current) {
-        console.log(`[BadgeTab] Both data loaded, marking as mounted and fetched for courseId: ${courseId}`);
         hasMountedRef.current = true;
         dataFetchedRef.current = true;
       }
-      console.log(`[BadgeTab] All data already loaded, skipping fetches`);
       return; // Early return to prevent unnecessary fetches
     }
     
     // Mark as mounted after first check (only once per courseId)
     if (!hasMountedRef.current) {
-      console.log(`[BadgeTab] First mount for courseId: ${courseId}`);
       hasMountedRef.current = true;
     }
     
@@ -337,52 +323,41 @@ const BadgeTab = memo(function BadgeTab() {
     // Use a combination of dataFetchedRef and fetching flags to determine if we should skip
     const shouldSkipFetch = dataFetchedRef.current && !courseIdChanged && (progressFetchingRef.current || welcomeFetchingRef.current || isProgressLoaded || isWelcomeLoaded);
     if (shouldSkipFetch) {
-      console.log(`[BadgeTab] Data already fetched or fetching for courseId: ${courseId}, skipping all fetches (dataFetched: ${dataFetchedRef.current}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current})`);
       return;
     }
-    
-    console.log(`[BadgeTab] Data check - isProgressLoaded: ${isProgressLoaded}, isWelcomeLoaded: ${isWelcomeLoaded}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current}, dataFetched: ${dataFetchedRef.current}`);
     
     // Only fetch progress data if:
     // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isProgressLoaded && !progressFetchingRef.current) {
-      console.log(`[BadgeTab] Fetching progress data for courseId: ${courseId}`);
       progressFetchingRef.current = true;
       dataFetchedRef.current = true; // Mark as fetched immediately to prevent re-fetch
       const promise = dispatch(fetchProgressTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
-          console.log(`[BadgeTab] Progress fetch completed for courseId: ${courseId}`);
           progressFetchingRef.current = false;
         });
       } else {
-        console.log(`[BadgeTab] Progress fetch promise not available, resetting flag`);
         progressFetchingRef.current = false;
       }
     } else {
-      console.log(`[BadgeTab] Skipping progress fetch - isProgressLoaded: ${isProgressLoaded}, progressFetching: ${progressFetchingRef.current}`);
     }
     
     // Only fetch welcome data if:
     // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
-      console.log(`[BadgeTab] Fetching welcome data for courseId: ${courseId}`);
       welcomeFetchingRef.current = true;
       dataFetchedRef.current = true; // Mark as fetched immediately to prevent re-fetch
       const promise = dispatch(fetchWelcomeTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
-          console.log(`[BadgeTab] Welcome fetch completed for courseId: ${courseId}`);
           welcomeFetchingRef.current = false;
         });
       } else {
-        console.log(`[BadgeTab] Welcome fetch promise not available, resetting flag`);
         welcomeFetchingRef.current = false;
       }
     } else {
-      console.log(`[BadgeTab] Skipping welcome fetch - isWelcomeLoaded: ${isWelcomeLoaded}, welcomeFetching: ${welcomeFetchingRef.current}`);
     }
     
     // Only depend on courseId and dispatch - don't depend on models to prevent re-runs
@@ -664,7 +639,7 @@ const BadgeTab = memo(function BadgeTab() {
         <div className="stats-banner-content">
           <div className="stats-banner-header">
             <h3 className="stats-banner-title">✨ Thành tích của tôi</h3>
-            <button className="btn btn-share-stats" onClick={() => console.log('Share stats')}>
+            <button className="btn btn-share-stats">
               📤 Chia sẻ
             </button>
           </div>
@@ -767,19 +742,19 @@ const BadgeTab = memo(function BadgeTab() {
           <div className="share-section">
             <div className="share-message">Chia sẻ thành tích của bạn! 🎉</div>
             <div className="share-buttons">
-              <button className="btn btn-share btn-share-facebook" onClick={() => console.log('Share to Facebook')}>
+              <button className="btn btn-share btn-share-facebook">
                 <span>📘</span>
                 <span>Facebook</span>
               </button>
-              <button className="btn btn-share btn-share-instagram" onClick={() => console.log('Share to Instagram')}>
+              <button className="btn btn-share btn-share-instagram">
                 <span>📷</span>
                 <span>Instagram</span>
               </button>
-              <button className="btn btn-share btn-share-zalo" onClick={() => console.log('Share to Zalo')}>
+              <button className="btn btn-share btn-share-zalo">
                 <span>💬</span>
                 <span>Zalo</span>
               </button>
-              <button className="btn btn-share btn-share-download" onClick={() => console.log('Download image')}>
+              <button className="btn btn-share btn-share-download">
                 <span>📥</span>
                 <span>Tải ảnh</span>
                     </button>
@@ -951,7 +926,7 @@ const BadgeTab = memo(function BadgeTab() {
       <div className="rewards-section">
         <div className="rewards-header">
           <h3 className="rewards-title">🎁 Phần thưởng đã đổi</h3>
-          <button className="btn btn-shop" onClick={() => console.log('Open shop')}>
+          <button className="btn btn-shop">
             🛒 Đổi thêm
           </button>
         </div>
@@ -1006,13 +981,13 @@ const BadgeTab = memo(function BadgeTab() {
                     <>
                       <button 
                         className={`btn btn-reward ${reward.equipped ? 'btn-reward-equipped' : 'btn-reward-equip'}`}
-                        onClick={() => console.log('Equip reward', reward.id)}
+                        onClick={() => {}}
                       >
                         {reward.equipped ? '✅ Đang dùng' : '✨ Trang bị'}
                       </button>
                       <button 
                         className="btn btn-reward-share"
-                        onClick={() => console.log('Share reward', reward.id)}
+                        onClick={() => {}}
                       >
                         📤
                       </button>
@@ -1027,7 +1002,7 @@ const BadgeTab = memo(function BadgeTab() {
             <div className="rewards-empty-icon">🎁</div>
             <h4>Chưa có phần thưởng nào</h4>
             <p>Hãy tích lũy điểm và đổi phần thưởng đầu tiên của bạn!</p>
-            <button className="btn btn-primary" onClick={() => console.log('Open shop')}>
+            <button className="btn btn-primary">
               🛒 Khám phá cửa hàng
             </button>
                 </div>
@@ -1069,7 +1044,7 @@ const BadgeTab = memo(function BadgeTab() {
               </div>
             </div>
             <div className="achievement-banner-actions">
-              <button className="btn btn-secondary" onClick={() => console.log('Share stats')}>
+              <button className="btn btn-secondary">
                 📊 Chia sẻ thành tích
               </button>
             </div>

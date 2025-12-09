@@ -387,7 +387,8 @@
 .post-actions {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   color: #5b6477;
   font-weight: 600;
 }

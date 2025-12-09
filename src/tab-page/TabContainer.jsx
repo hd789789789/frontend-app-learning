@@ -25,6 +25,12 @@ const TabContainer = (props) => {
     courseStatus,
   } = useSelector(state => state[slice]);
 
+  // Always prefer the course id from the URL so we render tab navigation
+  // even before the redux slice finishes updating (e.g., right after reload).
+  // This avoids passing a null courseId to TabPage/LoadedTabPage which would
+  // leave the tabs array empty and hide navigation.
+  const resolvedCourseId = courseIdFromUrl || courseId;
+
   const lastFetchKeyRef = useRef(null);
 
   useEffect(() => {
@@ -65,21 +71,21 @@ const TabContainer = (props) => {
   }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 
   // Avoid flashing loader for badge tab when course is already the active one
-  const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && courseId === courseIdFromUrl)
+  const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && resolvedCourseId === courseIdFromUrl)
     ? 'loaded'
     : courseStatus;
   if (courseStatus !== effectiveCourseStatus) {
-    console.log('[TabContainer] Override courseStatus for badge tab', { courseStatus, effectiveCourseStatus, tab, courseId, courseIdFromUrl });
+    console.log('[TabContainer] Override courseStatus for badge tab', { courseStatus, effectiveCourseStatus, tab, courseId, courseIdFromUrl, resolvedCourseId });
   }
 
   return (
     <TabPage
       activeTabSlug={tab}
-      courseId={courseId}
+      courseId={resolvedCourseId}
       courseStatus={effectiveCourseStatus}
       metadataModel={`${slice}Meta`}
     >
-      {courseId && <OuterExamTimer courseId={courseId} />}
+      {resolvedCourseId && <OuterExamTimer courseId={resolvedCourseId} />}
       {children}
     </TabPage>
   );
