@@ -824,6 +824,390 @@
   flex-shrink: 0;
 }
 
+// Progress Section
+.progress-section {
+  margin-top: 2rem;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%);
+  border: 2px solid #2ECC71;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(46, 204, 113, 0.15);
+}
+
+.progress-section-title {
+  color: #2C3E50;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.progress-overview {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.circular-progress {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  margin: 0 auto;
+}
+
+.progress-circle-bg {
+  fill: none;
+  stroke: #E0E0E0;
+  stroke-width: 20;
+}
+
+.progress-circle {
+  fill: none;
+  stroke: #2ECC71;
+  stroke-width: 20;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.progress-percentage {
+  font-size: 2.5rem;
+  font-weight: bold;
+  fill: #2C3E50;
+}
+
+.progress-label {
+  font-size: 1rem;
+  font-weight: 600;
+  fill: #2C3E50;
+}
+
+.progress-stats {
+  flex: 1;
+}
+
+.progress-stats-section {
+  margin-bottom: 1.5rem;
+}
+
+.progress-stats-title {
+  margin-bottom: 0.5rem;
+  color: #2C3E50;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.progress-stats-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.progress-stat-item {
+  display: flex;
+  justify-content: space-between;
+  color: #2C3E50;
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.weekly-goal {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.weekly-goal strong {
+  color: #2C3E50;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.weekly-goal-text {
+  margin-top: 0.5rem;
+  color: #5A6C7D;
+  font-size: 0.9rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #E0E0E0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8B3A62 0%, #C47E9E 100%);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.weekly-goal-progress {
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  color: #2C3E50;
+}
+
+// Grade Section
+.grade-section {
+  margin-top: 2rem;
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 50%, #FFCC80 100%);
+  border: 2px solid #FFB74D;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.15);
+}
+
+.grade-section-title {
+  color: #2C3E50;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.grade-section-description {
+  color: #5A6C7D;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.grade-slider {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.grade-slider-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.grade-slider-start {
+  background: #FCF3CF;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2C3E50;
+}
+
+.grade-slider-label {
+  font-size: 0.9rem;
+  color: #5A6C7D;
+  font-weight: 500;
+}
+
+.grade-slider-track {
+  position: relative;
+  height: 40px;
+  background: linear-gradient(to right, #FCF3CF 0%, #F39C12 50%, #2ECC71 100%);
+  border-radius: 20px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.grade-slider-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #8B3A62;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.grade-warning {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #FCF3CF;
+  border-left: 4px solid #F39C12;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.grade-warning-icon {
+  color: #F39C12;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.grade-warning-content {
+  flex: 1;
+}
+
+.grade-warning-content strong {
+  color: #2C3E50;
+  display: block;
+}
+
+.grade-warning-info {
+  font-size: 0.9rem;
+  color: #5A6C7D;
+  margin-top: 0.25rem;
+  cursor: help;
+}
+
+.grade-summary-title {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2C3E50;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.grade-info-icon {
+  font-size: 0.9rem;
+  color: #7F8C8D;
+  cursor: help;
+}
+
+.grade-table-wrapper {
+  overflow-x: auto;
+}
+
+.grade-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #2C3E50;
+}
+
+.grade-table thead tr {
+  background: rgba(248, 249, 250, 0.9);
+  border-bottom: 2px solid #E0E0E0;
+}
+
+.grade-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: #2C3E50;
+
+  &:nth-child(2),
+  &:nth-child(3),
+  &:nth-child(4) {
+    text-align: center;
+  }
+}
+
+.grade-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #E0E0E0;
+
+  &:nth-child(2),
+  &:nth-child(3),
+  &:nth-child(4) {
+    text-align: center;
+    font-weight: 600;
+  }
+}
+
+.grade-table-total {
+  background: rgba(255, 243, 224, 0.5);
+  font-weight: 700;
+}
+
+.grade-total-value {
+  text-align: center;
+  color: #D68910;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.grade-footnotes {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #5A6C7D;
+  border-left: 3px solid #3498DB;
+}
+
+.grade-footnotes div {
+  margin-bottom: 0.25rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  sup {
+    color: #3498DB;
+    font-weight: 700;
+  }
+
+  span {
+    color: #2C3E50;
+  }
+}
+
+.grade-details-title {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #2C3E50;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.grade-details {
+  padding: 1rem;
+  background: rgba(248, 249, 250, 0.8);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #2C3E50;
+}
+
+.grade-details ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 1.8;
+  color: #2C3E50;
+
+  li {
+    margin-top: 0.5rem;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    strong {
+      color: #2C3E50;
+    }
+  }
+}
+
+.grade-details-note {
+  margin: 1rem 0 0 0;
+  font-style: italic;
+  color: #5A6C7D;
+}
+
+.grade-details-link {
+  color: #8B3A62;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .stats-banner {
@@ -871,6 +1255,26 @@
   .certificate-header-content {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .progress-overview {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .circular-progress {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+  }
+
+  .grade-slider-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .grade-table-wrapper {
+    overflow-x: scroll;
   }
 }
 
