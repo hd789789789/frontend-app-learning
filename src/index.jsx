@@ -2,7 +2,7 @@ import { APP_INIT_ERROR, APP_READY, subscribe, initialize, mergeConfig, getConfi
 import { AppProvider, ErrorPage, PageWrap } from "@edx/frontend-platform/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 
 import { Helmet } from "react-helmet";
 import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
@@ -41,9 +41,21 @@ import PageNotFound from "./generic/PageNotFound";
 import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 
 // Component to redirect from /course/:courseId to /course/:courseId/home
+// Only redirect if we're at the exact base course path (not a sub-path)
 const CourseHomeRedirect = () => {
     const { courseId } = useParams();
-    return <Navigate to={`/course/${courseId}/home`} replace />;
+    const location = useLocation();
+    // Only redirect if pathname is exactly /course/:courseId (no additional path segments)
+    const pathname = location.pathname;
+    const expectedBasePath = `/course/${courseId}`;
+    
+    // If pathname is exactly the base path, redirect to home
+    if (pathname === expectedBasePath || pathname === `${expectedBasePath}/`) {
+        return <Navigate to={`/course/${courseId}/home`} replace />;
+    }
+    
+    // Otherwise, don't redirect (shouldn't happen if routes are set up correctly)
+    return null;
 };
 
 subscribe(APP_READY, () => {
@@ -110,6 +122,7 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
+                                    {/* OUTLINE route must be BEFORE redirect to ensure it matches first */}
                                     <Route
                                         path={DECODE_ROUTES.OUTLINE}
                                         element={
@@ -247,7 +260,8 @@ subscribe(APP_READY, () => {
                                         />
                                     ))}
                                     {/* Redirect from exact /course/:courseId (no additional path) to /course/:courseId/home (welcome tab) */}
-                                    {/* This must be after COURSEWARE routes so specific paths match first */}
+                                    {/* This must be AFTER all specific routes (OUTLINE, COURSEWARE, etc.) so specific paths match first */}
+                                    {/* React Router v6 matches routes in order, so this will only match if no other route matched */}
                                     <Route
                                         path="/course/:courseId"
                                         element={

@@ -265,60 +265,43 @@ const BadgeTab = memo(function BadgeTab() {
     classRank: userStats.classRank || mockStats.classRank,
   }), [userStats.streakDays, userStats.classRank]);
 
-  // Fetch progress and welcome data only if not already loaded - prevent duplicate API calls
-  // Use a single useEffect with proper dependency management to prevent multiple calls
-    useEffect(() => {
+  // Fetch progress and welcome data only once when component mounts or courseId changes
+  // Use refs to prevent multiple simultaneous fetches
+  useEffect(() => {
     if (!courseId) return;
 
     // Reset refs when courseId changes
-        if (courseId !== lastCourseIdRef.current) {
+    if (courseId !== lastCourseIdRef.current) {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
-            lastCourseIdRef.current = courseId;
-        }
-        
-    // Check if data is already loaded (check inside useEffect to avoid dependency issues)
-    const isProgressLoaded = !!(progressModel && progressModel.completionSummary);
-    const isWelcomeLoaded = !!(welcomeModel && welcomeModel.userStats);
+      lastCourseIdRef.current = courseId;
+    }
+    
+    // Check if data is already loaded in model store
+    const isProgressLoaded = !!(progressModel?.completionSummary);
+    const isWelcomeLoaded = !!(welcomeModel?.userStats);
     
     // Only fetch progress data if:
-    // 1. Data is not already loaded in model store
+    // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isProgressLoaded && !progressFetchingRef.current) {
       progressFetchingRef.current = true;
-      const progressPromise = dispatch(fetchProgressTab(courseId));
-      if (progressPromise && typeof progressPromise.then === 'function') {
-        progressPromise.finally(() => {
-          // Reset fetching flag after fetch completes (success or failure)
-          // This allows retry if needed, but prevents multiple simultaneous calls
-          progressFetchingRef.current = false;
-        });
-      } else {
-        // If dispatch doesn't return a promise, reset immediately
+      dispatch(fetchProgressTab(courseId)).finally(() => {
         progressFetchingRef.current = false;
-      }
+      });
     }
     
     // Only fetch welcome data if:
-    // 1. Data is not already loaded in model store
+    // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
       welcomeFetchingRef.current = true;
-      const welcomePromise = dispatch(fetchWelcomeTab(courseId));
-      if (welcomePromise && typeof welcomePromise.then === 'function') {
-        welcomePromise.finally(() => {
-          // Reset fetching flag after fetch completes (success or failure)
-          welcomeFetchingRef.current = false;
-        });
-      } else {
-        // If dispatch doesn't return a promise, reset immediately
+      dispatch(fetchWelcomeTab(courseId)).finally(() => {
         welcomeFetchingRef.current = false;
-      }
+      });
     }
-    // Only depend on courseId and dispatch to prevent unnecessary re-runs
-    // Check data loaded status inside effect to avoid dependency on changing values
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, dispatch]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
@@ -441,11 +424,7 @@ const BadgeTab = memo(function BadgeTab() {
             <h3 className="progress-section-title">📈 Tiến độ</h3>
             <div className="progress-overview">
               <div className="circular-progress">
-                {progressPercent !== undefined && !isNaN(progressPercent) ? (
-                  <CircularProgress percent={progressPercent} />
-                ) : (
-                  <CircularProgress percent={0} />
-                )}
+                <CircularProgress percent={progressPercent || 0} />
               </div>
               <div className="progress-stats">
                 <div className="progress-stats-section">
