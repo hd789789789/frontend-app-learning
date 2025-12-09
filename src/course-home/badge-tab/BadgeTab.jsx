@@ -205,17 +205,18 @@ function BadgeTab() {
   // Get progress data for display (moved before useMemo to avoid duplicate declaration)
   const completionSummary = progressModel?.completionSummary || {};
   const courseGrade = progressModel?.courseGrade || {};
+  const sectionScores = progressModel?.sectionScores || [];
   
-  // Calculate total lessons - check if there's a totalCount field first, otherwise sum all counts
+  // Calculate total lessons by counting subsections from section_scores
+  // This is more accurate than using completion_summary which might miss some subsections
+  const totalLessons = sectionScores.reduce((total, section) => {
+    return total + (section.subsections?.length || 0);
+  }, 0);
+  
+  // Get counts from completion_summary for status breakdown
   const completeCount = completionSummary.completeCount || 0;
   const incompleteCount = completionSummary.incompleteCount || 0;
   const lockedCount = completionSummary.lockedCount || 0;
-  
-  // Use totalCount if available, otherwise calculate from sum
-  // Some APIs might have a totalCount field that includes all units
-  const totalLessons = completionSummary.totalCount || 
-                       completionSummary.totalUnits || 
-                       (completeCount + incompleteCount + lockedCount);
   
   const completedLessons = completeCount;
   const inProgressLessons = incompleteCount;
