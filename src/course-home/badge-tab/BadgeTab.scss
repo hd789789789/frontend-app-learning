@@ -2,6 +2,19 @@
 .badge-tab {
   max-width: 1200px;
   margin: 0 auto;
+  
+  // Reduce padding on container
+  &.px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  &.px-md-1 {
+    @media (min-width: 768px) {
+      padding-left: 0.25rem !important;
+      padding-right: 0.25rem !important;
+    }
+  }
 }
 
 // Stats Banner
@@ -853,6 +866,11 @@
   width: 250px;
   height: 250px;
   margin: 0 auto;
+  
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .progress-circle-bg {
@@ -867,6 +885,7 @@
   stroke-width: 20;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.5s ease;
+  transform-origin: center;
 }
 
 .progress-text {
@@ -875,18 +894,21 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
+  pointer-events: none;
 }
 
 .progress-percentage {
   font-size: 2.5rem;
   font-weight: bold;
   fill: #2C3E50;
+  dominant-baseline: middle;
 }
 
 .progress-label {
   font-size: 1rem;
   font-weight: 600;
   fill: #2C3E50;
+  dominant-baseline: middle;
 }
 
 .progress-stats {

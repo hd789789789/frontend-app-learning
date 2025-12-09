@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Container, Spinner, Alert, Row, Col } from "@openedx/paragon";
@@ -112,62 +112,78 @@ const mockRewards = [
 ];
 
 function BadgeTab() {
-  const { courseId } = useParams();
-  const dispatch = useDispatch();
+    const { courseId } = useParams();
+    const dispatch = useDispatch();
   const progressModel = useModel('progress', courseId);
   const welcomeModel = useModel('welcome', courseId);
   const { courseStatus } = useSelector((state) => state.courseHome);
-  
+    
   const [rewardFilter, setRewardFilter] = useState('all');
-  const [certificates, setCertificates] = useState(mockCertificates);
-  const [rewards, setRewards] = useState(mockRewards);
-  
+  const [rewards] = useState(mockRewards);
+    
+  // Use refs to track if we've already fetched to prevent multiple fetches
+    const progressFetchedRef = useRef(false);
+  const welcomeFetchedRef = useRef(false);
+    const lastCourseIdRef = useRef(null);
+    
   const loading = courseStatus === 'loading';
   const progressDataLoaded = progressModel && progressModel.completionSummary;
+  const welcomeDataLoaded = welcomeModel && welcomeModel.userStats;
   
   // Get real user stats from welcome API if available
   const welcomeData = welcomeModel || {};
   const userStats = welcomeData.userStats || {};
   
-  // Merge real data with mock data
-  const stats = {
+  // Get completion percentage from progress data
+  const completionPercent = progressModel?.completionSummary?.percent || 0;
+  
+  // Calculate certificates with real data using useMemo to avoid unnecessary re-renders
+  const certificates = useMemo(() => {
+    return {
+      ...mockCertificates,
+      courseCompletion: {
+        ...mockCertificates.courseCompletion,
+        progress: Math.round(completionPercent),
+      },
+    };
+  }, [completionPercent]);
+  
+  // Merge real data with mock data using useMemo
+  const stats = useMemo(() => ({
     level: mockStats.level,
     xp: mockStats.xp,
     xpToNextLevel: mockStats.xpToNextLevel,
     coins: mockStats.coins,
     badges: mockStats.badges,
     streakDays: userStats.streakDays || mockStats.streakDays,
-    completedLessons: mockStats.completedLessons, // Could be calculated from progress
-    averageScore: mockStats.averageScore, // Could come from progress
+    completedLessons: mockStats.completedLessons,
+    averageScore: mockStats.averageScore,
     classRank: userStats.classRank || mockStats.classRank,
-  };
-  
-  // Update completion percentage in certificates if we have progress data
-  useEffect(() => {
-    if (progressModel && progressModel.completionSummary) {
-      const completionPercent = progressModel.completionSummary.percent || 0;
-      setCertificates(prev => ({
-        ...prev,
-        courseCompletion: {
-          ...prev.courseCompletion,
-          progress: Math.round(completionPercent),
-        },
-      }));
-    }
-  }, [progressModel]);
+  }), [userStats.streakDays, userStats.classRank]);
 
-  // Fetch progress and welcome data if available
-  useEffect(() => {
+  // Fetch progress and welcome data if available - only once per courseId
+    useEffect(() => {
+    // Reset refs when courseId changes
+        if (courseId !== lastCourseIdRef.current) {
+            progressFetchedRef.current = false;
+      welcomeFetchedRef.current = false;
+            lastCourseIdRef.current = courseId;
+        }
+        
     if (courseId) {
-      if (!progressDataLoaded) {
-        dispatch(fetchProgressTab(courseId));
-      }
-      // Fetch welcome data if not already loaded (for user stats)
-      if (!welcomeModel || !welcomeModel.userStats) {
+      // Fetch progress data only if not loaded and not already fetched
+      if (!progressDataLoaded && !progressFetchedRef.current) {
+            progressFetchedRef.current = true;
+            dispatch(fetchProgressTab(courseId));
+        }
+      
+      // Fetch welcome data only if not loaded and not already fetched
+      if (!welcomeDataLoaded && !welcomeFetchedRef.current) {
+        welcomeFetchedRef.current = true;
         dispatch(fetchWelcomeTab(courseId));
       }
     }
-  }, [courseId, dispatch, progressDataLoaded, welcomeModel]);
+  }, [courseId, dispatch, progressDataLoaded, welcomeDataLoaded]);
 
   // Calculate progress percentage for next level
   const levelProgress = ((stats.xp / stats.xpToNextLevel) * 100).toFixed(0);
@@ -186,14 +202,14 @@ function BadgeTab() {
     real: rewards.filter(r => r.type === 'real').length,
   };
 
-  if (loading) {
-    return (
+    if (loading) {
+        return (
       <Container className="badge-tab py-5 px-2 px-md-4 text-center">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
-      </Container>
-    );
-  }
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
+            </Container>
+        );
+    }
 
   // Get progress data for display
   const completionSummary = progressModel?.completionSummary || {};
@@ -238,11 +254,196 @@ function BadgeTab() {
     },
   ];
 
-  return (
-    <Container className="badge-tab py-4 px-2 px-md-4">
-      <Row>
+        return (
+    <Container className="badge-tab py-4 px-0 px-md-1">
+      <Row className="mx-0">
         {/* Main Content */}
-        <Col lg={8} md={12}>
+        <Col lg={8} md={12} className="px-2 px-md-3">
+          {/* Progress Section - Moved to top */}
+          <div className="progress-section">
+            <h3 className="progress-section-title">📈 Tiến độ</h3>
+            <div className="progress-overview">
+              <div className="circular-progress">
+                <svg width="250" height="250" viewBox="0 0 250 250">
+                  <circle 
+                    className="progress-circle-bg" 
+                    cx="125" 
+                    cy="125" 
+                    r="100"
+                    fill="none"
+                    stroke="#E0E0E0"
+                    strokeWidth="20"
+                  />
+                  <circle 
+                    className="progress-circle" 
+                    cx="125" 
+                    cy="125" 
+                    r="100"
+                    fill="none"
+                    stroke="#2ECC71"
+                    strokeWidth="20"
+                    strokeDasharray={2 * Math.PI * 100}
+                    strokeDashoffset={2 * Math.PI * 100 * (1 - completionPercent / 100)}
+                    strokeLinecap="round"
+                    transform="rotate(-90 125 125)"
+                  />
+                  <g className="progress-text">
+                    <text x="125" y="115" textAnchor="middle" className="progress-percentage">
+                      {Math.round(completionPercent)}%
+                    </text>
+                    <text x="125" y="145" textAnchor="middle" className="progress-label">
+                      Hoàn thành
+                    </text>
+                  </g>
+                </svg>
+              </div>
+              <div className="progress-stats">
+                <div className="progress-stats-section">
+                  <h4 className="progress-stats-title">Thống kê học tập</h4>
+                  <div className="progress-stats-list">
+                    <div className="progress-stat-item">
+                      <span>Tổng số bài học:</span>
+                      <strong>{totalLessons} bài</strong>
+                    </div>
+                    <div className="progress-stat-item">
+                      <span>Đã hoàn thành:</span>
+                      <strong style={{ color: '#27AE60' }}>{completedLessons} bài</strong>
+                    </div>
+                    <div className="progress-stat-item">
+                      <span>Đang học:</span>
+                      <strong style={{ color: '#E67E22' }}>{inProgressLessons} bài</strong>
+                    </div>
+                    <div className="progress-stat-item">
+                      <span>Chưa bắt đầu:</span>
+                      <strong style={{ color: '#7F8C8D' }}>{notStartedLessons} bài</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="weekly-goal">
+                  <strong>Mục tiêu tuần này</strong>
+                  <div className="weekly-goal-text">
+                    Hoàn thành 5 bài học để nhận danh hiệu "Người học chăm chỉ" 🌟
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: '60%' }}></div>
+                  </div>
+                  <div className="weekly-goal-progress">3/5 bài</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Grade Section - Moved to top */}
+          <div className="grade-section">
+            <h3 className="grade-section-title">📝 Điểm</h3>
+            <p className="grade-section-description">
+              Đây là điểm có trọng số của bạn so với điểm cần thiết để vượt qua khóa học này.
+            </p>
+            
+            {/* Grade Slider */}
+            <div className="grade-slider">
+              <div className="grade-slider-header">
+                <div className="grade-slider-start">0%</div>
+                <div className="grade-slider-label">Điểm hiện tại của bạn</div>
+              </div>
+              <div className="grade-slider-track">
+                <div 
+                  className="grade-slider-indicator"
+                  style={{ left: `${Math.min(100, Math.max(0, currentGrade))}%` }}
+                >
+                  Điểm đạt: {currentGrade}%
+                </div>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="grade-warning">
+              <div className="grade-warning-icon">⚠️</div>
+              <div className="grade-warning-content">
+                <strong>Điểm có trọng số {passingGrade}% là bắt buộc để vượt qua khóa học này</strong>
+                <div className="grade-warning-info">Nhấn để xem thêm thông tin ⓘ</div>
+              </div>
+            </div>
+
+            {/* Grade Summary Table */}
+            <h4 className="grade-summary-title">
+              Tóm tắt điểm
+              <span className="grade-info-icon">ⓘ</span>
+            </h4>
+            <div className="grade-table-wrapper">
+              <table className="grade-table">
+                <thead>
+                  <tr>
+                    <th>Loại bài tập</th>
+                    <th>Trọng số</th>
+                    <th>Điểm</th>
+                    <th>Điểm có trọng số</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Bài tập về nhà <sup>1</sup></td>
+                    <td>15%</td>
+                    <td>0%</td>
+                    <td>0%</td>
+                  </tr>
+                  <tr>
+                    <td>Bài Lab <sup>2</sup></td>
+                    <td>15%</td>
+                    <td>0%</td>
+                    <td>0%</td>
+                  </tr>
+                  <tr>
+                    <td>Kiểm tra giữa kỳ</td>
+                    <td>30%</td>
+                    <td>0%</td>
+                    <td>0%</td>
+                  </tr>
+                  <tr>
+                    <td>Kiểm tra cuối kỳ</td>
+                    <td>40%</td>
+                    <td>0%</td>
+                    <td>0%</td>
+                  </tr>
+                  <tr className="grade-table-total">
+                    <td>
+                      Tổng kết điểm có trọng số hiện tại của bạn
+                      <span className="grade-info-icon">ⓘ</span>
+                    </td>
+                    <td colSpan="3" className="grade-total-value">{currentGrade}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footnotes */}
+            <div className="grade-footnotes">
+              <div>
+                <sup>1</sup><span>2 điểm Bài tập về nhà thấp nhất được loại bỏ.</span>
+              </div>
+              <div>
+                <sup>2</sup><span>2 điểm Bài Lab thấp nhất được loại bỏ.</span>
+              </div>
+            </div>
+
+            {/* Grade Details */}
+            <h4 className="grade-details-title">Điểm chi tiết</h4>
+            <div className="grade-details">
+              <ul>
+                <li>
+                  <strong>Điểm luyện tập</strong> không có các hoạt động chưa có điểm dành cho luyện tập và tự đánh giá.
+                </li>
+                <li>
+                  <strong>Điểm đã chấm</strong> không có các hoạt động đã bị hủy hoặc chưa gửi vào bài làm cuối kỳ của bạn.
+                </li>
+              </ul>
+              <p className="grade-details-note">
+                Để xem tiến độ các khía cạnh không chấm điểm của khóa học, hãy xem{' '}
+                <a href="#" className="grade-details-link">Bảng điều khiển khóa học</a> của bạn.
+              </p>
+            </div>
+          </div>
+
           {/* Stats Banner */}
           <div className="stats-banner">
         <div className="stats-banner-bg-circle stats-banner-bg-circle-1" />
@@ -369,196 +570,11 @@ function BadgeTab() {
               <button className="btn btn-share btn-share-download" onClick={() => console.log('Download image')}>
                 <span>📥</span>
                 <span>Tải ảnh</span>
-              </button>
+                    </button>
             </div>
           </div>
         </div>
       </div>
-
-          {/* Progress Section */}
-          <div className="progress-section">
-            <h3 className="progress-section-title">📈 Tiến độ</h3>
-            <div className="progress-overview">
-              <div className="circular-progress">
-                <svg width="250" height="250" viewBox="0 0 250 250">
-                  <circle 
-                    className="progress-circle-bg" 
-                    cx="125" 
-                    cy="125" 
-                    r="100"
-                    fill="none"
-                    stroke="#E0E0E0"
-                    strokeWidth="20"
-                  />
-                  <circle 
-                    className="progress-circle" 
-                    cx="125" 
-                    cy="125" 
-                    r="100"
-                    fill="none"
-                    stroke="#2ECC71"
-                    strokeWidth="20"
-                    strokeDasharray={`${2 * Math.PI * 100}`}
-                    strokeDashoffset={`${2 * Math.PI * 100 * (1 - completionPercent / 100)}`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 125 125)"
-                  />
-                  <g className="progress-text">
-                    <text x="125" y="115" textAnchor="middle" className="progress-percentage">
-                      {Math.round(completionPercent)}%
-                    </text>
-                    <text x="125" y="145" textAnchor="middle" className="progress-label">
-                      Hoàn thành
-                    </text>
-                  </g>
-                </svg>
-              </div>
-              <div className="progress-stats">
-                <div className="progress-stats-section">
-                  <h4 className="progress-stats-title">Thống kê học tập</h4>
-                  <div className="progress-stats-list">
-                    <div className="progress-stat-item">
-                      <span>Tổng số bài học:</span>
-                      <strong>{totalLessons} bài</strong>
-                    </div>
-                    <div className="progress-stat-item">
-                      <span>Đã hoàn thành:</span>
-                      <strong style={{ color: '#27AE60' }}>{completedLessons} bài</strong>
-                    </div>
-                    <div className="progress-stat-item">
-                      <span>Đang học:</span>
-                      <strong style={{ color: '#E67E22' }}>{inProgressLessons} bài</strong>
-                    </div>
-                    <div className="progress-stat-item">
-                      <span>Chưa bắt đầu:</span>
-                      <strong style={{ color: '#7F8C8D' }}>{notStartedLessons} bài</strong>
-                    </div>
-                  </div>
-                </div>
-                <div className="weekly-goal">
-                  <strong>Mục tiêu tuần này</strong>
-                  <div className="weekly-goal-text">
-                    Hoàn thành 5 bài học để nhận danh hiệu "Người học chăm chỉ" 🌟
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '60%' }}></div>
-                  </div>
-                  <div className="weekly-goal-progress">3/5 bài</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Grade Section */}
-          <div className="grade-section">
-            <h3 className="grade-section-title">📝 Điểm</h3>
-            <p className="grade-section-description">
-              Đây là điểm có trọng số của bạn so với điểm cần thiết để vượt qua khóa học này.
-            </p>
-            
-            {/* Grade Slider */}
-            <div className="grade-slider">
-              <div className="grade-slider-header">
-                <div className="grade-slider-start">0%</div>
-                <div className="grade-slider-label">Điểm hiện tại của bạn</div>
-              </div>
-              <div className="grade-slider-track">
-                <div 
-                  className="grade-slider-indicator"
-                  style={{ left: `${currentGrade}%` }}
-                >
-                  Điểm đạt: {currentGrade}%
-                </div>
-              </div>
-            </div>
-
-            {/* Warning */}
-            <div className="grade-warning">
-              <div className="grade-warning-icon">⚠️</div>
-              <div className="grade-warning-content">
-                <strong>Điểm có trọng số {passingGrade}% là bắt buộc để vượt qua khóa học này</strong>
-                <div className="grade-warning-info">Nhấn để xem thêm thông tin ⓘ</div>
-              </div>
-            </div>
-
-            {/* Grade Summary Table */}
-            <h4 className="grade-summary-title">
-              Tóm tắt điểm
-              <span className="grade-info-icon">ⓘ</span>
-            </h4>
-            <div className="grade-table-wrapper">
-              <table className="grade-table">
-                <thead>
-                  <tr>
-                    <th>Loại bài tập</th>
-                    <th>Trọng số</th>
-                    <th>Điểm</th>
-                    <th>Điểm có trọng số</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Bài tập về nhà <sup>1</sup></td>
-                    <td>15%</td>
-                    <td>0%</td>
-                    <td>0%</td>
-                  </tr>
-                  <tr>
-                    <td>Bài Lab <sup>2</sup></td>
-                    <td>15%</td>
-                    <td>0%</td>
-                    <td>0%</td>
-                  </tr>
-                  <tr>
-                    <td>Kiểm tra giữa kỳ</td>
-                    <td>30%</td>
-                    <td>0%</td>
-                    <td>0%</td>
-                  </tr>
-                  <tr>
-                    <td>Kiểm tra cuối kỳ</td>
-                    <td>40%</td>
-                    <td>0%</td>
-                    <td>0%</td>
-                  </tr>
-                  <tr className="grade-table-total">
-                    <td>
-                      Tổng kết điểm có trọng số hiện tại của bạn
-                      <span className="grade-info-icon">ⓘ</span>
-                    </td>
-                    <td colSpan="3" className="grade-total-value">{currentGrade}%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footnotes */}
-            <div className="grade-footnotes">
-              <div>
-                <sup>1</sup><span>2 điểm Bài tập về nhà thấp nhất được loại bỏ.</span>
-              </div>
-              <div>
-                <sup>2</sup><span>2 điểm Bài Lab thấp nhất được loại bỏ.</span>
-              </div>
-            </div>
-
-            {/* Grade Details */}
-            <h4 className="grade-details-title">Điểm chi tiết</h4>
-            <div className="grade-details">
-              <ul>
-                <li>
-                  <strong>Điểm luyện tập</strong> không có các hoạt động chưa có điểm dành cho luyện tập và tự đánh giá.
-                </li>
-                <li>
-                  <strong>Điểm đã chấm</strong> không có các hoạt động đã bị hủy hoặc chưa gửi vào bài làm cuối kỳ của bạn.
-                </li>
-              </ul>
-              <p className="grade-details-note">
-                Để xem tiến độ các khía cạnh không chấm điểm của khóa học, hãy xem{' '}
-                <a href="#" className="grade-details-link">Bảng điều khiển khóa học</a> của bạn.
-              </p>
-            </div>
-          </div>
 
           {/* Certificates Section */}
       <div className="certificates-section">
@@ -589,7 +605,7 @@ function BadgeTab() {
                   </div>
                   <p className={certificates.courseCompletion.status === 'locked' ? 'locked' : ''}>
                     Chứng nhận tổng kết khóa học Toán 7 - Hoàn thành xuất sắc toàn bộ chương trình
-                  </p>
+                    </p>
                 </div>
               </div>
               <div className={`certificate-status ${certificates.courseCompletion.status}`}>
@@ -626,7 +642,7 @@ function BadgeTab() {
                 ))}
               </ul>
             </div>
-            
+
             {certificates.courseCompletion.status === 'earned' && (
               <div className="certificate-actions">
                 <button className="btn btn-cert btn-cert-primary">📥 Tải xuống</button>
@@ -754,7 +770,7 @@ function BadgeTab() {
           >
             🎁 Phần thưởng
           </button>
-        </div>
+                            </div>
 
         {/* Rewards Grid */}
         {filteredRewards.length > 0 ? (
@@ -769,10 +785,10 @@ function BadgeTab() {
                     {reward.status && (
                       <div className="reward-status">
                         <strong>📧 {reward.statusText}</strong>
-                      </div>
+                            </div>
                     )}
-                  </div>
-                </div>
+                        </div>
+                    </div>
                 <div className="reward-actions">
                   {reward.type === 'real' ? null : (
                     <>
@@ -788,8 +804,8 @@ function BadgeTab() {
                       >
                         📤
                       </button>
-                    </>
-                  )}
+                </>
+            )}
                 </div>
               </div>
             ))}
@@ -802,8 +818,8 @@ function BadgeTab() {
             <button className="btn btn-primary" onClick={() => console.log('Open shop')}>
               🛒 Khám phá cửa hàng
             </button>
-          </div>
-        )}
+                </div>
+            )}
 
         {/* Reward Stats */}
         <div className="reward-stats">
@@ -849,7 +865,7 @@ function BadgeTab() {
         </Col>
 
         {/* Sidebar */}
-        <Col lg={4} md={12}>
+        <Col lg={4} md={12} className="px-2 px-md-3">
           <StreakCalendar 
             streakDays={stats.streakDays} 
             lastDayOfStreak={userStats.lastDayOfStreak}
@@ -862,8 +878,8 @@ function BadgeTab() {
           <ReferralWidget />
         </Col>
       </Row>
-    </Container>
-  );
+        </Container>
+    );
 }
 
 export default BadgeTab;
