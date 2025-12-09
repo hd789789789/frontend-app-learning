@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -25,25 +25,28 @@ const TabContainer = (props) => {
     courseStatus,
   } = useSelector(state => state[slice]);
 
-  useEffect(() => {
-    // The courseId from the URL is the course we WANT to load.
-    console.log(`[TabContainer] useEffect triggered - tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}, isProgressTab: ${isProgressTab}`);
+  const lastFetchKeyRef = useRef(null);
 
-    // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
-    if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
-      console.log(`[TabContainer] Skipping fetch - already loaded courseId: ${courseId}`);
+  useEffect(() => {
+    const fetchKey = `${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
+    if (lastFetchKeyRef.current === fetchKey) {
       return;
     }
 
+    // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
+    if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
+      lastFetchKeyRef.current = fetchKey;
+      return;
+    }
+
+    lastFetchKeyRef.current = fetchKey;
     if (isProgressTab) {
-      console.log(`[TabContainer] Dispatching fetch for progress tab: ${courseIdFromUrl}, targetUserId: ${targetUserId}`);
       dispatch(fetch(courseIdFromUrl, targetUserId));
     } else {
-      console.log(`[TabContainer] Dispatching fetch for tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}`);
       dispatch(fetch(courseIdFromUrl));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseIdFromUrl, targetUserId, courseId, courseStatus]);
+  }, [courseIdFromUrl, targetUserId, isProgressTab]);
 
   return (
     <TabPage

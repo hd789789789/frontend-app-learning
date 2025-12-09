@@ -237,9 +237,12 @@ const BadgeTab = memo(function BadgeTab() {
   const hasMountedRef = useRef(false);
   const dataFetchedRef = useRef(false); // Track if we've already fetched data for this courseId
     
-  // Check loading state - only show loading spinner if courseStatus is explicitly 'loading'
-  // Don't show loading if we're just waiting for data to populate
+  // Track fetching state without hiding the whole layout to avoid flicker
   const loading = courseStatus === 'loading' && !progressModel && !welcomeModel;
+  const isFetching =
+    loading ||
+    (!progressDataLoaded && progressFetchingRef.current) ||
+    (!welcomeDataLoaded && welcomeFetchingRef.current);
   
   // Check if data is already loaded in model store - memoize to prevent recalculation
   const progressDataLoaded = useMemo(() => {
@@ -458,15 +461,6 @@ const BadgeTab = memo(function BadgeTab() {
   const currentGrade = useMemo(() => courseGrade.percent || 0, [courseGrade.percent]);
   const passingGrade = 50; // Mock data - should come from API
 
-    if (loading) {
-        return (
-      <Container className="badge-tab py-5 px-2 px-md-4 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
-            </Container>
-        );
-    }
-
   // Mock group streaks data (same as WelcomeTab)
   const groupStreaks = [
     {
@@ -499,6 +493,12 @@ const BadgeTab = memo(function BadgeTab() {
 
         return (
     <Container className="badge-tab py-4 px-0">
+      {isFetching && (
+        <div className="badge-tab__loading-overlay text-center mb-3">
+          <Spinner animation="border" size="sm" variant="primary" />
+          <span className="ms-2 text-muted">Đang tải dữ liệu Thành tích...</span>
+        </div>
+      )}
       <Row className="mx-0">
         {/* Main Content */}
         <Col lg={8} md={12} className="px-1 px-md-2">

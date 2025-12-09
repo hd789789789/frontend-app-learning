@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Badge,
   Container,
@@ -7,6 +7,10 @@ import {
   Col,
 } from '@openedx/paragon';
 
+import StreakCalendar from '../welcome-tab/StreakCalendar';
+import GroupStreaks from '../welcome-tab/GroupStreaks';
+import StudyTip from '../welcome-tab/StudyTip';
+import ReferralWidget from '../welcome-tab/ReferralWidget';
 import './StudyGroupsTab.scss';
 
 const HERO_TIPS = [
@@ -109,6 +113,11 @@ const SUGGESTED_GROUPS = [
   },
 ];
 
+const sidebarUserStats = {
+  streakDays: 12,
+  lastDayOfStreak: '2025-12-08',
+};
+
 const QuickStat = ({ icon, label, value, tone }) => (
   <div className={`quick-stat ${tone || ''}`}>
     <div className="quick-stat-icon">{icon}</div>
@@ -156,56 +165,90 @@ const PostSnippet = ({ post }) => (
 );
 
 const GroupCard = ({ group }) => (
-  <div className="group-card">
-    <div className="group-card__header">
-      <div>
-        <div className="group-title">{group.name}</div>
-        <div className="group-subtitle">{group.description}</div>
-        <div className="group-tags">
-          {group.tags.map(tag => (
-            <Badge key={tag} variant="light" className="me-2 mb-2">{tag}</Badge>
-          ))}
-        </div>
-      </div>
-      <div className="group-actions">
-        <button type="button" className="btn btn-outline-primary btn-sm">📊 Xem thống kê</button>
-        <button type="button" className="btn btn-primary btn-sm">💬 Thảo luận</button>
-      </div>
-    </div>
-
-    <div className="group-metrics">
-      <QuickStat icon="👥" label="Thành viên" value={group.members} />
-      <QuickStat icon="🔥" label="Chuỗi nhóm" value={`${group.streak} ngày`} />
-      <QuickStat icon="📈" label="Tiến độ TB" value={`${group.progress}%`} />
-      <div className="goal-progress">
-        <div className="goal-head">
-          <span>Mục tiêu tuần</span>
-          <span className="goal-value">{group.weeklyGoal.current}/{group.weeklyGoal.total} hoàn thành</span>
-        </div>
-        <ProgressBar now={(group.weeklyGoal.current / group.weeklyGoal.total) * 100} />
-      </div>
-    </div>
-
-    <Row className="mt-3">
-      <Col md={5}>
-        <div className="section-title">Thành viên nổi bật</div>
-        <div className="member-list">
-          {group.featuredMembers.map(member => (
-            <MemberChip key={member.name} member={member} />
-          ))}
-        </div>
-      </Col>
-      <Col md={7}>
-        <div className="section-title">Hoạt động gần đây</div>
-        <div className="post-list">
-          {group.posts.map(post => (
-            <PostSnippet key={post.id} post={post} />
-          ))}
-        </div>
-      </Col>
-    </Row>
-  </div>
+  <GroupCardWithCollapse group={group} />
 );
+
+const GroupCardWithCollapse = ({ group }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const toggle = () => setCollapsed(prev => !prev);
+
+  return (
+    <div className={`group-card ${collapsed ? 'collapsed' : ''}`}>
+      <div className="group-card__header">
+        <button
+          type="button"
+          className="collapse-toggle"
+          onClick={toggle}
+          title="Thu gọn/Mở rộng"
+        >
+          {collapsed ? '▶' : '▼'}
+        </button>
+        <div className="group-head-info">
+          <div className="group-title">{group.name}</div>
+          <div className="group-stats">
+            <span>👥 {group.members} thành viên</span>
+            <span>🔥 Chuỗi nhóm: {group.streak} ngày</span>
+            <span>📊 Tiến độ TB: {group.progress}%</span>
+          </div>
+        </div>
+        <div className="group-menu">
+          <button type="button" className="btn btn-outline-primary btn-sm">📊 Thống kê</button>
+          <button type="button" className="btn btn-outline-secondary btn-sm">✏️ Chỉnh sửa</button>
+          <button type="button" className="btn btn-primary btn-sm">💬 Thảo luận</button>
+        </div>
+      </div>
+
+      {collapsed ? (
+        <div className="collapsed-summary">
+          <QuickStat icon="👥" label="Thành viên" value={group.members} />
+          <QuickStat icon="🔥" label="Chuỗi" value={`${group.streak} ngày`} />
+          <QuickStat icon="📊" label="Tiến độ" value={`${group.progress}%`} />
+        </div>
+      ) : (
+        <>
+          <div className="group-subtitle">{group.description}</div>
+          <div className="group-tags">
+            {group.tags.map(tag => (
+              <Badge key={tag} variant="light" className="me-2 mb-2">{tag}</Badge>
+            ))}
+          </div>
+
+          <div className="group-metrics">
+            <QuickStat icon="👥" label="Thành viên" value={group.members} />
+            <QuickStat icon="🔥" label="Chuỗi nhóm" value={`${group.streak} ngày`} />
+            <QuickStat icon="📈" label="Tiến độ TB" value={`${group.progress}%`} />
+            <div className="goal-progress">
+              <div className="goal-head">
+                <span>Mục tiêu tuần</span>
+                <span className="goal-value">{group.weeklyGoal.current}/{group.weeklyGoal.total} hoàn thành</span>
+              </div>
+              <ProgressBar now={(group.weeklyGoal.current / group.weeklyGoal.total) * 100} />
+            </div>
+          </div>
+
+          <Row className="mt-3">
+            <Col md={5}>
+              <div className="section-title">Thành viên</div>
+              <div className="member-list">
+                {group.featuredMembers.map(member => (
+                  <MemberChip key={member.name} member={member} />
+                ))}
+              </div>
+            </Col>
+            <Col md={7}>
+              <div className="section-title">Hoạt động gần đây</div>
+              <div className="post-list">
+                {group.posts.map(post => (
+                  <PostSnippet key={post.id} post={post} />
+                ))}
+              </div>
+            </Col>
+          </Row>
+        </>
+      )}
+    </div>
+  );
+};
 
 const SuggestionCard = ({ suggestion }) => (
   <div className="suggestion-card">
@@ -229,59 +272,80 @@ const SuggestionCard = ({ suggestion }) => (
 const StudyGroupsTab = () => {
   const myGroups = useMemo(() => GROUPS_MOCK, []);
   const suggestedGroups = useMemo(() => SUGGESTED_GROUPS, []);
+  const groupStreaks = useMemo(() => myGroups.map((group, idx) => ({
+    id: idx + 1,
+    name: group.name,
+    streakDays: group.streak,
+    members: group.featuredMembers.slice(0, 3).map((m, mIdx) => ({
+      id: `${group.id}-${mIdx}`,
+      initial: m.initials.slice(0, 2),
+      color: m.color,
+    })),
+    additionalMembers: Math.max(group.members - 3, 0),
+    status: 'in_progress',
+    message: '💪 Giữ streak nhóm hôm nay nhé!',
+  })), [myGroups]);
 
   return (
     <Container className="study-groups-tab px-0">
-      <div className="study-groups-hero">
-        <div>
-          <p className="eyebrow">Nhóm học tập</p>
-          <h1>Kết nối, giữ động lực và học nhanh hơn cùng bạn bè 👥</h1>
-          <p className="hero-sub">
-            Tạo nhóm riêng, đặt mục tiêu chung, chia sẻ tài nguyên và tổng kết tiến độ mỗi tuần.
-          </p>
-          <div className="hero-tips">
-            {HERO_TIPS.map(tip => (
-              <div key={tip} className="hero-tip">✅ {tip}</div>
-            ))}
+      <Row>
+        <Col lg={8} md={12}>
+          <div className="groups-header">
+            <div>
+              <h2>Nhóm học tập</h2>
+              <p className="header-sub">Học cùng nhau để cùng tiến bộ!</p>
+            </div>
+            <div className="groups-actions">
+              <button type="button" className="btn btn-outline-primary">Tìm nhóm</button>
+              <button type="button" className="btn btn-primary">+ Tạo nhóm mới</button>
+            </div>
           </div>
-        </div>
-        <div className="hero-actions">
-          <button type="button" className="btn btn-outline-primary">Tìm nhóm</button>
-          <button type="button" className="btn btn-primary">+ Tạo nhóm mới</button>
-        </div>
-      </div>
 
-      <section className="panel">
-        <div className="panel-head">
-          <div>
-            <div className="panel-eyebrow">Nhóm của bạn</div>
-            <h3>Các nhóm bạn đang tham gia</h3>
-          </div>
-          <div className="panel-actions">
-            <button type="button" className="btn btn-outline-primary btn-sm">Mời bạn bè</button>
-            <button type="button" className="btn btn-outline-secondary btn-sm">Quản lý nhóm</button>
-          </div>
-        </div>
-        <div className="group-list">
-          {myGroups.map(group => (
-            <GroupCard key={group.id} group={group} />
-          ))}
-        </div>
-      </section>
+          <section className="panel">
+            <div className="panel-head">
+              <div>
+                <div className="panel-eyebrow">Nhóm của bạn</div>
+                <h3>Các nhóm bạn đang tham gia</h3>
+              </div>
+              <div className="panel-actions">
+                <button type="button" className="btn btn-outline-primary btn-sm">Mời bạn bè</button>
+                <button type="button" className="btn btn-outline-secondary btn-sm">Quản lý nhóm</button>
+              </div>
+            </div>
+            <div className="group-list">
+              {myGroups.map(group => (
+                <GroupCard key={group.id} group={group} />
+              ))}
+            </div>
+          </section>
 
-      <section className="panel">
-        <div className="panel-head">
-          <div>
-            <div className="panel-eyebrow">Gợi ý cho bạn</div>
-            <h3>Khám phá nhóm học tập nổi bật</h3>
+          <section className="panel">
+            <div className="panel-head">
+              <div>
+                <div className="panel-eyebrow">Gợi ý cho bạn</div>
+                <h3>Khám phá nhóm học tập nổi bật</h3>
+              </div>
+            </div>
+            <div className="suggestions-grid">
+              {suggestedGroups.map(suggestion => (
+                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+              ))}
+            </div>
+          </section>
+        </Col>
+
+        <Col lg={4} md={12} className="mt-3 mt-lg-0">
+          <div className="study-groups-sidebar">
+            <StreakCalendar
+              streakDays={sidebarUserStats.streakDays}
+              lastDayOfStreak={sidebarUserStats.lastDayOfStreak}
+            />
+            <GroupStreaks groups={groupStreaks} />
+            <StudyTip />
+            <ReferralWidget />
           </div>
-        </div>
-        <div className="suggestions-grid">
-          {suggestedGroups.map(suggestion => (
-            <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-          ))}
-        </div>
-      </section>
+        </Col>
+      </Row>
     </Container>
   );
 };
