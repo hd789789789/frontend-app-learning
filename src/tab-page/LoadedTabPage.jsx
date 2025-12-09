@@ -56,7 +56,25 @@ const LoadedTabPage = ({
   // Thêm tab Thành tích sau tab Leaderboard (Học đua) và ẩn tab Progress
   // Đảm bảo tab Discussions hiển thị với URL đúng định dạng
   const tabs = React.useMemo(() => {
-    if (!originalTabs) return [];
+    // Nếu metadata tabs không có (hoặc lỗi gọi API), tạo danh sách tabs mặc định
+    if (!originalTabs || originalTabs.length === 0) {
+      return [
+        welcomeTab,
+        {
+          title: 'Khóa học',
+          slug: 'outline',
+          url: `/learning/course/${courseId}/home`,
+        },
+        {
+          title: 'Học đua',
+          slug: 'leaderboard',
+          url: `/learning/course/${courseId}/leaderboard`,
+        },
+        studyGroupsTab,
+        badgeTab,
+      ];
+    }
+
     // Filter out progress tab
     let tabsCopy = originalTabs.filter(tab => tab.slug !== 'progress');
     
