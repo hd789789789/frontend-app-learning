@@ -515,6 +515,10 @@ div#main-content {
     top: 65px;
 }
 
+.streak-calendar-card .pgn__card-body {
+    padding: 10px;
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
 @import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
