@@ -135,7 +135,7 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* OUTLINE route - must be before redirect to ensure it matches first */}
+                                    {/* OUTLINE route - MUST be before HOME route to ensure /course/:courseId/course matches first */}
                                     <Route
                                         path={DECODE_ROUTES.OUTLINE}
                                         element={
@@ -146,6 +146,7 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
+                                    {/* HOME route - handles /course/:courseId/home */}
                                     <Route
                                         path={DECODE_ROUTES.HOME}
                                         element={

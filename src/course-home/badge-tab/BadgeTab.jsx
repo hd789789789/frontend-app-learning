@@ -301,22 +301,30 @@ const BadgeTab = memo(function BadgeTab() {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
       hasMountedRef.current = false;
+      lastCourseIdRef.current = courseId;
     } else {
       console.log(`[BadgeTab] CourseId unchanged: ${courseId}, keeping refs`);
     }
     
-    // Always update lastCourseIdRef to current courseId
-    lastCourseIdRef.current = courseId;
+    // Check if data is already loaded in model store - use stable references
+    const isProgressLoaded = !!(progressModel?.completionSummary);
+    const isWelcomeLoaded = !!(welcomeModel?.userStats);
+    
+    // If both data are loaded, mark as mounted and skip all fetches
+    if (isProgressLoaded && isWelcomeLoaded) {
+      if (!hasMountedRef.current) {
+        console.log(`[BadgeTab] Both data loaded, marking as mounted for courseId: ${courseId}`);
+        hasMountedRef.current = true;
+      }
+      console.log(`[BadgeTab] All data already loaded, skipping fetches`);
+      return; // Early return to prevent unnecessary fetches
+    }
     
     // Mark as mounted after first check (only once per courseId)
     if (!hasMountedRef.current) {
       console.log(`[BadgeTab] First mount for courseId: ${courseId}`);
       hasMountedRef.current = true;
     }
-    
-    // Check if data is already loaded in model store - use stable references
-    const isProgressLoaded = !!(progressModel?.completionSummary);
-    const isWelcomeLoaded = !!(welcomeModel?.userStats);
     
     console.log(`[BadgeTab] Data check - isProgressLoaded: ${isProgressLoaded}, isWelcomeLoaded: ${isWelcomeLoaded}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current}`);
     
