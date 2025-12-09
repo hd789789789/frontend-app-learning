@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Container, ProgressBar, Row, Col } from '@openedx/paragon';
 import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useModel } from '../../generic/model-store';
 import StreakCalendar from '../welcome-tab/StreakCalendar';
 import GroupStreaks from '../welcome-tab/GroupStreaks';
 import StudyTip from '../welcome-tab/StudyTip';
 import ReferralWidget from '../welcome-tab/ReferralWidget';
+import { fetchWelcomeTab } from '../data';
 
 import './StudyGroupsTab.scss';
 
@@ -266,14 +268,21 @@ const GroupCard = ({ group }) => {
 
 const StudyGroupsTab = () => {
   const { courseId } = useParams();
+  const dispatch = useDispatch();
   const welcomeModel = useModel('welcome', courseId) || {};
   const userStats = welcomeModel.userStats || {
-    streakDays: 12,
+    streakDays: 0,
     lastDayOfStreak: null,
   };
 
   const groups = useMemo(() => GROUPS_MOCK, []);
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
+
+  useEffect(() => {
+    if (courseId && (!welcomeModel.userStats || !welcomeModel.success)) {
+      dispatch(fetchWelcomeTab(courseId));
+    }
+  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
 
   return (
     <Container className="study-groups-tab px-0">

@@ -71,7 +71,7 @@ const TabPage = (props) => {
         <PageLoading srMessage={intl.formatMessage(messages.loading)} />
       )}
 
-      {['loaded', 'denied'].includes(courseStatus) && (
+      {(['loaded', 'denied'].includes(courseStatus) || activeTabSlug === 'badge') && (
         <LoadedTabPage {...props} />
       )}
 
