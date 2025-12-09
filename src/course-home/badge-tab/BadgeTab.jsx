@@ -205,24 +205,35 @@ function BadgeTab() {
   // Get progress data for display (moved before useMemo to avoid duplicate declaration)
   const completionSummary = progressModel?.completionSummary || {};
   const courseGrade = progressModel?.courseGrade || {};
-  const totalLessons = (completionSummary.completeCount || 0) + (completionSummary.incompleteCount || 0) + (completionSummary.lockedCount || 0);
-  const completedLessons = completionSummary.completeCount || 0;
-  const inProgressLessons = completionSummary.incompleteCount || 0;
-  const notStartedLessons = completionSummary.lockedCount || 0;
+  
+  // Calculate total lessons - check if there's a totalCount field first, otherwise sum all counts
+  const completeCount = completionSummary.completeCount || 0;
+  const incompleteCount = completionSummary.incompleteCount || 0;
+  const lockedCount = completionSummary.lockedCount || 0;
+  
+  // Use totalCount if available, otherwise calculate from sum
+  // Some APIs might have a totalCount field that includes all units
+  const totalLessons = completionSummary.totalCount || 
+                       completionSummary.totalUnits || 
+                       (completeCount + incompleteCount + lockedCount);
+  
+  const completedLessons = completeCount;
+  const inProgressLessons = incompleteCount;
+  const notStartedLessons = lockedCount;
   
   // Get grade data
   const currentGrade = courseGrade.percent || 0;
   const passingGrade = 50; // Mock data - should come from API
 
-  if (loading) {
-    return (
+    if (loading) {
+        return (
       <Container className="badge-tab py-5 px-2 px-md-4 text-center">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
-      </Container>
-    );
-  }
-  
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3 text-muted">Đang tải dữ liệu Thành tích...</p>
+            </Container>
+        );
+    }
+
   // Mock group streaks data (same as WelcomeTab)
   const groupStreaks = [
     {
