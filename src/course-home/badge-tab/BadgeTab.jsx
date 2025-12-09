@@ -12,16 +12,19 @@ import CompletionDonutChart from "../progress-tab/course-completion/CompletionDo
 import './BadgeTab.scss';
 
 // Circular Progress Component - Memoized to prevent unnecessary re-renders
-const CircularProgress = memo(({ percent }) => {
+const CircularProgress = memo(({ percent = 0 }) => {
+  // Ensure percent is a valid number between 0 and 100
+  const validPercent = Math.max(0, Math.min(100, isNaN(percent) ? 0 : percent));
+  
   // SVG circle calculations
   const radius = 100;
   const circumference = Math.PI * radius * 2; // 2 * PI * r
-  const strokeDashoffset = circumference - (percent / 100) * circumference;
+  const strokeDashoffset = circumference - (validPercent / 100) * circumference;
   
   // Outer ring calculations (larger circle)
   const outerRadius = 110;
   const outerCircumference = Math.PI * outerRadius * 2;
-  const outerStrokeDashoffset = outerCircumference - (percent / 100) * outerCircumference;
+  const outerStrokeDashoffset = outerCircumference - (validPercent / 100) * outerCircumference;
   
   return (
     <div className="circular-progress-wrapper">
@@ -30,6 +33,7 @@ const CircularProgress = memo(({ percent }) => {
         height="250" 
         viewBox="0 0 250 250"
         className="progress-svg"
+        style={{ display: 'block' }}
       >
         {/* Outer background circle */}
         <circle 
@@ -54,6 +58,7 @@ const CircularProgress = memo(({ percent }) => {
           transform="rotate(-90 125 125)"
           className="progress-circle-outer"
           opacity="0.3"
+          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
         {/* Inner background circle */}
         <circle 
@@ -77,12 +82,13 @@ const CircularProgress = memo(({ percent }) => {
           strokeLinecap="round"
           transform="rotate(-90 125 125)"
           className="progress-circle-fill"
+          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
       </svg>
       {/* Text overlay */}
       <div className="progress-text-overlay">
         <div className="progress-percentage-text">
-          {percent}%
+          {Math.round(validPercent)}%
         </div>
         <div className="progress-label-text">
           Hoàn thành
@@ -90,6 +96,9 @@ const CircularProgress = memo(({ percent }) => {
       </div>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if percent actually changes
+  return prevProps.percent === nextProps.percent;
 });
 
 CircularProgress.displayName = 'CircularProgress';
@@ -209,7 +218,9 @@ function BadgeTab() {
   const welcomeFetchingRef = useRef(false);
     const lastCourseIdRef = useRef(null);
     
-  const loading = courseStatus === 'loading';
+  // Check loading state - only show loading spinner if courseStatus is explicitly 'loading'
+  // Don't show loading if we're just waiting for data to populate
+  const loading = courseStatus === 'loading' && !progressModel && !welcomeModel;
   
   // Check if data is already loaded in model store
   const progressDataLoaded = useMemo(() => {
@@ -252,6 +263,7 @@ function BadgeTab() {
   }), [userStats.streakDays, userStats.classRank]);
 
   // Fetch progress and welcome data only if not already loaded - prevent duplicate API calls
+  // Use a single useEffect with proper dependency management to prevent multiple calls
   useEffect(() => {
     if (!courseId) return;
     
@@ -271,11 +283,17 @@ function BadgeTab() {
     // 2. We haven't already initiated a fetch for this courseId
     if (!isProgressLoaded && !progressFetchingRef.current) {
       progressFetchingRef.current = true;
-      dispatch(fetchProgressTab(courseId)).finally(() => {
-        // Reset fetching flag after fetch completes (success or failure)
-        // This allows retry if needed, but prevents multiple simultaneous calls
+      const progressPromise = dispatch(fetchProgressTab(courseId));
+      if (progressPromise && typeof progressPromise.then === 'function') {
+        progressPromise.finally(() => {
+          // Reset fetching flag after fetch completes (success or failure)
+          // This allows retry if needed, but prevents multiple simultaneous calls
+          progressFetchingRef.current = false;
+        });
+      } else {
+        // If dispatch doesn't return a promise, reset immediately
         progressFetchingRef.current = false;
-      });
+      }
     }
     
     // Only fetch welcome data if:
@@ -283,10 +301,16 @@ function BadgeTab() {
     // 2. We haven't already initiated a fetch for this courseId
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
       welcomeFetchingRef.current = true;
-      dispatch(fetchWelcomeTab(courseId)).finally(() => {
-        // Reset fetching flag after fetch completes (success or failure)
+      const welcomePromise = dispatch(fetchWelcomeTab(courseId));
+      if (welcomePromise && typeof welcomePromise.then === 'function') {
+        welcomePromise.finally(() => {
+          // Reset fetching flag after fetch completes (success or failure)
+          welcomeFetchingRef.current = false;
+        });
+      } else {
+        // If dispatch doesn't return a promise, reset immediately
         welcomeFetchingRef.current = false;
-      });
+      }
     }
     // Only depend on courseId and dispatch to prevent unnecessary re-runs
     // Check data loaded status inside effect to avoid dependency on changing values
@@ -342,14 +366,23 @@ function BadgeTab() {
   const notStartedLessons = lockedCount;
   
   // Calculate progress percentage - memoized to prevent recalculation
+  // Always ensure we have a valid number (0-100)
   const progressPercent = useMemo(() => {
+    // Calculate from actual data
     const calculatedPercent = totalLessons > 0 
       ? Math.round((completedLessons / totalLessons) * 100)
       : 0;
     
-    // Use API percent if available and valid, otherwise use calculated
-    const displayPercent = completionPercent > 0 ? Math.round(completionPercent) : calculatedPercent;
-    return Math.max(0, Math.min(100, displayPercent));
+    // Use API percent if available and valid (greater than 0), otherwise use calculated
+    const apiPercent = completionPercent && !isNaN(completionPercent) && completionPercent > 0 
+      ? Math.round(completionPercent) 
+      : null;
+    
+    const displayPercent = apiPercent !== null ? apiPercent : calculatedPercent;
+    const finalPercent = Math.max(0, Math.min(100, displayPercent));
+    
+    // Ensure we always return a valid number
+    return isNaN(finalPercent) ? 0 : finalPercent;
   }, [totalLessons, completedLessons, completionPercent]);
   
   // Get grade data - memoized
@@ -405,7 +438,11 @@ function BadgeTab() {
             <h3 className="progress-section-title">📈 Tiến độ</h3>
             <div className="progress-overview">
               <div className="circular-progress">
-                <CircularProgress percent={progressPercent} />
+                {progressPercent !== undefined && !isNaN(progressPercent) ? (
+                  <CircularProgress percent={progressPercent} />
+                ) : (
+                  <CircularProgress percent={0} />
+                )}
               </div>
               <div className="progress-stats">
                 <div className="progress-stats-section">
