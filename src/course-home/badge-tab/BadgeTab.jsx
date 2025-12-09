@@ -235,6 +235,7 @@ const BadgeTab = memo(function BadgeTab() {
   const progressFetchingRef = useRef(false);
   const welcomeFetchingRef = useRef(false);
   const hasMountedRef = useRef(false);
+  const dataFetchedRef = useRef(false); // Track if we've already fetched data for this courseId
     
   // Check loading state - only show loading spinner if courseStatus is explicitly 'loading'
   // Don't show loading if we're just waiting for data to populate
@@ -301,6 +302,7 @@ const BadgeTab = memo(function BadgeTab() {
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
       hasMountedRef.current = false;
+      dataFetchedRef.current = false;
       lastCourseIdRef.current = courseId;
     } else {
       console.log(`[BadgeTab] CourseId unchanged: ${courseId}, keeping refs`);
@@ -315,9 +317,16 @@ const BadgeTab = memo(function BadgeTab() {
       if (!hasMountedRef.current) {
         console.log(`[BadgeTab] Both data loaded, marking as mounted for courseId: ${courseId}`);
         hasMountedRef.current = true;
+        dataFetchedRef.current = true;
       }
       console.log(`[BadgeTab] All data already loaded, skipping fetches`);
       return; // Early return to prevent unnecessary fetches
+    }
+    
+    // If we've already fetched data for this courseId, don't fetch again
+    if (dataFetchedRef.current) {
+      console.log(`[BadgeTab] Data already fetched for courseId: ${courseId}, skipping`);
+      return;
     }
     
     // Mark as mounted after first check (only once per courseId)
@@ -334,6 +343,7 @@ const BadgeTab = memo(function BadgeTab() {
     if (!isProgressLoaded && !progressFetchingRef.current) {
       console.log(`[BadgeTab] Fetching progress data for courseId: ${courseId}`);
       progressFetchingRef.current = true;
+      dataFetchedRef.current = true; // Mark as fetched
       const promise = dispatch(fetchProgressTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
@@ -354,6 +364,7 @@ const BadgeTab = memo(function BadgeTab() {
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
       console.log(`[BadgeTab] Fetching welcome data for courseId: ${courseId}`);
       welcomeFetchingRef.current = true;
+      dataFetchedRef.current = true; // Mark as fetched
       const promise = dispatch(fetchWelcomeTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {

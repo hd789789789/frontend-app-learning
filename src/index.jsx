@@ -40,7 +40,7 @@ import PageNotFound from "./generic/PageNotFound";
 // THÊM IMPORT NÀY
 import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 
-// Component to redirect from /course/:courseId to /course/:courseId/course (OUTLINE tab - default)
+// Component to redirect from /course/:courseId to /course/:courseId/home (OUTLINE tab - default)
 // Only redirect if we're at the exact base course path (not a sub-path)
 const CourseHomeRedirect = () => {
     const { courseId } = useParams();
@@ -59,16 +59,22 @@ const CourseHomeRedirect = () => {
     // Only redirect if:
     // 1. Pathname matches expected base path exactly
     // 2. Number of segments is exactly 2 (course and courseId)
-    // 3. NOT /course/:courseId/home, /course/:courseId/course, etc.
+    // 3. NOT /course/:courseId/home, /course/:courseId/welcome, etc.
     if (normalizedPathname === expectedBasePath && pathSegments.length === expectedSegments.length) {
-        console.log(`[CourseHomeRedirect] Redirecting from ${pathname} to /course/${courseId}/course`);
-        return <Navigate to={`/course/${courseId}/course`} replace />;
+        console.log(`[CourseHomeRedirect] Redirecting from ${pathname} to /course/${courseId}/home`);
+        return <Navigate to={`/course/${courseId}/home`} replace />;
     }
     
     console.log(`[CourseHomeRedirect] No redirect - pathname: ${pathname}, normalized: ${normalizedPathname}, expected: ${expectedBasePath}, segments: ${pathSegments.length} vs ${expectedSegments.length}`);
     
     // Otherwise, don't redirect - let other routes handle it
     return null;
+};
+
+// Component to redirect from /course/:courseId/course to /course/:courseId/home
+const CourseOutlineRedirect = () => {
+    const { courseId } = useParams();
+    return <Navigate to={`/course/${courseId}/home`} replace />;
 };
 
 subscribe(APP_READY, () => {
@@ -125,6 +131,7 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
+                                    {/* WELCOME route - handles /course/:courseId/welcome (Chào mừng tab) */}
                                     <Route
                                         path={DECODE_ROUTES.WELCOME}
                                         element={
@@ -135,9 +142,9 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* OUTLINE route - MUST be before HOME route to ensure /course/:courseId/course matches first */}
+                                    {/* HOME route - handles /course/:courseId/home (Khóa học tab - OUTLINE) */}
                                     <Route
-                                        path={DECODE_ROUTES.OUTLINE}
+                                        path={DECODE_ROUTES.HOME}
                                         element={
                                             <DecodePageRoute>
                                                 <TabContainer tab="outline" fetch={fetchOutlineTab} slice="courseHome">
@@ -146,14 +153,12 @@ subscribe(APP_READY, () => {
                                             </DecodePageRoute>
                                         }
                                     />
-                                    {/* HOME route - handles /course/:courseId/home */}
+                                    {/* OUTLINE route - handles /course/:courseId/course (redirect to /home for consistency) */}
                                     <Route
-                                        path={DECODE_ROUTES.HOME}
+                                        path={DECODE_ROUTES.OUTLINE}
                                         element={
                                             <DecodePageRoute>
-                                                <TabContainer tab="welcome" fetch={fetchWelcomeTab} slice="courseHome">
-                                                    <WelcomeTab />
-                                                </TabContainer>
+                                                <CourseOutlineRedirect />
                                             </DecodePageRoute>
                                         }
                                     />
