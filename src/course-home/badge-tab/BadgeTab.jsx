@@ -213,10 +213,18 @@ const mockRewards = [
 const BadgeTab = memo(function BadgeTab() {
     const { courseId } = useParams();
     const dispatch = useDispatch();
+  
+  // Debug: Track render count
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  console.log(`[BadgeTab] Render #${renderCountRef.current} - courseId: ${courseId}`);
+  
   // Use stable selectors to prevent re-renders
   const courseStatus = useSelector((state) => state.courseHome?.courseStatus || 'loading');
   const progressModel = useModel('progress', courseId);
   const welcomeModel = useModel('welcome', courseId);
+  
+  console.log(`[BadgeTab] Render #${renderCountRef.current} - courseStatus: ${courseStatus}, progressModel: ${!!progressModel}, welcomeModel: ${!!welcomeModel}`);
     
   const [rewardFilter, setRewardFilter] = useState('all');
   const [rewards] = useState(mockRewards);
@@ -233,11 +241,15 @@ const BadgeTab = memo(function BadgeTab() {
   
   // Check if data is already loaded in model store - memoize to prevent recalculation
   const progressDataLoaded = useMemo(() => {
-    return !!(progressModel?.completionSummary);
+    const loaded = !!(progressModel?.completionSummary);
+    console.log(`[BadgeTab] progressDataLoaded calculated: ${loaded} - render #${renderCountRef.current}, completionSummary: ${!!progressModel?.completionSummary}`);
+    return loaded;
   }, [progressModel?.completionSummary]);
 
   const welcomeDataLoaded = useMemo(() => {
-    return !!(welcomeModel?.userStats);
+    const loaded = !!(welcomeModel?.userStats);
+    console.log(`[BadgeTab] welcomeDataLoaded calculated: ${loaded} - render #${renderCountRef.current}, userStats: ${!!welcomeModel?.userStats}`);
+    return loaded;
   }, [welcomeModel?.userStats]);
   
   // Get real user stats from welcome API if available
@@ -274,10 +286,16 @@ const BadgeTab = memo(function BadgeTab() {
   // Fetch progress and welcome data only once when component mounts or courseId changes
   // Use refs to prevent multiple simultaneous fetches and re-renders
   useEffect(() => {
-    if (!courseId) return;
+    console.log(`[BadgeTab] useEffect triggered - courseId: ${courseId}, lastCourseId: ${lastCourseIdRef.current}`);
+    
+    if (!courseId) {
+      console.log(`[BadgeTab] No courseId, skipping fetch`);
+      return;
+    }
 
     // Reset refs when courseId changes
     if (courseId !== lastCourseIdRef.current) {
+      console.log(`[BadgeTab] CourseId changed from ${lastCourseIdRef.current} to ${courseId}, resetting refs`);
       progressFetchingRef.current = false;
       welcomeFetchingRef.current = false;
       lastCourseIdRef.current = courseId;
@@ -286,6 +304,7 @@ const BadgeTab = memo(function BadgeTab() {
     
     // Mark as mounted after first check
     if (!hasMountedRef.current) {
+      console.log(`[BadgeTab] First mount for courseId: ${courseId}`);
       hasMountedRef.current = true;
     }
     
@@ -293,34 +312,46 @@ const BadgeTab = memo(function BadgeTab() {
     const isProgressLoaded = !!(progressModel?.completionSummary);
     const isWelcomeLoaded = !!(welcomeModel?.userStats);
     
+    console.log(`[BadgeTab] Data check - isProgressLoaded: ${isProgressLoaded}, isWelcomeLoaded: ${isWelcomeLoaded}, progressFetching: ${progressFetchingRef.current}, welcomeFetching: ${welcomeFetchingRef.current}`);
+    
     // Only fetch progress data if:
     // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isProgressLoaded && !progressFetchingRef.current) {
+      console.log(`[BadgeTab] Fetching progress data for courseId: ${courseId}`);
       progressFetchingRef.current = true;
       const promise = dispatch(fetchProgressTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
+          console.log(`[BadgeTab] Progress fetch completed for courseId: ${courseId}`);
           progressFetchingRef.current = false;
         });
       } else {
+        console.log(`[BadgeTab] Progress fetch promise not available, resetting flag`);
         progressFetchingRef.current = false;
       }
+    } else {
+      console.log(`[BadgeTab] Skipping progress fetch - isProgressLoaded: ${isProgressLoaded}, progressFetching: ${progressFetchingRef.current}`);
     }
     
     // Only fetch welcome data if:
     // 1. Data is not already loaded
     // 2. We haven't already initiated a fetch for this courseId
     if (!isWelcomeLoaded && !welcomeFetchingRef.current) {
+      console.log(`[BadgeTab] Fetching welcome data for courseId: ${courseId}`);
       welcomeFetchingRef.current = true;
       const promise = dispatch(fetchWelcomeTab(courseId));
       if (promise && typeof promise.finally === 'function') {
         promise.finally(() => {
+          console.log(`[BadgeTab] Welcome fetch completed for courseId: ${courseId}`);
           welcomeFetchingRef.current = false;
         });
       } else {
+        console.log(`[BadgeTab] Welcome fetch promise not available, resetting flag`);
         welcomeFetchingRef.current = false;
       }
+    } else {
+      console.log(`[BadgeTab] Skipping welcome fetch - isWelcomeLoaded: ${isWelcomeLoaded}, welcomeFetching: ${welcomeFetchingRef.current}`);
     }
     // Only depend on courseId and dispatch - don't depend on models to prevent re-runs
     // eslint-disable-next-line react-hooks/exhaustive-deps

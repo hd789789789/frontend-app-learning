@@ -20,9 +20,12 @@ const TabContainer = (props) => {
 
   useEffect(() => {
     // The courseId from the URL is the course we WANT to load.
+    console.log(`[TabContainer] useEffect triggered - tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}, isProgressTab: ${isProgressTab}`);
     if (isProgressTab) {
+      console.log(`[TabContainer] Dispatching fetch for progress tab: ${courseIdFromUrl}, targetUserId: ${targetUserId}`);
       dispatch(fetch(courseIdFromUrl, targetUserId));
     } else {
+      console.log(`[TabContainer] Dispatching fetch for tab: ${tab}, courseIdFromUrl: ${courseIdFromUrl}`);
       dispatch(fetch(courseIdFromUrl));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

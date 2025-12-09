@@ -46,18 +46,20 @@ const CourseHomeRedirect = () => {
     const { courseId } = useParams();
     const location = useLocation();
     const pathname = location.pathname;
+    
+    // Remove trailing slash for comparison
+    const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
     const expectedBasePath = `/course/${courseId}`;
     
-    // Normalize pathname - remove trailing slash for comparison
-    const normalizedPathname = pathname.endsWith('/') && pathname.length > expectedBasePath.length + 1 
-        ? pathname.slice(0, -1) 
-        : pathname;
-    const normalizedBasePath = expectedBasePath;
+    // Only redirect if pathname is EXACTLY /course/:courseId (no additional path segments)
+    // Split pathname to check number of segments
+    const pathSegments = normalizedPathname.split('/').filter(Boolean);
+    const expectedSegments = expectedBasePath.split('/').filter(Boolean);
     
-    // Only redirect if pathname is exactly /course/:courseId (no additional path segments)
-    // This means pathname should be exactly /course/:courseId or /course/:courseId/
-    // But NOT /course/:courseId/course, /course/:courseId/welcome, etc.
-    if (normalizedPathname === normalizedBasePath || normalizedPathname === `${normalizedBasePath}/`) {
+    // Only redirect if:
+    // 1. Pathname matches expected base path exactly
+    // 2. Number of segments is exactly 2 (course and courseId)
+    if (normalizedPathname === expectedBasePath && pathSegments.length === expectedSegments.length) {
         return <Navigate to={`/course/${courseId}/course`} replace />;
     }
     
@@ -267,9 +269,10 @@ subscribe(APP_READY, () => {
                                         />
                                     ))}
                                     {/* Redirect from exact /course/:courseId (no additional path) to /course/:courseId/course (OUTLINE tab) */}
-                                    {/* This must be AFTER all specific routes (OUTLINE, COURSEWARE, etc.) so specific paths match first */}
-                                    {/* React Router v6 matches routes in order, so this will only match if no other route matched */}
-                                    {/* IMPORTANT: This route will match /course/:courseId but NOT /course/:courseId/course or other sub-paths */}
+                                    {/* This MUST be AFTER all specific routes (OUTLINE, COURSEWARE, etc.) so specific paths match first */}
+                                    {/* React Router v6 matches routes in order - more specific routes are matched first */}
+                                    {/* IMPORTANT: This route will ONLY match /course/:courseId, NOT /course/:courseId/course or other sub-paths */}
+                                    {/* The CourseHomeRedirect component will verify the pathname is exactly /course/:courseId before redirecting */}
                                     <Route
                                         path="/course/:courseId"
                                         element={
