@@ -746,10 +746,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   }, [group.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, group.canManageMembers, group.canEdit, group.canDelete]);
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
+  const commentCountLoadedRef = useRef(false);
 
   useEffect(() => {
-    setCommentCount(getInitialCommentCount(group));
-  }, [group.commentCount, group.commentsCount, group.comments_count, group.comment_count, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const initialCount = getInitialCommentCount(group);
+    setCommentCount(initialCount);
+    commentCountLoadedRef.current = initialCount > 0;
+  }, [group.commentCount, group.commentsCount, group.comments_count, group.comment_count, group.comments, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComments = useCallback(async () => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
@@ -773,6 +776,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
           : getInitialCommentCount(group) || fetchedComments.length
       );
       commentsLoadedRef.current = true;
+      commentCountLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
         groupId: group.id,
@@ -784,6 +788,29 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     } finally {
       setLoadingComments(false);
     }
+  }, [group.id]);
+
+  // Fetch comment count on mount if not present
+  useEffect(() => {
+    if (!commentCountLoadedRef.current) {
+      getStudyGroupComments(group.id)
+        .then((data) => {
+          const newCount = typeof data.count === 'number'
+            ? data.count
+            : getInitialCommentCount(group) || (data.results || []).length || 0;
+          setCommentCount(newCount);
+          commentCountLoadedRef.current = true;
+        })
+        .catch((err) => {
+          logError('Failed to preload comment count', {
+            groupId: group.id,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.id]);
 
   useEffect(() => {
@@ -864,8 +891,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     }
   };
 
-  const handleRemoveMember = async (memberIdentifier) => {
+  const handleRemoveMember = async (memberIdentifier, memberObj) => {
     const target = memberIdentifier || 'unknown';
+    logInfo('Removing member from group (client)', {
+      groupId: group.id,
+      target,
+      memberObj,
+    });
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
       logInfo('Removing member from group', { groupId: group.id, userId: target });
       
@@ -993,7 +1025,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           className="friend-action-btn"
                           onClick={() =>
                             handleRemoveMember(
-                              member.id || member.user?.id || member.user?.username
+                              member.id ||
+                                member.memberId ||
+                                member.membershipId ||
+                                member.user?.id ||
+                                member.user?.username,
+                              member
                             )
                           }
                           title="Xóa khỏi nhóm"
