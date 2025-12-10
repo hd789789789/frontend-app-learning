@@ -690,10 +690,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         currentUserKey &&
         (memberId === currentUserKey || memberId?.toString() === currentUserKey?.toString());
       const matchesUsername =
-        (currentUsername && memberUsername && memberUsername.toLowerCase() === currentUsername.toLowerCase()) ||
-        (currentUserKey &&
-          memberUsername &&
-          memberUsername.toLowerCase() === currentUserKey.toString().toLowerCase());
+        currentUserKey &&
+        memberUsername &&
+        memberUsername.toLowerCase() === currentUserKey.toString().toLowerCase();
       return matchesId || matchesUsername;
     }) || null;
   const currentRole = currentMember?.role || group.currentUserRole;
@@ -979,7 +978,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           onClick={() => handleRemoveMember(member.user.id)}
                           title="Xóa khỏi nhóm"
                         >
-                          🗑️
+                          <svg
+                            aria-hidden="true"
+                            focusable="false"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 448 512"
+                            className="icon-trash"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M135.2 17.7c5.5-10.7 16.5-17.7 28.7-17.7h120.3c12.2 0 23.2 6.9 28.7 17.7L328 32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32H120l15.2-14.3zM32 128H416L397.6 467c-1.6 25.3-22.6 45-47.9 45H98.3C72.9 512 51.9 492.3 50.4 467L32 128z"
+                            />
+                          </svg>
                         </button>
                       )}
                     </div>
