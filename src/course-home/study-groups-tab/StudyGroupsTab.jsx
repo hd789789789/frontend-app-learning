@@ -255,29 +255,39 @@ const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
 const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState([]);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [error, setError] = useState(null);
   const searchTimerRef = useRef(null);
+  const pageRef = useRef(1);
+  const lastSearchRef = useRef('');
 
-  const loadUsers = useCallback(async (reset = false) => {
-    const nextPage = reset ? 1 : page;
+  const loadUsers = useCallback(async ({ reset = false, searchTerm } = {}) => {
+    const activeSearch = searchTerm !== undefined ? searchTerm : lastSearchRef.current;
+    const nextPage = reset ? 1 : pageRef.current;
+
+    if (reset) {
+      pageRef.current = 1;
+      setUsers([]);
+      setHasMore(false);
+    }
+
     setLoadingList(true);
     setError(null);
     try {
-      const data = await getAvailableMembers(groupId, { search, page: nextPage, pageSize: 5 });
+      const data = await getAvailableMembers(groupId, { search: activeSearch, page: nextPage, pageSize: 5 });
       const newResults = data.results || [];
       setUsers((prev) => (reset ? newResults : [...prev, ...newResults]));
       setHasMore(Boolean(data.next));
-      setPage(nextPage + 1);
+      pageRef.current = nextPage + 1;
+      lastSearchRef.current = activeSearch;
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Có lỗi khi tải danh sách người dùng';
       setError(msg);
       logError('Failed to load available members', {
         groupId,
-        search,
+        search: activeSearch,
         page: nextPage,
         error: err.response?.data,
         status: err.response?.status,
@@ -286,7 +296,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     } finally {
       setLoadingList(false);
     }
-  }, [groupId, search, page]);
+  }, [groupId]);
 
   // Load when open
   useEffect(() => {
@@ -295,9 +305,11 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
         clearTimeout(searchTimerRef.current);
       }
       setUsers([]);
-      setPage(1);
+      setSearch('');
+      pageRef.current = 1;
       setHasMore(false);
-      loadUsers(true);
+      lastSearchRef.current = '';
+      loadUsers({ reset: true, searchTerm: '' });
     } else if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
@@ -308,14 +320,11 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearch(val);
-    setPage(1);
-    setUsers([]);
-    setHasMore(false);
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
     // reload after small delay to debounce
-    searchTimerRef.current = setTimeout(() => loadUsers(true), 150);
+    searchTimerRef.current = setTimeout(() => loadUsers({ reset: true, searchTerm: val }), 150);
   };
 
   const handleAddUser = async (usernameOrEmail) => {
@@ -326,9 +335,9 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
       onSuccess();
       // refresh list to remove added user
       setUsers([]);
-      setPage(1);
       setHasMore(false);
-      loadUsers(true);
+      pageRef.current = 1;
+      loadUsers({ reset: true, searchTerm: lastSearchRef.current });
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi thêm thành viên';
       setError(msg);
@@ -493,7 +502,7 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
 };
 
 // Comment Card Component
-const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
+const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [loading, setLoading] = useState(false);
@@ -532,6 +541,9 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
         await deleteComment(comment.id);
         logInfo('Comment deleted successfully', { commentId: comment.id });
         onUpdate();
+        if (onDeleted) {
+          onDeleted();
+        }
       } catch (err) {
         logError('Failed to delete comment', {
           commentId: comment.id,
@@ -661,16 +673,23 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(group.commentCount || 0);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(null);
   const [showComments, setShowComments] = useState(false);
 
-  const canManageMembers = group.canManageMembers;
-  const canEdit = group.canEdit || canManageMembers;
-  const canDelete = group.canDelete || canManageMembers;
+  const ownerId = group.ownerId || group.owner?.id || group.createdById;
+  const isOwner = ownerId && ownerId === currentUserId;
+  const canManageMembers = group.canManageMembers !== false && (group.canManageMembers || group.canEdit || group.canDelete || isOwner);
+  const canEdit = group.canEdit !== false && (group.canEdit || canManageMembers || isOwner);
+  const canDelete = group.canDelete !== false && (group.canDelete || canManageMembers || isOwner);
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
+
+  useEffect(() => {
+    setCommentCount(group.commentCount || comments.length || 0);
+  }, [group.commentCount, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComments = useCallback(async () => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
@@ -686,7 +705,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     try {
       const data = await getStudyGroupComments(group.id);
       logInfo('Comments loaded successfully', { groupId: group.id, count: data.results?.length || 0 });
-      setComments(data.results || []);
+      const fetchedComments = data.results || [];
+      setComments(fetchedComments);
+      setCommentCount(typeof data.count === 'number' ? data.count : fetchedComments.length);
       commentsLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
@@ -721,6 +742,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setCommentContent('');
       setShowComments(true);
       setComments((prev) => [result, ...prev]);
+      setCommentCount((prev) => prev + 1);
       commentsLoadedRef.current = true;
     } catch (err) {
       logError('Failed to add comment', {
@@ -764,6 +786,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       e.target.value = '';
       commentsLoadedRef.current = true;
       setShowComments(true);
+      setCommentCount((prev) => prev + 1);
       setComments((prev) => [{ ...comment, attachments: [attachment] }, ...prev]);
     } catch (err) {
       logError('Failed to upload file', {
@@ -968,7 +991,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       setShowComments(!showComments);
                     }}
                   >
-                    💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({comments.length})
+                    💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({commentCount})
                   </Button>
                 </div>
 
@@ -992,6 +1015,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                             }
                           }}
                           currentUserId={currentUserId}
+                          onDeleted={() => setCommentCount((prev) => Math.max(0, prev - 1))}
                         />
                       ))
                     ) : (
