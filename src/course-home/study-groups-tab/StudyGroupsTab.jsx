@@ -41,6 +41,7 @@ import {
   addReaction,
   removeReaction,
   uploadCommentAttachment,
+  findUserByUsernameOrEmail,
 } from '../data/api';
 
 import './StudyGroupsTab.scss';
@@ -892,12 +893,38 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   };
 
   const handleRemoveMember = async (memberIdentifier, memberObj) => {
-    const target = memberIdentifier || 'unknown';
+    let target = memberIdentifier || null;
+    const usernameFallback = memberObj?.user?.username || memberObj?.user_username;
+
     logInfo('Removing member from group (client)', {
       groupId: group.id,
       target,
+      usernameFallback,
       memberObj,
     });
+
+    // Resolve user id if missing or not numeric
+    if (!target || Number.isNaN(Number(target))) {
+      if (usernameFallback) {
+        try {
+          const userInfo = await findUserByUsernameOrEmail(usernameFallback);
+          target = userInfo?.id;
+          logInfo('Resolved user id from username', { username: usernameFallback, userId: target });
+        } catch (err) {
+          logError('Failed to resolve user id from username', {
+            username: usernameFallback,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+        }
+      }
+    }
+
+    if (!target) {
+      logError('Cannot remove member: user id not found', { memberObj });
+      return;
+    }
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
       logInfo('Removing member from group', { groupId: group.id, userId: target });
       
