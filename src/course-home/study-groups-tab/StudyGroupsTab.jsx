@@ -33,6 +33,7 @@ import {
   deleteStudyGroup,
   addStudyGroupMember,
   removeStudyGroupMember,
+  getAvailableMembers,
   getStudyGroupComments,
   createComment,
   updateComment,
@@ -52,6 +53,13 @@ const REACTION_TYPES = [
   { type: 'sad', emoji: '😢', label: 'Sad' },
   { type: 'angry', emoji: '😠', label: 'Angry' },
 ];
+
+const getAvatarColor = (id) => {
+  const num = (id || 1) * 2654435761; // Knuth multiplicative
+  return `#${(num >>> 0).toString(16).padStart(6, '0').slice(0, 6)}`;
+};
+
+const getInitials = (text) => (text ? text.substring(0, 2).toUpperCase() : 'U');
 
 // Create Group Modal
 const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
@@ -243,39 +251,86 @@ const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
   );
 };
 
-// Add Member Modal
+// Add Member Modal with search + pagination
 const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingList, setLoadingList] = useState(false);
+  const [loadingAdd, setLoadingAdd] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const loadUsers = useCallback(async (reset = false) => {
+    const nextPage = reset ? 1 : page;
+    setLoadingList(true);
     setError(null);
-    
-    logInfo('Adding member to study group', { groupId, username });
-    
     try {
-      // Note: API expects user ID, but we'll use username for now
-      // You may need to adjust based on your API
-      const result = await addStudyGroupMember(groupId, username);
-      logInfo('Member added successfully', { groupId, username, result });
-      setUsername('');
-      onSuccess();
-      onClose();
+      const data = await getAvailableMembers(groupId, { search, page: nextPage, pageSize: 5 });
+      const newResults = data.results || [];
+      setUsers(reset ? newResults : [...users, ...newResults]);
+      setHasMore(Boolean(data.next));
+      setPage(nextPage + 1);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi thêm thành viên';
-      logError('Failed to add member', {
+      const msg = err.response?.data?.error || err.message || 'Có lỗi khi tải danh sách người dùng';
+      setError(msg);
+      logError('Failed to load available members', {
         groupId,
-        username,
+        search,
+        page: nextPage,
         error: err.response?.data,
         status: err.response?.status,
-        message: errorMessage,
+        message: err.message,
       });
-      setError(errorMessage);
     } finally {
-      setLoading(false);
+      setLoadingList(false);
+    }
+  }, [groupId, search, page, users]);
+
+  // Load when open
+  useEffect(() => {
+    if (isOpen) {
+      setUsers([]);
+      setPage(1);
+      setHasMore(false);
+      loadUsers(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Search change
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+    setUsers([]);
+    setHasMore(false);
+    // reload after small delay
+    setTimeout(() => loadUsers(true), 100);
+  };
+
+  const handleAddUser = async (usernameOrEmail) => {
+    setLoadingAdd(true);
+    setError(null);
+    try {
+      await addStudyGroupMember(groupId, usernameOrEmail);
+      onSuccess();
+      // refresh list to remove added user
+      setUsers([]);
+      setPage(1);
+      setHasMore(false);
+      loadUsers(true);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi thêm thành viên';
+      setError(msg);
+      logError('Failed to add member', {
+        groupId,
+        usernameOrEmail,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: msg,
+      });
+    } finally {
+      setLoadingAdd(false);
     }
   };
 
@@ -293,32 +348,62 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
       </ModalDialog.Header>
       <ModalDialog.Body>
         {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
-        <Form id="add-member-form" onSubmit={handleSubmit}>
-          <FormGroup>
-            <FormControl
-              type="text"
-              placeholder="Username hoặc Email"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </FormGroup>
-        </Form>
+        <FormGroup>
+          <FormControl
+            type="text"
+            placeholder="Tìm theo username hoặc email"
+            value={search}
+            onChange={handleSearchChange}
+          />
+        </FormGroup>
+
+        <div className="available-users-list">
+          {users.map((user) => (
+            <div key={user.id} className="available-user-row">
+              <div className="member-info">
+                <div className="member-avatar" style={{ background: getAvatarColor(user.id) }}>
+                  {getInitials(user.username)}
+                </div>
+                <div>
+                  <div className="member-name">{user.username}</div>
+                  <div className="member-sub">{user.fullName || user.email || ''}</div>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => handleAddUser(user.username)}
+                disabled={loadingAdd}
+              >
+                Thêm
+              </Button>
+            </div>
+          ))}
+
+          {loadingList && (
+            <div className="text-center py-2">
+              <Spinner animation="border" size="sm" />
+            </div>
+          )}
+
+          {!loadingList && users.length === 0 && (
+            <div className="text-center py-2 text-muted">Không có người dùng phù hợp</div>
+          )}
+
+          {hasMore && (
+            <div className="text-center">
+              <Button size="sm" variant="outline-secondary" onClick={() => loadUsers(false)} disabled={loadingList}>
+                Tải thêm
+              </Button>
+            </div>
+          )}
+        </div>
       </ModalDialog.Body>
       <ModalDialog.Footer>
         <ActionRow>
           <ModalDialog.CloseButton variant="tertiary" onClick={onClose}>
             Hủy
           </ModalDialog.CloseButton>
-          <Button
-            type="submit"
-            form="add-member-form"
-            variant="primary"
-            disabled={loading}
-          >
-            {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
-            Thêm
-          </Button>
         </ActionRow>
       </ModalDialog.Footer>
     </ModalDialog>
@@ -574,8 +659,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [uploadingFile, setUploadingFile] = useState(null);
   const [showComments, setShowComments] = useState(false);
 
-  const canEdit = group.canEdit;
-  const canDelete = group.canDelete;
+  const canEdit = group.canEdit !== false || group.canManageMembers;
+  const canDelete = group.canDelete !== false || group.canManageMembers;
   const canManageMembers = group.canManageMembers;
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
@@ -799,8 +884,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                   {group.members.slice(0, 5).map((member) => (
                     <div key={member.id} className="member-row">
                       <div className="member-info">
-                        <div className="member-avatar">
-                          {member.user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                        <div className="member-avatar" style={{ background: getAvatarColor(member.user?.id) }}>
+                          {getInitials(member.user?.username)}
                         </div>
                         <div>
                           <div className="member-name">

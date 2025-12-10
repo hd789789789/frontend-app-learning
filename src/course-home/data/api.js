@@ -753,6 +753,37 @@ export async function removeStudyGroupMember(groupId, userId) {
   }
 }
 
+export async function getAvailableMembers(groupId, { search = '', page = 1, pageSize = 5 } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  if (page) params.append('page', page);
+  if (pageSize) params.append('page_size', pageSize);
+  
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/available-members/?${params.toString()}`;
+  console.log('[Study Groups API] Getting available members:', { groupId, search, page, pageSize, url });
+  
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    console.log('[Study Groups API] Available members retrieved successfully:', {
+      groupId,
+      count: Array.isArray(data.results) ? data.results.length : 0,
+    });
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error getting available members:', {
+      groupId,
+      search,
+      page,
+      pageSize,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
 export async function getStudyGroupComments(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
   console.log('[Study Groups API] Getting group comments:', { groupId, url });
