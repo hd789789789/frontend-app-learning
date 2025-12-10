@@ -1027,9 +1027,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                             handleRemoveMember(
                               member.id ||
                                 member.memberId ||
-                                member.membershipId ||
-                                member.user?.id ||
-                                member.user?.username,
+                                member.membershipId,
                               member
                             )
                           }

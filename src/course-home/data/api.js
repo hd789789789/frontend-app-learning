@@ -732,18 +732,20 @@ export async function addStudyGroupMember(groupId, usernameOrEmail) {
   }
 }
 
-export async function removeStudyGroupMember(groupId, userId) {
-  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/${userId}/`;
-  console.log('[Study Groups API] Removing member:', { groupId, userId, url });
+export async function removeStudyGroupMember(groupId, memberIdentifier) {
+  // Backend expects membership id, not user id/username
+  const memberId = memberIdentifier;
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/${memberId}/`;
+  console.log('[Study Groups API] Removing member:', { groupId, memberId, url });
   
   try {
     await getAuthenticatedHttpClient().delete(url);
-    console.log('[Study Groups API] Member removed successfully:', { groupId, userId });
+    console.log('[Study Groups API] Member removed successfully:', { groupId, memberId });
     return { success: true };
   } catch (error) {
     console.error('[Study Groups API] Error removing member:', {
       groupId,
-      userId,
+      memberId,
       url,
       status: error.response?.status,
       error: error.response?.data,
