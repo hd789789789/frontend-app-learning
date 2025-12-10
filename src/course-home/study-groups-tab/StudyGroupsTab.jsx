@@ -832,7 +832,6 @@ const StudyGroupsTab = () => {
     if (!hasInitialFetchedRef.current && !isFetchingRef.current) {
       logInfo('Fetching study groups data (initial)', { 
         courseId, 
-        hasData, 
         isFetching: isFetchingRef.current 
       });
       hasInitialFetchedRef.current = true;
