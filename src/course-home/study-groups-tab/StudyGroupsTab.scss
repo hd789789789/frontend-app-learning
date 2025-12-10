@@ -367,6 +367,15 @@
   font-size: 1.1rem;
 }
 
+.comment-menu-inline {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.comment-menu-inline .btn {
+  padding: 0.25rem 0.6rem;
+}
+
 .post-snippet {
   border: 1px solid #e5e7f0;
   border-radius: 10px;

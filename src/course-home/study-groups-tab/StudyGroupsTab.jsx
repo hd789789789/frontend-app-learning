@@ -558,7 +558,10 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Vừa xong';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Vừa xong';
+
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
@@ -572,8 +575,10 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
     return date.toLocaleDateString('vi-VN');
   };
 
-  const userInitials = comment.user?.username?.substring(0, 2).toUpperCase() || 'U';
-  const userColor = `#${(comment.user?.id || 0).toString(16).padStart(6, '0').substring(0, 6)}`;
+  const fallbackUser = comment.user || (comment.createdBy ? { username: comment.createdBy } : null);
+  const displayUsername = fallbackUser?.username || 'Người dùng đã xóa';
+  const userInitials = displayUsername.substring(0, 2).toUpperCase();
+  const userColor = `#${(fallbackUser?.id || 0).toString(16).padStart(6, '0').substring(0, 6)}`;
 
   return (
     <div className="feed-post">
@@ -587,23 +592,26 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
           <div className="post-time">{formatDate(comment.createdAt)} • 👥 Nhóm</div>
         </div>
         {(canEdit || canDelete) && (
-          <Dropdown>
-            <DropdownButton
-              id={`comment-menu-${comment.id}`}
-              variant="link"
-              className="icon-button"
-            >
-              ⋯
-            </DropdownButton>
-            <Dropdown.Menu>
-              {canEdit && (
-                <DropdownItem onClick={() => setIsEditing(true)}>Chỉnh sửa</DropdownItem>
-              )}
-              {canDelete && (
-                <DropdownItem onClick={handleDelete} className="text-danger">Xóa</DropdownItem>
-              )}
-            </Dropdown.Menu>
-          </Dropdown>
+          <div className="comment-menu-inline">
+            {canEdit && (
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => setIsEditing(true)}
+              >
+                <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="outline-danger"
+                onClick={handleDelete}
+              >
+                <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa
+              </Button>
+            )}
+          </div>
         )}
       </div>
       
@@ -668,12 +676,19 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
 };
 
 // Group Card Component
+const getInitialCommentCount = (group) =>
+  group?.commentCount ??
+  group?.commentsCount ??
+  group?.comments_count ??
+  group?.comment_count ??
+  0;
+
 const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
   const [comments, setComments] = useState([]);
-  const [commentCount, setCommentCount] = useState(group.commentCount || 0);
+  const [commentCount, setCommentCount] = useState(getInitialCommentCount(group));
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(null);
@@ -732,8 +747,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const commentsLoadedRef = useRef(false);
 
   useEffect(() => {
-    setCommentCount(group.commentCount || comments.length || 0);
-  }, [group.commentCount, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    setCommentCount(getInitialCommentCount(group));
+  }, [group.commentCount, group.commentsCount, group.comments_count, group.comment_count, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComments = useCallback(async () => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
@@ -751,7 +766,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       logInfo('Comments loaded successfully', { groupId: group.id, count: data.results?.length || 0 });
       const fetchedComments = data.results || [];
       setComments(fetchedComments);
-      setCommentCount(typeof data.count === 'number' ? data.count : fetchedComments.length);
+      setCommentCount(
+        typeof data.count === 'number'
+          ? data.count
+          : getInitialCommentCount(group) || fetchedComments.length
+      );
       commentsLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
@@ -785,9 +804,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
       setCommentContent('');
       setShowComments(true);
-      setComments((prev) => [result, ...prev]);
       setCommentCount((prev) => prev + 1);
-      commentsLoadedRef.current = true;
+      commentsLoadedRef.current = false;
+      await loadComments();
     } catch (err) {
       logError('Failed to add comment', {
         groupId: group.id,
@@ -828,10 +847,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setCommentContent('');
       setUploadingFile(null);
       e.target.value = '';
-      commentsLoadedRef.current = true;
+      commentsLoadedRef.current = false;
       setShowComments(true);
       setCommentCount((prev) => prev + 1);
-      setComments((prev) => [{ ...comment, attachments: [attachment] }, ...prev]);
+      await loadComments();
     } catch (err) {
       logError('Failed to upload file', {
         groupId: group.id,
@@ -844,18 +863,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     }
   };
 
-  const handleRemoveMember = async (userId) => {
+  const handleRemoveMember = async (userIdOrUsername) => {
+    const target = userIdOrUsername || 'unknown';
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
-      logInfo('Removing member from group', { groupId: group.id, userId });
+      logInfo('Removing member from group', { groupId: group.id, userId: target });
       
       try {
-        await removeStudyGroupMember(group.id, userId);
-        logInfo('Member removed successfully', { groupId: group.id, userId });
+        await removeStudyGroupMember(group.id, target);
+        logInfo('Member removed successfully', { groupId: group.id, userId: target });
         onUpdate();
       } catch (err) {
         logError('Failed to remove member', {
           groupId: group.id,
-          userId,
+          userId: target,
           error: err.response?.data,
           status: err.response?.status,
           message: err.message,
@@ -898,7 +918,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                     variant="outline-primary"
                     onClick={() => setShowEditGroup(true)}
                   >
-                    Sửa nhóm
+                    <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa nhóm
                   </Button>
                 )}
                 {canDelete && (
@@ -916,7 +936,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       }
                     }}
                   >
-                    Xóa nhóm
+                    <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa nhóm
                   </Button>
                 )}
               </div>
@@ -970,7 +990,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       {canManageMembers && member.user?.id !== currentUserId && (
                         <button
                           className="friend-action-btn"
-                          onClick={() => handleRemoveMember(member.user.id)}
+                          onClick={() => handleRemoveMember(member.user?.id || member.user?.username)}
                           title="Xóa khỏi nhóm"
                         >
                           <svg
