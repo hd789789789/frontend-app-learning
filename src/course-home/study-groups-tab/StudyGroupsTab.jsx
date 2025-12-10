@@ -6,7 +6,7 @@ import {
   Row, 
   Col, 
   Button,
-  Modal,
+  ModalDialog,
   Form,
   FormGroup,
   FormControl,
@@ -15,6 +15,7 @@ import {
   DropdownButton,
   DropdownItem,
   Spinner,
+  ActionRow,
 } from '@openedx/paragon';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -87,36 +88,57 @@ const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tạo nhóm học tập mới" size="md">
-      <Form onSubmit={handleSubmit}>
-        {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
-        <FormGroup>
-          <FormControl
-            type="text"
-            placeholder="Tên nhóm"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </FormGroup>
-        <FormGroup>
-          <FormControl
-            as="textarea"
-            rows={4}
-            placeholder="Mô tả nhóm"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
-        </FormGroup>
-        <div className="d-flex justify-content-end gap-2 mt-3">
-          <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button type="submit" variant="primary" disabled={loading}>
+    <ModalDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Tạo nhóm học tập mới"
+      size="md"
+      hasCloseButton
+      isFullscreenOnMobile
+    >
+      <ModalDialog.Header>
+        <ModalDialog.Title>Tạo nhóm học tập mới</ModalDialog.Title>
+      </ModalDialog.Header>
+      <ModalDialog.Body>
+        {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
+        <Form id="create-group-form" onSubmit={handleSubmit}>
+          <FormGroup>
+            <FormControl
+              type="text"
+              placeholder="Tên nhóm"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </FormGroup>
+          <FormGroup>
+            <FormControl
+              as="textarea"
+              rows={4}
+              placeholder="Mô tả nhóm"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </FormGroup>
+        </Form>
+      </ModalDialog.Body>
+      <ModalDialog.Footer>
+        <ActionRow>
+          <ModalDialog.CloseButton variant="tertiary" onClick={onClose}>
+            Hủy
+          </ModalDialog.CloseButton>
+          <Button
+            type="submit"
+            form="create-group-form"
+            variant="primary"
+            disabled={loading}
+          >
             {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
             Tạo nhóm
           </Button>
-        </div>
-      </Form>
-    </Modal>
+        </ActionRow>
+      </ModalDialog.Footer>
+    </ModalDialog>
   );
 };
 
@@ -157,27 +179,48 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Thêm thành viên" size="md">
-      <Form onSubmit={handleSubmit}>
-        {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
-        <FormGroup>
-          <FormControl
-            type="text"
-            placeholder="Username hoặc Email"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </FormGroup>
-        <div className="d-flex justify-content-end gap-2 mt-3">
-          <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button type="submit" variant="primary" disabled={loading}>
+    <ModalDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Thêm thành viên"
+      size="md"
+      hasCloseButton
+      isFullscreenOnMobile
+    >
+      <ModalDialog.Header>
+        <ModalDialog.Title>Thêm thành viên</ModalDialog.Title>
+      </ModalDialog.Header>
+      <ModalDialog.Body>
+        {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
+        <Form id="add-member-form" onSubmit={handleSubmit}>
+          <FormGroup>
+            <FormControl
+              type="text"
+              placeholder="Username hoặc Email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </FormGroup>
+        </Form>
+      </ModalDialog.Body>
+      <ModalDialog.Footer>
+        <ActionRow>
+          <ModalDialog.CloseButton variant="tertiary" onClick={onClose}>
+            Hủy
+          </ModalDialog.CloseButton>
+          <Button
+            type="submit"
+            form="add-member-form"
+            variant="primary"
+            disabled={loading}
+          >
             {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
             Thêm
           </Button>
-        </div>
-      </Form>
-    </Modal>
+        </ActionRow>
+      </ModalDialog.Footer>
+    </ModalDialog>
   );
 };
 
