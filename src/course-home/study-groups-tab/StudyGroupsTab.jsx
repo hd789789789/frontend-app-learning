@@ -681,18 +681,25 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
 
   const ownerId = group.ownerId || group.owner?.id || group.createdById;
   const isOwner = ownerId && ownerId === currentUserId;
-  const currentMember = (group.members || []).find((m) => m.user?.id === currentUserId);
+  const currentMember =
+    (group.members || []).find(
+      (m) => m.user?.id === currentUserId || m.user?.username === getAuthenticatedUser()?.username
+    ) || null;
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
 
-  const canManageMembers = group.canManageMembers !== false && (group.canManageMembers || group.canEdit || group.canDelete || isOwner || isGroupAdmin);
-  const canEdit = group.canEdit !== false && (group.canEdit || canManageMembers || isOwner || isGroupAdmin);
-  const canDelete = group.canDelete !== false && (group.canDelete || canManageMembers || isOwner || isGroupAdmin);
-  const showGroupMenu = canEdit || canDelete;
+  const apiCanManage = group.canManageMembers !== false ? (group.canManageMembers ?? false) : false;
+  const apiCanEdit = group.canEdit !== false ? (group.canEdit ?? false) : false;
+  const apiCanDelete = group.canDelete !== false ? (group.canDelete ?? false) : false;
+
+  const canManageMembers = apiCanManage || apiCanEdit || apiCanDelete || isOwner || isGroupAdmin;
+  const canEdit = apiCanEdit || canManageMembers || isOwner || isGroupAdmin;
+  const canDelete = apiCanDelete || canManageMembers || isOwner || isGroupAdmin;
+  const showGroupMenu = canEdit || canDelete || canManageMembers;
 
   // Debug logs for permission issues
   useEffect(() => {
-    logInfo('GroupCard permission check', {
+    const payload = {
       groupId: group.id,
       currentUserId,
       ownerId,
@@ -705,8 +712,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         canDeleteFromApi: group.canDelete,
       },
       derived: { canManageMembers, canEdit, canDelete, showGroupMenu },
-    });
-  }, [group.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu]);
+    };
+    logInfo('GroupCard permission check', payload);
+    // Fallback console log to ensure visibility when logInfo is filtered
+    // eslint-disable-next-line no-console
+    console.log('[GroupCard permission check]', payload);
+  }, [group.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, group.canManageMembers, group.canEdit, group.canDelete]);
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
 
@@ -867,6 +878,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
             data-debug-show-menu={showGroupMenu ? 'true' : 'false'}
             data-debug-can-edit={canEdit ? 'true' : 'false'}
             data-debug-can-delete={canDelete ? 'true' : 'false'}
+            data-debug-can-manage={canManageMembers ? 'true' : 'false'}
           >
             {showGroupMenu && (
               <Dropdown>
