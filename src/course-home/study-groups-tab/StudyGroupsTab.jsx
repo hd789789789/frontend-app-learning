@@ -784,41 +784,94 @@ const StudyGroupsTab = () => {
       return studyGroupsModel.results;
     }
     return [];
-  }, [studyGroupsModel.results, refreshKey]);
+  }, [studyGroupsModel.results]);
 
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
 
+  // Fetch welcome tab data only once per course
+  const welcomeFetchedRef = useRef(false);
+  const lastWelcomeCourseIdRef = useRef(null);
   useEffect(() => {
-    logInfo('StudyGroupsTab mounted/updated', { courseId });
-    
-    if (courseId && (!welcomeModel.userStats || !welcomeModel.success)) {
+    // Reset when courseId changes
+    if (lastWelcomeCourseIdRef.current !== courseId) {
+      welcomeFetchedRef.current = false;
+      lastWelcomeCourseIdRef.current = courseId;
+    }
+
+    if (courseId && (!welcomeModel.userStats || !welcomeModel.success) && !welcomeFetchedRef.current) {
       logInfo('Fetching welcome tab data', { courseId });
       dispatch(fetchWelcomeTab(courseId));
-    }
-  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
-
-  // Separate effect for initial data fetch - only fetch once when component mounts
-  useEffect(() => {
-    if (courseId && !hasInitialFetchedRef.current) {
-      logInfo('Fetching study groups data (initial)', { courseId });
-      dispatch(fetchStudyGroupsTab(courseId));
-      hasInitialFetchedRef.current = true;
+      welcomeFetchedRef.current = true;
     }
   }, [courseId, dispatch]);
 
-  // Effect for refresh key changes (only when explicitly triggered)
+  // Track last courseId to reset state when course changes
+  const lastCourseIdRef = useRef(null);
+  
+  // Reset fetch state when courseId changes
   useEffect(() => {
-    if (courseId && refreshKey > 0) {
-      logInfo('Refreshing study groups (refreshKey changed)', { courseId, refreshKey });
-      hasInitialFetchedRef.current = false; // Reset to allow refetch
+    if (courseId && lastCourseIdRef.current !== courseId) {
+      logInfo('Course ID changed, resetting fetch state', { 
+        oldCourseId: lastCourseIdRef.current, 
+        newCourseId: courseId 
+      });
+      hasInitialFetchedRef.current = false;
+      lastCourseIdRef.current = courseId;
+    }
+  }, [courseId]);
+
+  // Initial fetch - only once per course
+  useEffect(() => {
+    if (!courseId) return;
+    
+    // Only fetch if we haven't fetched for this course yet
+    if (!hasInitialFetchedRef.current) {
+      logInfo('Fetching study groups data (initial)', { courseId });
+      hasInitialFetchedRef.current = true; // Set flag BEFORE dispatch to prevent re-triggering
       dispatch(fetchStudyGroupsTab(courseId));
     }
+  }, [courseId]); // Remove dispatch from dependencies - it's stable from Redux
+
+  // Explicit refresh - only when refreshKey changes and is > 0
+  const lastRefreshKeyRef = useRef(0);
+  const refreshTimeoutRef = useRef(null);
+  
+  useEffect(() => {
+    if (!courseId) return;
+    
+    if (refreshKey > 0 && refreshKey !== lastRefreshKeyRef.current) {
+      // Clear any pending refresh
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      // Debounce refresh to prevent rapid successive calls
+      refreshTimeoutRef.current = setTimeout(() => {
+        logInfo('Refreshing study groups (refreshKey changed)', { 
+          courseId, 
+          refreshKey, 
+          lastRefreshKey: lastRefreshKeyRef.current 
+        });
+        dispatch(fetchStudyGroupsTab(courseId));
+        lastRefreshKeyRef.current = refreshKey;
+      }, 300); // 300ms debounce
+    }
+    
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
   }, [courseId, dispatch, refreshKey]);
 
   const handleRefresh = useCallback(() => {
-    logInfo('Refreshing study groups', { courseId });
-    setRefreshKey(prev => prev + 1);
-    // Don't call dispatch here, let the refreshKey effect handle it
+    logInfo('Refreshing study groups (handleRefresh called)', { courseId });
+    // Only increment refreshKey if it hasn't been incremented recently
+    setRefreshKey(prev => {
+      const newKey = prev + 1;
+      logInfo('Incrementing refreshKey', { oldKey: prev, newKey });
+      return newKey;
+    });
   }, [courseId]);
 
   return (
