@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { 
   Badge, 
   Container, 
@@ -417,14 +417,14 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const canDelete = group.canDelete;
   const canManageMembers = group.canManageMembers;
   const isMember = group.isMember;
+  const commentsLoadedRef = useRef(false);
 
-  useEffect(() => {
-    if (showComments && !comments.length) {
-      loadComments();
+  const loadComments = useCallback(async () => {
+    if (loadingComments) {
+      logInfo('Comments already loading, skipping', { groupId: group.id });
+      return;
     }
-  }, [showComments]);
-
-  const loadComments = async () => {
+    
     setLoadingComments(true);
     logInfo('Loading comments', { groupId: group.id });
     
@@ -432,6 +432,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       const data = await getStudyGroupComments(group.id);
       logInfo('Comments loaded successfully', { groupId: group.id, count: data.results?.length || 0 });
       setComments(data.results || []);
+      commentsLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
         groupId: group.id,
@@ -442,7 +443,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     } finally {
       setLoadingComments(false);
     }
-  };
+  }, [group.id]);
+
+  useEffect(() => {
+    if (showComments && comments.length === 0 && !loadingComments && !commentsLoadedRef.current) {
+      loadComments();
+    }
+  }, [showComments, loadComments]);
 
   const handleAddComment = async () => {
     if (!commentContent.trim()) {
@@ -456,6 +463,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       const result = await createComment(group.id, { content: commentContent });
       logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
       setCommentContent('');
+      commentsLoadedRef.current = false; // Reset to allow reload
       loadComments();
     } catch (err) {
       logError('Failed to add comment', {
@@ -497,6 +505,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setCommentContent('');
       setUploadingFile(null);
       e.target.value = '';
+      commentsLoadedRef.current = false; // Reset to allow reload
       loadComments();
     } catch (err) {
       logError('Failed to upload file', {
@@ -698,8 +707,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                   <Button
                     variant="outline-primary"
                     onClick={() => {
-                      setShowComments(!showComments);
-                      if (!showComments) loadComments();
+                      const newShowComments = !showComments;
+                      setShowComments(newShowComments);
+                      if (newShowComments && !commentsLoadedRef.current) {
+                        loadComments();
+                      }
                     }}
                   >
                     💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({comments.length})
@@ -718,7 +730,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           key={comment.id}
                           comment={comment}
                           group={group}
-                          onUpdate={loadComments}
+                          onUpdate={() => {
+                            commentsLoadedRef.current = false;
+                            loadComments();
+                          }}
                           currentUserId={currentUserId}
                         />
                       ))
@@ -773,23 +788,37 @@ const StudyGroupsTab = () => {
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
 
   useEffect(() => {
-    logInfo('StudyGroupsTab mounted/updated', { courseId, refreshKey });
+    logInfo('StudyGroupsTab mounted/updated', { courseId });
     
     if (courseId && (!welcomeModel.userStats || !welcomeModel.success)) {
       logInfo('Fetching welcome tab data', { courseId });
       dispatch(fetchWelcomeTab(courseId));
     }
-    if (courseId) {
-      logInfo('Fetching study groups data', { courseId });
+  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
+
+  // Separate effect for initial data fetch - only fetch once when component mounts
+  useEffect(() => {
+    if (courseId && !hasInitialFetchedRef.current) {
+      logInfo('Fetching study groups data (initial)', { courseId });
+      dispatch(fetchStudyGroupsTab(courseId));
+      hasInitialFetchedRef.current = true;
+    }
+  }, [courseId, dispatch]);
+
+  // Effect for refresh key changes (only when explicitly triggered)
+  useEffect(() => {
+    if (courseId && refreshKey > 0) {
+      logInfo('Refreshing study groups (refreshKey changed)', { courseId, refreshKey });
+      hasInitialFetchedRef.current = false; // Reset to allow refetch
       dispatch(fetchStudyGroupsTab(courseId));
     }
-  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success, refreshKey]);
+  }, [courseId, dispatch, refreshKey]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     logInfo('Refreshing study groups', { courseId });
     setRefreshKey(prev => prev + 1);
-    dispatch(fetchStudyGroupsTab(courseId));
-  };
+    // Don't call dispatch here, let the refreshKey effect handle it
+  }, [courseId]);
 
   return (
     <Container className="study-groups-tab px-0">
