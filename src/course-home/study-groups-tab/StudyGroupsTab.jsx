@@ -681,9 +681,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
 
   const ownerId = group.ownerId || group.owner?.id || group.createdById;
   const isOwner = ownerId && ownerId === currentUserId;
-  const canManageMembers = group.canManageMembers !== false && (group.canManageMembers || group.canEdit || group.canDelete || isOwner);
-  const canEdit = group.canEdit !== false && (group.canEdit || canManageMembers || isOwner);
-  const canDelete = group.canDelete !== false && (group.canDelete || canManageMembers || isOwner);
+  const currentMember = (group.members || []).find((m) => m.user?.id === currentUserId);
+  const isGroupAdmin = currentMember?.role === 'admin' || currentMember?.role === 'owner' || currentMember?.role === 'creator';
+  const canManageMembers = group.canManageMembers !== false && (group.canManageMembers || group.canEdit || group.canDelete || isOwner || isGroupAdmin);
+  const canEdit = group.canEdit !== false && (group.canEdit || canManageMembers || isOwner || isGroupAdmin);
+  const canDelete = group.canDelete !== false && (group.canDelete || canManageMembers || isOwner || isGroupAdmin);
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
 
