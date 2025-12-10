@@ -97,6 +97,9 @@
   height: 34px;
   cursor: pointer;
   color: #1f2430;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
 }
 
 .group-menu-dropdown {

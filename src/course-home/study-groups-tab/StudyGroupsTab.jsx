@@ -680,10 +680,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [showComments, setShowComments] = useState(false);
 
   const ownerId = group.ownerId || group.owner?.id || group.createdById;
-  const isOwner = ownerId && ownerId === currentUserId;
+  const currentUserKey = currentUserId;
+  const isOwner = ownerId && currentUserKey && (ownerId === currentUserKey || ownerId?.toString() === currentUserKey?.toString());
   const currentMember =
     (group.members || []).find(
-      (m) => m.user?.id === currentUserId || m.user?.username === getAuthenticatedUser()?.username
+      (m) =>
+        (currentUserKey && (m.user?.id === currentUserKey || m.user?.username === currentUserKey)) ||
+        m.user?.username === getAuthenticatedUser()?.username
     ) || null;
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
@@ -886,6 +889,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                   id={`group-menu-${group.id}`}
                   variant="link"
                   className="group-menu-btn"
+                  aria-label="Mở menu nhóm"
                 >
                   ⋮
                 </DropdownButton>
@@ -1103,7 +1107,8 @@ const StudyGroupsTab = () => {
   const hasInitialFetchedRef = useRef(false);
 
   const currentUser = getAuthenticatedUser();
-  const currentUserId = currentUser?.id;
+  // Fallback to username when id is missing to keep permission checks working
+  const currentUserId = currentUser?.id || currentUser?.username || null;
 
   const userStats = welcomeModel.userStats || {
     streakDays: 0,
