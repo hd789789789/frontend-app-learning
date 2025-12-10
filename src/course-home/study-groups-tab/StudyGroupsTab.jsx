@@ -683,11 +683,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const currentUserKey = currentUserId;
   const isOwner = ownerId && currentUserKey && (ownerId === currentUserKey || ownerId?.toString() === currentUserKey?.toString());
   const currentMember =
-    (group.members || []).find(
-      (m) =>
-        (currentUserKey && (m.user?.id === currentUserKey || m.user?.username === currentUserKey)) ||
-        m.user?.username === getAuthenticatedUser()?.username
-    ) || null;
+    (group.members || []).find((m) => {
+      const memberId = m.user?.id;
+      const memberUsername = m.user?.username;
+      const matchesId =
+        currentUserKey &&
+        (memberId === currentUserKey || memberId?.toString() === currentUserKey?.toString());
+      const matchesUsername =
+        (currentUsername && memberUsername && memberUsername.toLowerCase() === currentUsername.toLowerCase()) ||
+        (currentUserKey &&
+          memberUsername &&
+          memberUsername.toLowerCase() === currentUserKey.toString().toLowerCase());
+      return matchesId || matchesUsername;
+    }) || null;
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
 
@@ -1109,6 +1117,7 @@ const StudyGroupsTab = () => {
   const currentUser = getAuthenticatedUser();
   // Fallback to username when id is missing to keep permission checks working
   const currentUserId = currentUser?.id || currentUser?.username || null;
+  const currentUsername = currentUser?.username || null;
 
   const userStats = welcomeModel.userStats || {
     streakDays: 0,
