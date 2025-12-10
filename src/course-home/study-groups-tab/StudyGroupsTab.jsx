@@ -807,6 +807,7 @@ const StudyGroupsTab = () => {
 
   // Track last courseId to reset state when course changes
   const lastCourseIdRef = useRef(null);
+  const isFetchingRef = useRef(false);
   
   // Reset fetch state when courseId changes
   useEffect(() => {
@@ -816,21 +817,35 @@ const StudyGroupsTab = () => {
         newCourseId: courseId 
       });
       hasInitialFetchedRef.current = false;
+      isFetchingRef.current = false;
       lastCourseIdRef.current = courseId;
     }
   }, [courseId]);
 
-  // Initial fetch - only once per course
+  // Initial fetch - only once per course, and only if we don't have data
   useEffect(() => {
     if (!courseId) return;
     
-    // Only fetch if we haven't fetched for this course yet
-    if (!hasInitialFetchedRef.current) {
-      logInfo('Fetching study groups data (initial)', { courseId });
-      hasInitialFetchedRef.current = true; // Set flag BEFORE dispatch to prevent re-triggering
-      dispatch(fetchStudyGroupsTab(courseId));
+    // Only fetch if:
+    // 1. We haven't fetched for this course yet
+    // 2. We're not currently fetching
+    if (!hasInitialFetchedRef.current && !isFetchingRef.current) {
+      logInfo('Fetching study groups data (initial)', { 
+        courseId, 
+        hasData, 
+        isFetching: isFetchingRef.current 
+      });
+      hasInitialFetchedRef.current = true;
+      isFetchingRef.current = true;
+      dispatch(fetchStudyGroupsTab(courseId)).finally(() => {
+        // Reset fetching flag after a short delay to allow state to update
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 500);
+      });
     }
-  }, [courseId]); // Remove dispatch from dependencies - it's stable from Redux
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]); // Only depend on courseId - check model state inside effect
 
   // Explicit refresh - only when refreshKey changes and is > 0
   const lastRefreshKeyRef = useRef(0);
