@@ -682,10 +682,31 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const ownerId = group.ownerId || group.owner?.id || group.createdById;
   const isOwner = ownerId && ownerId === currentUserId;
   const currentMember = (group.members || []).find((m) => m.user?.id === currentUserId);
-  const isGroupAdmin = currentMember?.role === 'admin' || currentMember?.role === 'owner' || currentMember?.role === 'creator';
+  const currentRole = currentMember?.role || group.currentUserRole;
+  const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
+
   const canManageMembers = group.canManageMembers !== false && (group.canManageMembers || group.canEdit || group.canDelete || isOwner || isGroupAdmin);
   const canEdit = group.canEdit !== false && (group.canEdit || canManageMembers || isOwner || isGroupAdmin);
   const canDelete = group.canDelete !== false && (group.canDelete || canManageMembers || isOwner || isGroupAdmin);
+  const showGroupMenu = canEdit || canDelete;
+
+  // Debug logs for permission issues
+  useEffect(() => {
+    logInfo('GroupCard permission check', {
+      groupId: group.id,
+      currentUserId,
+      ownerId,
+      currentRole,
+      isOwner,
+      isGroupAdmin,
+      flags: {
+        canManageMembersFromApi: group.canManageMembers,
+        canEditFromApi: group.canEdit,
+        canDeleteFromApi: group.canDelete,
+      },
+      derived: { canManageMembers, canEdit, canDelete, showGroupMenu },
+    });
+  }, [group.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu]);
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
 
@@ -841,8 +862,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
               <span>📅 Tạo: {formatDate(group.createdAt)}</span>
             </div>
           </div>
-          <div className="group-menu-container">
-            {(canEdit || canDelete) && (
+          <div
+            className="group-menu-container"
+            data-debug-show-menu={showGroupMenu ? 'true' : 'false'}
+            data-debug-can-edit={canEdit ? 'true' : 'false'}
+            data-debug-can-delete={canDelete ? 'true' : 'false'}
+          >
+            {showGroupMenu && (
               <Dropdown>
                 <DropdownButton
                   id={`group-menu-${group.id}`}
@@ -907,7 +933,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                   </Button>
                 )}
               </div>
-              {group.members && group.members.length > 0 ? (
+                  {group.members && group.members.length > 0 ? (
                 <div className="members-list">
                   {group.members.slice(0, 5).map((member) => (
                     <div key={member.id} className="member-row">
