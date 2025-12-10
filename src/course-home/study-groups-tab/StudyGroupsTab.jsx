@@ -1025,9 +1025,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           className="friend-action-btn"
                           onClick={() =>
                             handleRemoveMember(
-                              member.id ||
-                                member.memberId ||
-                                member.membershipId,
+                              member.user?.id ||
+                                member.user_id ||
+                                member.userId,
                               member
                             )
                           }
