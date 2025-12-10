@@ -96,6 +96,11 @@
   width: 34px;
   height: 34px;
   cursor: pointer;
+  color: #1f2430;
+}
+
+.group-menu-dropdown {
+  min-width: 140px;
 }
 
 .collapsed-group-summary {
@@ -504,6 +509,9 @@
   font-size: 1.2rem;
   cursor: pointer;
   transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     transform: scale(1.2);
@@ -514,6 +522,24 @@
     background: #e3e7ff;
     border: 2px solid #3f51b5;
   }
+}
+
+.reaction-counts {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reaction-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #f5c6d9;
+  background: #fff5f8;
+  border-radius: 999px;
+  font-weight: 600;
 }
 
 .edit-comment-form {
@@ -553,10 +579,28 @@
   padding: 0.25rem;
   border-radius: 4px;
   transition: background 0.2s;
+  color: #d9534f;
 
   &:hover {
     background: #f0f2ff;
   }
+}
+
+.available-users-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.available-user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.3rem;
+}
+
+.icon-pill {
+  min-width: 36px;
+  padding-inline: 10px;
 }
 
 @media (max-width: 768px) {

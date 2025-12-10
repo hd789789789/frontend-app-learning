@@ -260,6 +260,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [error, setError] = useState(null);
+  const searchTimerRef = useRef(null);
 
   const loadUsers = useCallback(async (reset = false) => {
     const nextPage = reset ? 1 : page;
@@ -268,7 +269,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     try {
       const data = await getAvailableMembers(groupId, { search, page: nextPage, pageSize: 5 });
       const newResults = data.results || [];
-      setUsers(reset ? newResults : [...users, ...newResults]);
+      setUsers((prev) => (reset ? newResults : [...prev, ...newResults]));
       setHasMore(Boolean(data.next));
       setPage(nextPage + 1);
     } catch (err) {
@@ -285,27 +286,36 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     } finally {
       setLoadingList(false);
     }
-  }, [groupId, search, page, users]);
+  }, [groupId, search, page]);
 
   // Load when open
   useEffect(() => {
     if (isOpen) {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
       setUsers([]);
       setPage(1);
       setHasMore(false);
       loadUsers(true);
+    } else if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Search change
   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
+    const val = e.target.value;
+    setSearch(val);
     setPage(1);
     setUsers([]);
     setHasMore(false);
-    // reload after small delay
-    setTimeout(() => loadUsers(true), 100);
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+    // reload after small delay to debounce
+    searchTimerRef.current = setTimeout(() => loadUsers(true), 150);
   };
 
   const handleAddUser = async (usernameOrEmail) => {
@@ -374,8 +384,9 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
                 variant="outline-primary"
                 onClick={() => handleAddUser(user.username)}
                 disabled={loadingAdd}
+                className="icon-pill"
               >
-                Thêm
+                +
               </Button>
             </div>
           ))}
@@ -488,8 +499,8 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
   const [loading, setLoading] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
 
-  const canEdit = comment.canEdit || comment.user?.id === currentUserId;
-  const canDelete = comment.canDelete || comment.user?.id === currentUserId;
+  const canEdit = comment.canEdit !== false || comment.user?.id === currentUserId;
+  const canDelete = comment.canDelete !== false || comment.user?.id === currentUserId;
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -639,10 +650,6 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
             })}
           </div>
         )}
-        <button className="reaction-btn">
-          <span>💬</span>
-          <span>{comment.repliesCount || 0} bình luận</span>
-        </button>
       </div>
     </div>
   );
@@ -659,9 +666,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [uploadingFile, setUploadingFile] = useState(null);
   const [showComments, setShowComments] = useState(false);
 
-  const canEdit = group.canEdit !== false || group.canManageMembers;
-  const canDelete = group.canDelete !== false || group.canManageMembers;
   const canManageMembers = group.canManageMembers;
+  const canEdit = group.canEdit || canManageMembers;
+  const canDelete = group.canDelete || canManageMembers;
   const isMember = group.isMember;
   const commentsLoadedRef = useRef(false);
 
@@ -712,11 +719,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       const result = await createComment(group.id, { content: commentContent });
       logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
       setCommentContent('');
-      commentsLoadedRef.current = false; // Reset to allow reload
-      // Reload comments after adding a new one
-      if (showComments) {
-        loadComments();
-      }
+      setShowComments(true);
+      setComments((prev) => [result, ...prev]);
+      commentsLoadedRef.current = true;
     } catch (err) {
       logError('Failed to add comment', {
         groupId: group.id,
@@ -757,11 +762,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setCommentContent('');
       setUploadingFile(null);
       e.target.value = '';
-      commentsLoadedRef.current = false; // Reset to allow reload
-      // Reload comments after uploading a file
-      if (showComments) {
-        loadComments();
-      }
+      commentsLoadedRef.current = true;
+      setShowComments(true);
+      setComments((prev) => [{ ...comment, attachments: [attachment] }, ...prev]);
     } catch (err) {
       logError('Failed to upload file', {
         groupId: group.id,
@@ -823,7 +826,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                 >
                   ⋮
                 </DropdownButton>
-                <Dropdown.Menu>
+                <Dropdown.Menu align="end" renderMenuOnMount className="group-menu-dropdown">
                   {canEdit && (
                     <DropdownItem onClick={() => setShowEditGroup(true)}>
                       Chỉnh sửa
