@@ -769,6 +769,7 @@ const StudyGroupsTab = () => {
   const studyGroupsModel = useModel('study-groups', courseId) || {};
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const hasInitialFetchedRef = useRef(false);
 
   const currentUser = getAuthenticatedUser();
   const currentUserId = currentUser?.id;
