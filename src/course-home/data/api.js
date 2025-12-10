@@ -589,16 +589,23 @@ export async function getStudyGroupsTabData(courseId) {
 // Study Groups API functions
 export async function createStudyGroup(courseId, groupData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/courses/${encodeURIComponent(courseId)}/study-groups/`;
-  console.log('[Study Groups API] Creating group:', { courseId, groupData, url });
+  
+  // Backend requires course_id in the request body
+  const requestData = {
+    ...groupData,
+    course_id: courseId,
+  };
+  
+  console.log('[Study Groups API] Creating group:', { courseId, groupData: requestData, url });
   
   try {
-    const { data } = await getAuthenticatedHttpClient().post(url, groupData);
+    const { data } = await getAuthenticatedHttpClient().post(url, requestData);
     console.log('[Study Groups API] Group created successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error creating group:', {
       courseId,
-      groupData,
+      groupData: requestData,
       url,
       status: error.response?.status,
       error: error.response?.data,
@@ -689,18 +696,33 @@ export async function getStudyGroupMembers(groupId) {
   }
 }
 
-export async function addStudyGroupMember(groupId, userId) {
+// Helper function to find user by username or email
+export async function findUserByUsernameOrEmail(usernameOrEmail) {
+  // Try to get user info from accounts API
+  const url = `${getConfig().LMS_BASE_URL}/api/user/v1/accounts/${encodeURIComponent(usernameOrEmail)}/`;
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    return camelCaseObject(data);
+  } catch (error) {
+    // If not found by username, might be email - backend should handle this
+    throw error;
+  }
+}
+
+export async function addStudyGroupMember(groupId, usernameOrEmail) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/`;
-  console.log('[Study Groups API] Adding member:', { groupId, userId, url });
+  console.log('[Study Groups API] Adding member:', { groupId, usernameOrEmail, url });
   
   try {
-    const { data } = await getAuthenticatedHttpClient().post(url, { user: userId });
+    // Backend StudyGroupMemberCreateSerializer accepts username or email in 'user' field
+    // It will automatically find the user by username or email
+    const { data } = await getAuthenticatedHttpClient().post(url, { user: usernameOrEmail });
     console.log('[Study Groups API] Member added successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error adding member:', {
       groupId,
-      userId,
+      usernameOrEmail,
       url,
       status: error.response?.status,
       error: error.response?.data,

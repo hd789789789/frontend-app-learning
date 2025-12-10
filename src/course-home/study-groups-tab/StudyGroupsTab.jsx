@@ -142,6 +142,107 @@ const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
   );
 };
 
+// Edit Group Modal
+const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Initialize form data when group changes or modal opens
+  useEffect(() => {
+    if (group && isOpen) {
+      setFormData({
+        name: group.name || '',
+        description: group.description || '',
+      });
+      setError(null);
+    }
+  }, [group, isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    logInfo('Updating study group', { groupId: group.id, formData });
+    
+    try {
+      const result = await updateStudyGroup(group.id, formData);
+      logInfo('Study group updated successfully', { groupId: group.id, result });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi cập nhật nhóm';
+      logError('Failed to update study group', {
+        groupId: group.id,
+        formData,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: errorMessage,
+      });
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!group) return null;
+
+  return (
+    <ModalDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Chỉnh sửa nhóm học tập"
+      size="md"
+      hasCloseButton
+      isFullscreenOnMobile
+    >
+      <ModalDialog.Header>
+        <ModalDialog.Title>Chỉnh sửa nhóm học tập</ModalDialog.Title>
+      </ModalDialog.Header>
+      <ModalDialog.Body>
+        {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
+        <Form id="edit-group-form" onSubmit={handleSubmit}>
+          <FormGroup>
+            <FormControl
+              type="text"
+              placeholder="Tên nhóm"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </FormGroup>
+          <FormGroup>
+            <FormControl
+              as="textarea"
+              rows={4}
+              placeholder="Mô tả nhóm"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </FormGroup>
+        </Form>
+      </ModalDialog.Body>
+      <ModalDialog.Footer>
+        <ActionRow>
+          <ModalDialog.CloseButton variant="tertiary" onClick={onClose}>
+            Hủy
+          </ModalDialog.CloseButton>
+          <Button
+            type="submit"
+            form="edit-group-form"
+            variant="primary"
+            disabled={loading}
+          >
+            {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+            Lưu thay đổi
+          </Button>
+        </ActionRow>
+      </ModalDialog.Footer>
+    </ModalDialog>
+  );
+};
+
 // Add Member Modal
 const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const [username, setUsername] = useState('');
@@ -268,7 +369,7 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
         {userReaction ? (
           <>
             <span>{REACTION_TYPES.find(r => r.type === userReaction)?.emoji}</span>
-            <span>{comment.reactionCounts?.[userReaction] || 0}</span>
+            <span>Đã {REACTION_TYPES.find(r => r.type === userReaction)?.label}</span>
           </>
         ) : (
           <>
@@ -437,6 +538,22 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
 
       <div className="post-reactions">
         <ReactionPicker comment={comment} onReactionChange={onUpdate} />
+        {/* Display all reaction types with counts */}
+        {comment.reactionCounts && Object.keys(comment.reactionCounts).length > 0 && (
+          <div className="reaction-counts">
+            {REACTION_TYPES.map((reaction) => {
+              const count = comment.reactionCounts[reaction.type] || 0;
+              if (count > 0) {
+                return (
+                  <span key={reaction.type} className="reaction-count-badge" title={reaction.label}>
+                    {reaction.emoji} {count}
+                  </span>
+                );
+              }
+              return null;
+            })}
+          </div>
+        )}
         <button className="reaction-btn">
           <span>💬</span>
           <span>{comment.repliesCount || 0} bình luận</span>
@@ -450,6 +567,7 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
 const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentContent, setCommentContent] = useState('');
@@ -622,7 +740,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                 </DropdownButton>
                 <Dropdown.Menu>
                   {canEdit && (
-                    <DropdownItem onClick={() => {/* TODO: Edit modal */}}>
+                    <DropdownItem onClick={() => setShowEditGroup(true)}>
                       Chỉnh sửa
                     </DropdownItem>
                   )}
@@ -806,6 +924,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         onSuccess={() => {
           onUpdate();
           setShowAddMember(false);
+        }}
+      />
+
+      <EditGroupModal
+        isOpen={showEditGroup}
+        onClose={() => setShowEditGroup(false)}
+        group={group}
+        onSuccess={() => {
+          onUpdate();
+          setShowEditGroup(false);
         }}
       />
     </>
