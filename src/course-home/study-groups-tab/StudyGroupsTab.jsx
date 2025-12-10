@@ -420,11 +420,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const commentsLoadedRef = useRef(false);
 
   const loadComments = useCallback(async () => {
-    if (loadingComments) {
+    // Use a ref to track if we're currently loading to prevent concurrent calls
+    if (commentsLoadedRef.current === 'loading') {
       logInfo('Comments already loading, skipping', { groupId: group.id });
       return;
     }
     
+    commentsLoadedRef.current = 'loading';
     setLoadingComments(true);
     logInfo('Loading comments', { groupId: group.id });
     
@@ -440,16 +442,17 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         status: err.response?.status,
         message: err.message,
       });
+      commentsLoadedRef.current = false; // Reset on error to allow retry
     } finally {
       setLoadingComments(false);
     }
   }, [group.id]);
 
   useEffect(() => {
-    if (showComments && comments.length === 0 && !loadingComments && !commentsLoadedRef.current) {
+    if (showComments && comments.length === 0 && !loadingComments && commentsLoadedRef.current !== true && commentsLoadedRef.current !== 'loading') {
       loadComments();
     }
-  }, [showComments, loadComments]);
+  }, [showComments, comments.length, loadingComments, loadComments]);
 
   const handleAddComment = async () => {
     if (!commentContent.trim()) {
@@ -464,7 +467,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
       setCommentContent('');
       commentsLoadedRef.current = false; // Reset to allow reload
-      loadComments();
+      // Reload comments after adding a new one
+      if (showComments) {
+        loadComments();
+      }
     } catch (err) {
       logError('Failed to add comment', {
         groupId: group.id,
@@ -506,7 +512,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setUploadingFile(null);
       e.target.value = '';
       commentsLoadedRef.current = false; // Reset to allow reload
-      loadComments();
+      // Reload comments after uploading a file
+      if (showComments) {
+        loadComments();
+      }
     } catch (err) {
       logError('Failed to upload file', {
         groupId: group.id,
@@ -707,11 +716,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                   <Button
                     variant="outline-primary"
                     onClick={() => {
-                      const newShowComments = !showComments;
-                      setShowComments(newShowComments);
-                      if (newShowComments && !commentsLoadedRef.current) {
-                        loadComments();
-                      }
+                      setShowComments(!showComments);
                     }}
                   >
                     💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({comments.length})
@@ -732,7 +737,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           group={group}
                           onUpdate={() => {
                             commentsLoadedRef.current = false;
-                            loadComments();
+                            // Reload comments after reaction/update/delete
+                            if (showComments) {
+                              loadComments();
+                            }
                           }}
                           currentUserId={currentUserId}
                         />
@@ -798,12 +806,21 @@ const StudyGroupsTab = () => {
       lastWelcomeCourseIdRef.current = courseId;
     }
 
-    if (courseId && (!welcomeModel.userStats || !welcomeModel.success) && !welcomeFetchedRef.current) {
+    // Only fetch if:
+    // 1. We have a courseId
+    // 2. We haven't fetched yet for this course
+    // 3. The model doesn't have data yet (empty object or no userStats)
+    // 4. The model doesn't indicate success (if success exists and is false, don't refetch)
+    const hasData = welcomeModel.userStats !== undefined;
+    const isSuccess = welcomeModel.success === true;
+    const shouldFetch = courseId && !welcomeFetchedRef.current && !hasData && !isSuccess;
+
+    if (shouldFetch) {
       logInfo('Fetching welcome tab data', { courseId });
       dispatch(fetchWelcomeTab(courseId));
       welcomeFetchedRef.current = true;
     }
-  }, [courseId, dispatch]);
+  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
 
   // Track fetch state - use refs to persist across renders
   const lastCourseIdRef = useRef(null);
@@ -838,6 +855,19 @@ const StudyGroupsTab = () => {
       return;
     }
     
+    // Check if model already has data (from previous load or cache)
+    // If it has results array (even if empty), consider it loaded
+    const hasModelData = studyGroupsModel.results !== undefined;
+    if (hasModelData) {
+      logInfo('Study groups model already has data, skipping initial fetch', { 
+        courseId, 
+        hasResults: Array.isArray(studyGroupsModel.results),
+        resultsCount: studyGroupsModel.results?.length || 0
+      });
+      hasInitialFetchedRef.current = true;
+      return;
+    }
+    
     logInfo('Fetching study groups data (initial - mount)', { courseId });
     
     // Set flags IMMEDIATELY before any async operation
@@ -856,7 +886,7 @@ const StudyGroupsTab = () => {
       clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId]); // ONLY courseId - nothing else
+  }, [courseId, studyGroupsModel.results]); // Include studyGroupsModel.results to check if data exists
 
   // Refresh fetch - only when refreshKey explicitly changes
   useEffect(() => {
