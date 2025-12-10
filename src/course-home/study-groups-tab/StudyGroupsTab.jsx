@@ -965,6 +965,9 @@ const StudyGroupsTab = () => {
     return [];
   }, [studyGroupsModel.results]);
 
+  // Get permission to create group from model
+  const canCreateGroup = studyGroupsModel.canCreateGroup !== false; // Default to true if not set (for backward compatibility)
+
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
 
   // Fetch welcome tab data only once per course
@@ -1106,9 +1109,11 @@ const StudyGroupsTab = () => {
         <Col lg={8} md={12}>
           <div className="groups-header">
             <h2>Nhóm học tập</h2>
-            <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-              + Tạo nhóm mới
-            </Button>
+            {canCreateGroup && (
+              <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+                + Tạo nhóm mới
+              </Button>
+            )}
           </div>
 
           <section className="panel">
@@ -1128,7 +1133,11 @@ const StudyGroupsTab = () => {
                 ))
               ) : (
                 <div className="text-center p-4">
-                  <p>Chưa có nhóm học tập nào. Hãy tạo nhóm mới để bắt đầu!</p>
+                  <p>
+                    {canCreateGroup 
+                      ? 'Chưa có nhóm học tập nào. Hãy tạo nhóm mới để bắt đầu!'
+                      : 'Chưa có nhóm học tập nào. Bạn cần được thêm vào nhóm để tham gia thảo luận.'}
+                  </p>
                 </div>
               )}
             </div>
