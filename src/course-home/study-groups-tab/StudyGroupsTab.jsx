@@ -681,6 +681,7 @@ const getInitialCommentCount = (group) =>
   group?.commentsCount ??
   group?.comments_count ??
   group?.comment_count ??
+  (Array.isArray(group?.comments) ? group.comments.length : 0) ??
   0;
 
 const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
@@ -863,8 +864,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     }
   };
 
-  const handleRemoveMember = async (userIdOrUsername) => {
-    const target = userIdOrUsername || 'unknown';
+  const handleRemoveMember = async (memberIdentifier) => {
+    const target = memberIdentifier || 'unknown';
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
       logInfo('Removing member from group', { groupId: group.id, userId: target });
       
@@ -990,7 +991,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       {canManageMembers && member.user?.id !== currentUserId && (
                         <button
                           className="friend-action-btn"
-                          onClick={() => handleRemoveMember(member.user?.id || member.user?.username)}
+                          onClick={() =>
+                            handleRemoveMember(
+                              member.id || member.user?.id || member.user?.username
+                            )
+                          }
                           title="Xóa khỏi nhóm"
                         >
                           <svg
