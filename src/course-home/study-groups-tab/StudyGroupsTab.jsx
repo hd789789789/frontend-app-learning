@@ -891,40 +891,35 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
             data-debug-can-manage={canManageMembers ? 'true' : 'false'}
           >
             {showGroupMenu && (
-              <Dropdown>
-                <DropdownButton
-                  id={`group-menu-${group.id}`}
-                  variant="link"
-                  className="group-menu-btn"
-                  aria-label="Mở menu nhóm"
-                >
-                  ⋮
-                </DropdownButton>
-                <Dropdown.Menu align="end" renderMenuOnMount className="group-menu-dropdown">
-                  {canEdit && (
-                    <DropdownItem onClick={() => setShowEditGroup(true)}>
-                      Chỉnh sửa
-                    </DropdownItem>
-                  )}
-                  {canDelete && (
-                    <DropdownItem 
-                      onClick={async () => {
-                        if (window.confirm('Bạn có chắc muốn xóa nhóm này?')) {
-                          try {
-                            await deleteStudyGroup(group.id);
-                            onUpdate();
-                          } catch (err) {
-                            logError(err);
-                          }
+              <div className="group-menu-inline">
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    onClick={() => setShowEditGroup(true)}
+                  >
+                    Sửa nhóm
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    onClick={async () => {
+                      if (window.confirm('Bạn có chắc muốn xóa nhóm này?')) {
+                        try {
+                          await deleteStudyGroup(group.id);
+                          onUpdate();
+                        } catch (err) {
+                          logError(err);
                         }
-                      }}
-                      className="text-danger"
-                    >
-                      Xóa nhóm
-                    </DropdownItem>
-                  )}
-                </Dropdown.Menu>
-              </Dropdown>
+                      }
+                    }}
+                  >
+                    Xóa nhóm
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
