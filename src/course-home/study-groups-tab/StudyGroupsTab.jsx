@@ -805,11 +805,12 @@ const StudyGroupsTab = () => {
     }
   }, [courseId, dispatch]);
 
-  // Track last courseId to reset state when course changes
+  // Track fetch state - use refs to persist across renders
   const lastCourseIdRef = useRef(null);
   const isFetchingRef = useRef(false);
+  const lastRefreshKeyRef = useRef(0);
   
-  // Reset fetch state when courseId changes
+  // Reset state when courseId changes (separate effect to avoid interference)
   useEffect(() => {
     if (courseId && lastCourseIdRef.current !== courseId) {
       logInfo('Course ID changed, resetting fetch state', { 
@@ -818,65 +819,75 @@ const StudyGroupsTab = () => {
       });
       hasInitialFetchedRef.current = false;
       isFetchingRef.current = false;
+      lastRefreshKeyRef.current = 0;
       lastCourseIdRef.current = courseId;
     }
   }, [courseId]);
-
-  // Initial fetch - only once per course, and only if we don't have data
-  useEffect(() => {
-    if (!courseId) return;
-    
-    // Only fetch if:
-    // 1. We haven't fetched for this course yet
-    // 2. We're not currently fetching
-    if (!hasInitialFetchedRef.current && !isFetchingRef.current) {
-      logInfo('Fetching study groups data (initial)', { 
-        courseId, 
-        isFetching: isFetchingRef.current 
-      });
-      hasInitialFetchedRef.current = true;
-      isFetchingRef.current = true;
-      dispatch(fetchStudyGroupsTab(courseId)).finally(() => {
-        // Reset fetching flag after a short delay to allow state to update
-        setTimeout(() => {
-          isFetchingRef.current = false;
-        }, 500);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId]); // Only depend on courseId - check model state inside effect
-
-  // Explicit refresh - only when refreshKey changes and is > 0
-  const lastRefreshKeyRef = useRef(0);
-  const refreshTimeoutRef = useRef(null);
   
+  // Initial fetch - ONLY ONCE when component mounts with a courseId
   useEffect(() => {
     if (!courseId) return;
     
-    if (refreshKey > 0 && refreshKey !== lastRefreshKeyRef.current) {
-      // Clear any pending refresh
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-      
-      // Debounce refresh to prevent rapid successive calls
-      refreshTimeoutRef.current = setTimeout(() => {
-        logInfo('Refreshing study groups (refreshKey changed)', { 
-          courseId, 
-          refreshKey, 
-          lastRefreshKey: lastRefreshKeyRef.current 
-        });
-        dispatch(fetchStudyGroupsTab(courseId));
-        lastRefreshKeyRef.current = refreshKey;
-      }, 300); // 300ms debounce
+    // Only fetch if we haven't fetched for this course yet
+    if (hasInitialFetchedRef.current) {
+      return;
     }
+    
+    // Double-check we're not already fetching
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    logInfo('Fetching study groups data (initial - mount)', { courseId });
+    
+    // Set flags IMMEDIATELY before any async operation
+    hasInitialFetchedRef.current = true;
+    isFetchingRef.current = true;
+    
+    // Dispatch fetch
+    dispatch(fetchStudyGroupsTab(courseId));
+    
+    // Reset fetching flag after a reasonable delay
+    const timeoutId = setTimeout(() => {
+      isFetchingRef.current = false;
+    }, 3000);
     
     return () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
+      clearTimeout(timeoutId);
     };
-  }, [courseId, dispatch, refreshKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]); // ONLY courseId - nothing else
+
+  // Refresh fetch - only when refreshKey explicitly changes
+  useEffect(() => {
+    if (!courseId) return;
+    if (refreshKey === 0) return; // Initial state, skip
+    if (refreshKey === lastRefreshKeyRef.current) return; // No change, skip
+    if (isFetchingRef.current) return; // Already fetching, skip
+    
+    logInfo('Refreshing study groups (refreshKey changed)', { 
+      courseId, 
+      refreshKey,
+      lastRefreshKey: lastRefreshKeyRef.current
+    });
+    
+    // Update tracking immediately
+    lastRefreshKeyRef.current = refreshKey;
+    isFetchingRef.current = true;
+    
+    // Dispatch fetch
+    dispatch(fetchStudyGroupsTab(courseId));
+    
+    // Reset fetching flag after a delay
+    const timeoutId = setTimeout(() => {
+      isFetchingRef.current = false;
+    }, 3000);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, refreshKey]); // Only courseId and refreshKey
 
   const handleRefresh = useCallback(() => {
     logInfo('Refreshing study groups (handleRefresh called)', { courseId });
