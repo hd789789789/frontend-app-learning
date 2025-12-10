@@ -1,288 +1,795 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Badge, Container, ProgressBar, Row, Col } from '@openedx/paragon';
+import { 
+  Badge, 
+  Container, 
+  ProgressBar, 
+  Row, 
+  Col, 
+  Button,
+  Modal,
+  Form,
+  FormGroup,
+  FormControl,
+  Alert,
+  Dropdown,
+  DropdownButton,
+  DropdownItem,
+  Spinner,
+} from '@openedx/paragon';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useModel } from '../../generic/model-store';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
+import { logError, logInfo } from '@edx/frontend-platform/logging';
 import StreakCalendar from '../welcome-tab/StreakCalendar';
 import GroupStreaks from '../welcome-tab/GroupStreaks';
 import StudyTip from '../welcome-tab/StudyTip';
 import ReferralWidget from '../welcome-tab/ReferralWidget';
-import { fetchWelcomeTab } from '../data';
+import { fetchWelcomeTab, fetchStudyGroupsTab } from '../data';
+import {
+  createStudyGroup,
+  updateStudyGroup,
+  deleteStudyGroup,
+  addStudyGroupMember,
+  removeStudyGroupMember,
+  getStudyGroupComments,
+  createComment,
+  updateComment,
+  deleteComment,
+  addReaction,
+  removeReaction,
+  uploadCommentAttachment,
+} from '../data/api';
 
 import './StudyGroupsTab.scss';
 
-// Mock data modeled closely after the provided HTML reference
-const GROUPS_MOCK = [
-  {
-    id: 'group1',
-    name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
-    members: 8,
-    streak: 5,
-    progress: 72,
-    description: 'Nhóm học cùng nhau để cùng tiến bộ! Hãy cùng hoàn thành mục tiêu tuần này.',
-    membersList: [
-      { name: 'An Nhiên', initials: 'A', color: '#E86C5D', streak: 5, progress: 85 },
-      { name: 'Bảo Trâm', initials: 'B', color: '#3498DB', streak: 5, progress: 78 },
-      { name: 'Pi (Bạn) 👑', initials: 'PI', color: '#2ECC71', streak: 12, progress: 67, role: 'Admin' },
-      { name: 'Đức Anh', initials: 'D', color: '#F39C12', streak: 3, progress: 65 },
-    ],
-    posts: [
-      {
-        id: 'p1',
-        author: 'An Nhiên',
-        initials: 'A',
-        color: '#E86C5D',
-        time: '30 phút trước • 👥 Nhóm',
-        content: 'Mình vừa hoàn thành bài kiểm tra Chương 1 và đạt 9.5 điểm! 🎉 Cảm ơn mọi người đã động viên và giúp đỡ mình trong nhóm. Ai còn khó khăn phần nào cứ hỏi mình nhé! 💪',
-        reactions: 24,
-        comments: 8,
-      },
-      {
-        id: 'p2',
-        author: 'Đức Anh',
-        initials: 'D',
-        color: '#F39C12',
-        time: '2 giờ trước • 👥 Nhóm',
-        content: 'Ai giải thích giúp mình phần "Lũy thừa của số hữu tỉ" được không? Mình hơi khó hiểu phần này 🤔',
-        reactions: 12,
-        comments: 15,
-      },
-      {
-        id: 'p3',
-        author: 'Pi (Bạn) 👑 Admin',
-        initials: 'PI',
-        color: '#2ECC71',
-        time: 'Hôm qua • 👥 Nhóm',
-        content: '🎯 Nhóm của chúng ta đã duy trì chuỗi 5 ngày! Tuyệt vời! Hãy tiếp tục phấn đấu để đạt mục tiêu 10 ngày liên tiếp nhé các bạn! 💪🔥\n\nMọi người nhớ hoàn thành bài học hôm nay để giữ chuỗi nhóm nhé! Cùng nhau tiến bộ! 🚀',
-        reactions: 18,
-        comments: 5,
-      },
-    ],
-  },
-  {
-    id: 'group2',
-    name: 'Nhóm Toán 8/1 THCS Lê Quý Đôn 🚀',
-    members: 6,
-    streak: 8,
-    progress: 85,
-    description: 'Nhóm học tập chăm chỉ! Cùng nhau chinh phục các đỉnh cao toán học 🎯',
-    membersList: [
-      { name: 'Kim Ngân', initials: 'K', color: '#9B59B6', streak: 8, progress: 92 },
-      { name: 'Thành Long', initials: 'T', color: '#16A085', streak: 8, progress: 88 },
-      { name: 'Pi (Bạn)', initials: 'PI', color: '#2ECC71', streak: 12, progress: 67, role: 'Thành viên' },
-      { name: 'Văn Minh', initials: 'V', color: '#E67E22', streak: 6, progress: 81 },
-      { name: 'Hồng Anh', initials: 'H', color: '#3498DB', streak: 8, progress: 86 },
-      { name: 'Ngọc Hân 👑', initials: 'N', color: '#E74C3C', streak: 8, progress: 90, role: 'Admin' },
-    ],
-    posts: [
-      {
-        id: 'p4',
-        author: 'Kim Ngân',
-        initials: 'K',
-        color: '#9B59B6',
-        time: '1 giờ trước • 👥 Nhóm',
-        content: 'Nhóm mình đang dẫn đầu bảng xếp hạng rồi! Cùng cố gắng duy trì vị trí top 1 nhé các bạn! 💪✨',
-        reactions: 20,
-        comments: 4,
-      },
-    ],
-  },
+const REACTION_TYPES = [
+  { type: 'like', emoji: '👍', label: 'Like' },
+  { type: 'love', emoji: '❤️', label: 'Love' },
+  { type: 'haha', emoji: '😂', label: 'Haha' },
+  { type: 'wow', emoji: '😮', label: 'Wow' },
+  { type: 'sad', emoji: '😢', label: 'Sad' },
+  { type: 'angry', emoji: '😠', label: 'Angry' },
 ];
 
-const DEFAULT_GROUP_STREAKS = [
-  {
-    id: 1,
-    name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
-    streakDays: 5,
-    members: [
-      { id: 1, initial: 'A', color: '#E86C5D' },
-      { id: 2, initial: 'B', color: '#3498DB' },
-      { id: 3, initial: 'C', color: '#2ECC71' },
-    ],
-    additionalMembers: 5,
-    status: 'in_progress',
-    message: '💪 Tiếp tục học hôm nay để giữ chuỗi nhóm!',
-  },
-  {
-    id: 2,
-    name: 'Chinh phục Toán 7',
-    streakDays: 10,
-    members: [
-      { id: 4, initial: 'D', color: '#8B3A62' },
-      { id: 5, initial: 'E', color: '#E67E22' },
-      { id: 6, initial: 'F', color: '#16A085' },
-    ],
-    additionalMembers: 2,
-    status: 'all_completed',
-    message: '✓ Tất cả thành viên đã học hôm nay',
-  },
-];
+// Create Group Modal
+const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-const MemberRow = ({ member }) => (
-  <div className="member-row">
-    <div className="member-info">
-      <div className="member-avatar" style={{ background: member.color }}>{member.initials}</div>
-      <div>
-        <div className="member-name">{member.name}</div>
-        <div className="member-sub">🔥 {member.streak} ngày • {member.progress}%</div>
-      </div>
-    </div>
-    <div className="member-actions">
-      {member.role ? (
-        <span className="member-badge">{member.role}</span>
-      ) : (
-        <>
-          <button className="friend-action-btn" title="Xem profile">👁️</button>
-          <button className="friend-action-btn" title="Xóa khỏi nhóm">🗑️</button>
-        </>
-      )}
-    </div>
-  </div>
-);
-
-const PostCard = ({ post }) => (
-  <div className="feed-post">
-    <div className="post-header">
-      <div className="user-avatar" style={{ background: post.color }}>{post.initials}</div>
-      <div className="post-author-info">
-        <div className="post-author-name">{post.author}</div>
-        <div className="post-time">{post.time}</div>
-      </div>
-      <button className="icon-button" title="Tùy chọn">⋯</button>
-    </div>
-    <div className="post-content">
-      {post.content}
-    </div>
-    <div className="post-reactions">
-      <button className="reaction-btn liked">
-        <span className="reaction-icon">❤️</span>
-        <span>{post.reactions}</span>
-      </button>
-      <button className="reaction-btn">
-        <span>💬</span>
-        <span>{post.comments} bình luận</span>
-      </button>
-      <button className="reaction-btn">
-        <span>📤</span>
-        <span>Chia sẻ</span>
-      </button>
-    </div>
-    <div className="comment-input-wrapper">
-      <div className="user-avatar small">PI</div>
-      <input type="text" className="comment-input" placeholder="Viết bình luận..." />
-      <button className="send-comment-btn">Gửi</button>
-    </div>
-  </div>
-);
-
-const GroupCard = ({ group }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const toggle = () => setCollapsed(prev => !prev);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    logInfo('Creating study group', { courseId, formData });
+    
+    try {
+      const result = await createStudyGroup(courseId, formData);
+      logInfo('Study group created successfully', { groupId: result.id, courseId });
+      setFormData({ name: '', description: '' });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi tạo nhóm';
+      logError('Failed to create study group', {
+        courseId,
+        formData,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: errorMessage,
+      });
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className={`group-card ${collapsed ? 'collapsed' : ''}`}>
-      <div className="group-header">
-        <button className="group-collapse-toggle" onClick={toggle} title="Thu gọn/Mở rộng nhóm">
-          {collapsed ? '▶' : '▼'}
-        </button>
-        <div className="group-info">
-          <h3>{group.name}</h3>
-          <div className="group-stats">
-            <span>👥 {group.members} thành viên</span>
-            <span>🔥 Chuỗi nhóm: {group.streak} ngày</span>
-            <span>📊 Tiến độ TB: {group.progress}%</span>
-          </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Tạo nhóm học tập mới" size="md">
+      <Form onSubmit={handleSubmit}>
+        {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+        <FormGroup>
+          <FormControl
+            type="text"
+            placeholder="Tên nhóm"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+        </FormGroup>
+        <FormGroup>
+          <FormControl
+            as="textarea"
+            rows={4}
+            placeholder="Mô tả nhóm"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </FormGroup>
+        <div className="d-flex justify-content-end gap-2 mt-3">
+          <Button variant="secondary" onClick={onClose}>Hủy</Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+            Tạo nhóm
+          </Button>
         </div>
-        <div className="group-menu-container">
-          <button className="group-menu-btn" title="Tùy chọn nhóm">⋮</button>
+      </Form>
+    </Modal>
+  );
+};
+
+// Add Member Modal
+const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    logInfo('Adding member to study group', { groupId, username });
+    
+    try {
+      // Note: API expects user ID, but we'll use username for now
+      // You may need to adjust based on your API
+      const result = await addStudyGroupMember(groupId, username);
+      logInfo('Member added successfully', { groupId, username, result });
+      setUsername('');
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi thêm thành viên';
+      logError('Failed to add member', {
+        groupId,
+        username,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: errorMessage,
+      });
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Thêm thành viên" size="md">
+      <Form onSubmit={handleSubmit}>
+        {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+        <FormGroup>
+          <FormControl
+            type="text"
+            placeholder="Username hoặc Email"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </FormGroup>
+        <div className="d-flex justify-content-end gap-2 mt-3">
+          <Button variant="secondary" onClick={onClose}>Hủy</Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+            Thêm
+          </Button>
         </div>
-      </div>
+      </Form>
+    </Modal>
+  );
+};
 
-      {collapsed && (
-        <div className="collapsed-group-summary">
-          <div className="collapsed-stat">
-            <span>👥</span>
-            <strong>{group.members}</strong>
-            <span>thành viên</span>
-          </div>
-          <div className="collapsed-stat">
-            <span>🔥</span>
-            <strong>{group.streak} ngày</strong>
-          </div>
-          <div className="collapsed-stat">
-            <span>📊</span>
-            <strong>{group.progress}%</strong>
-            <span>tiến độ</span>
-          </div>
+// Reaction Picker
+const ReactionPicker = ({ comment, onReactionChange }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const currentUser = getAuthenticatedUser();
+  const userReaction = comment.userReaction;
+
+  const handleReaction = async (reactionType) => {
+    logInfo('Handling reaction', { commentId: comment.id, reactionType, currentReaction: userReaction });
+    
+    try {
+      if (userReaction === reactionType) {
+        // Remove reaction
+        logInfo('Removing reaction', { commentId: comment.id, reactionType });
+        await removeReaction(comment.id);
+        logInfo('Reaction removed successfully', { commentId: comment.id });
+      } else {
+        // Add or change reaction
+        logInfo('Adding/changing reaction', { commentId: comment.id, reactionType });
+        const result = await addReaction(comment.id, reactionType);
+        logInfo('Reaction added/changed successfully', { commentId: comment.id, result });
+      }
+      onReactionChange();
+      setShowPicker(false);
+    } catch (err) {
+      logError('Failed to handle reaction', {
+        commentId: comment.id,
+        reactionType,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+    }
+  };
+
+  return (
+    <div className="reaction-picker-wrapper">
+      <button 
+        className="reaction-btn" 
+        onClick={() => setShowPicker(!showPicker)}
+        title="Thả reaction"
+      >
+        {userReaction ? (
+          <>
+            <span>{REACTION_TYPES.find(r => r.type === userReaction)?.emoji}</span>
+            <span>{comment.reactionCounts?.[userReaction] || 0}</span>
+          </>
+        ) : (
+          <>
+            <span>👍</span>
+            <span>Thả reaction</span>
+          </>
+        )}
+      </button>
+      {showPicker && (
+        <div className="reaction-picker">
+          {REACTION_TYPES.map((reaction) => (
+            <button
+              key={reaction.type}
+              className={`reaction-option ${userReaction === reaction.type ? 'active' : ''}`}
+              onClick={() => handleReaction(reaction.type)}
+              title={reaction.label}
+            >
+              {reaction.emoji}
+            </button>
+          ))}
         </div>
-      )}
-
-      {!collapsed && (
-        <>
-          <div className="group-subtitle">
-            {group.description}
-          </div>
-
-          <div className="members-block">
-            <div className="members-head">
-              <span>Thành viên ({group.members})</span>
-              <button className="btn btn-primary btn-sm">+ Thêm</button>
-            </div>
-            <div className="members-list">
-              {group.membersList.map(member => (
-                <MemberRow key={member.name} member={member} />
-              ))}
-            </div>
-            <div className="member-more">Xem thêm thành viên...</div>
-          </div>
-
-          <div className="discussion-actions">
-            <button className="btn btn-primary w-100">💬 Thảo luận</button>
-          </div>
-
-          <div className="discussion-container">
-            <div className="create-post-box">
-              <div className="create-post-input">
-                <div className="user-avatar">PI</div>
-                <textarea className="create-post-textarea" placeholder="Chia sẻ suy nghĩ của bạn với nhóm..." rows="1" />
-              </div>
-              <div className="create-post-actions">
-                <button className="post-action-btn" title="Thêm ảnh">📷</button>
-                <button className="post-action-btn" title="Thêm file">📎</button>
-                <button className="post-action-btn" title="Thêm emoji">😊</button>
-                <button className="btn btn-primary post-submit">Đăng</button>
-              </div>
-            </div>
-
-            <div className="discussion-feed">
-              {group.posts.map(post => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        </>
       )}
     </div>
   );
 };
 
+// Comment Card Component
+const CommentCard = ({ comment, group, onUpdate, currentUserId }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [loading, setLoading] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
+
+  const canEdit = comment.canEdit || comment.user?.id === currentUserId;
+  const canDelete = comment.canDelete || comment.user?.id === currentUserId;
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    logInfo('Updating comment', { commentId: comment.id, content: editContent });
+    
+    try {
+      const result = await updateComment(comment.id, editContent);
+      logInfo('Comment updated successfully', { commentId: comment.id, result });
+      setIsEditing(false);
+      onUpdate();
+    } catch (err) {
+      logError('Failed to update comment', {
+        commentId: comment.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Bạn có chắc muốn xóa bình luận này?')) {
+      setLoading(true);
+      logInfo('Deleting comment', { commentId: comment.id });
+      
+      try {
+        await deleteComment(comment.id);
+        logInfo('Comment deleted successfully', { commentId: comment.id });
+        onUpdate();
+      } catch (err) {
+        logError('Failed to delete comment', {
+          commentId: comment.id,
+          error: err.response?.data,
+          status: err.response?.status,
+          message: err.message,
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'Vừa xong';
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days < 7) return `${days} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  const userInitials = comment.user?.username?.substring(0, 2).toUpperCase() || 'U';
+  const userColor = `#${(comment.user?.id || 0).toString(16).padStart(6, '0').substring(0, 6)}`;
+
+  return (
+    <div className="feed-post">
+      <div className="post-header">
+        <div className="user-avatar" style={{ background: userColor }}>{userInitials}</div>
+        <div className="post-author-info">
+          <div className="post-author-name">
+            {comment.user?.username || 'Người dùng đã xóa'}
+            {comment.user?.id === currentUserId && ' (Bạn)'}
+          </div>
+          <div className="post-time">{formatDate(comment.createdAt)} • 👥 Nhóm</div>
+        </div>
+        {(canEdit || canDelete) && (
+          <Dropdown>
+            <DropdownButton
+              id={`comment-menu-${comment.id}`}
+              variant="link"
+              className="icon-button"
+            >
+              ⋯
+            </DropdownButton>
+            <Dropdown.Menu>
+              {canEdit && (
+                <DropdownItem onClick={() => setIsEditing(true)}>Chỉnh sửa</DropdownItem>
+              )}
+              {canDelete && (
+                <DropdownItem onClick={handleDelete} className="text-danger">Xóa</DropdownItem>
+              )}
+            </Dropdown.Menu>
+          </Dropdown>
+        )}
+      </div>
+      
+      {isEditing ? (
+        <div className="edit-comment-form">
+          <FormControl
+            as="textarea"
+            rows={3}
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+          />
+          <div className="d-flex gap-2 mt-2">
+            <Button size="sm" onClick={handleUpdate} disabled={loading}>
+              Lưu
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>
+              Hủy
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="post-content">{comment.content}</div>
+      )}
+
+      {comment.attachments && comment.attachments.length > 0 && (
+        <div className="post-attachments">
+          {comment.attachments.map((attachment) => (
+            <a
+              key={attachment.id}
+              href={attachment.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="attachment-link"
+            >
+              📎 {attachment.fileName}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div className="post-reactions">
+        <ReactionPicker comment={comment} onReactionChange={onUpdate} />
+        <button className="reaction-btn">
+          <span>💬</span>
+          <span>{comment.repliesCount || 0} bình luận</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Group Card Component
+const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentContent, setCommentContent] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(null);
+  const [showComments, setShowComments] = useState(false);
+
+  const canEdit = group.canEdit;
+  const canDelete = group.canDelete;
+  const canManageMembers = group.canManageMembers;
+  const isMember = group.isMember;
+
+  useEffect(() => {
+    if (showComments && !comments.length) {
+      loadComments();
+    }
+  }, [showComments]);
+
+  const loadComments = async () => {
+    setLoadingComments(true);
+    logInfo('Loading comments', { groupId: group.id });
+    
+    try {
+      const data = await getStudyGroupComments(group.id);
+      logInfo('Comments loaded successfully', { groupId: group.id, count: data.results?.length || 0 });
+      setComments(data.results || []);
+    } catch (err) {
+      logError('Failed to load comments', {
+        groupId: group.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentContent.trim()) {
+      logInfo('Comment content is empty, skipping');
+      return;
+    }
+
+    logInfo('Adding comment', { groupId: group.id, contentLength: commentContent.length });
+    
+    try {
+      const result = await createComment(group.id, { content: commentContent });
+      logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
+      setCommentContent('');
+      loadComments();
+    } catch (err) {
+      logError('Failed to add comment', {
+        groupId: group.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      logInfo('No file selected for upload');
+      return;
+    }
+
+    logInfo('Uploading file attachment', { 
+      groupId: group.id, 
+      fileName: file.name, 
+      fileSize: file.size,
+      fileType: file.type 
+    });
+
+    // Create comment first, then upload attachment
+    try {
+      const comment = await createComment(group.id, { content: commentContent || 'Đã đính kèm file' });
+      logInfo('Comment created for attachment', { commentId: comment.id });
+      
+      setUploadingFile(true);
+      const attachment = await uploadCommentAttachment(comment.id, file);
+      logInfo('File uploaded successfully', { 
+        commentId: comment.id, 
+        attachmentId: attachment.id,
+        fileName: attachment.fileName 
+      });
+      
+      setCommentContent('');
+      setUploadingFile(null);
+      e.target.value = '';
+      loadComments();
+    } catch (err) {
+      logError('Failed to upload file', {
+        groupId: group.id,
+        fileName: file.name,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      setUploadingFile(null);
+    }
+  };
+
+  const handleRemoveMember = async (userId) => {
+    if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
+      logInfo('Removing member from group', { groupId: group.id, userId });
+      
+      try {
+        await removeStudyGroupMember(group.id, userId);
+        logInfo('Member removed successfully', { groupId: group.id, userId });
+        onUpdate();
+      } catch (err) {
+        logError('Failed to remove member', {
+          groupId: group.id,
+          userId,
+          error: err.response?.data,
+          status: err.response?.status,
+          message: err.message,
+        });
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
+
+  return (
+    <>
+      <div className={`group-card ${collapsed ? 'collapsed' : ''}`}>
+        <div className="group-header">
+          <button className="group-collapse-toggle" onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? '▶' : '▼'}
+          </button>
+          <div className="group-info">
+            <h3>{group.name}</h3>
+            <div className="group-stats">
+              <span>👥 {group.memberCount || 0} thành viên</span>
+              <span>📅 Tạo: {formatDate(group.createdAt)}</span>
+            </div>
+          </div>
+          <div className="group-menu-container">
+            {(canEdit || canDelete) && (
+              <Dropdown>
+                <DropdownButton
+                  id={`group-menu-${group.id}`}
+                  variant="link"
+                  className="group-menu-btn"
+                >
+                  ⋮
+                </DropdownButton>
+                <Dropdown.Menu>
+                  {canEdit && (
+                    <DropdownItem onClick={() => {/* TODO: Edit modal */}}>
+                      Chỉnh sửa
+                    </DropdownItem>
+                  )}
+                  {canDelete && (
+                    <DropdownItem 
+                      onClick={async () => {
+                        if (window.confirm('Bạn có chắc muốn xóa nhóm này?')) {
+                          try {
+                            await deleteStudyGroup(group.id);
+                            onUpdate();
+                          } catch (err) {
+                            logError(err);
+                          }
+                        }
+                      }}
+                      className="text-danger"
+                    >
+                      Xóa nhóm
+                    </DropdownItem>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
+          </div>
+        </div>
+
+        {collapsed && (
+          <div className="collapsed-group-summary">
+            <div className="collapsed-stat">
+              <span>👥</span>
+              <strong>{group.memberCount || 0}</strong>
+              <span>thành viên</span>
+            </div>
+            <div className="collapsed-stat">
+              <span>📅</span>
+              <strong>{formatDate(group.createdAt)}</strong>
+            </div>
+          </div>
+        )}
+
+        {!collapsed && (
+          <>
+            <div className="group-subtitle">{group.description || 'Chưa có mô tả'}</div>
+
+            <div className="members-block">
+              <div className="members-head">
+                <span>Thành viên ({group.memberCount || 0})</span>
+                {canManageMembers && (
+                  <Button size="sm" variant="primary" onClick={() => setShowAddMember(true)}>
+                    + Thêm
+                  </Button>
+                )}
+              </div>
+              {group.members && group.members.length > 0 ? (
+                <div className="members-list">
+                  {group.members.slice(0, 5).map((member) => (
+                    <div key={member.id} className="member-row">
+                      <div className="member-info">
+                        <div className="member-avatar">
+                          {member.user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <div className="member-name">
+                            {member.user?.username || 'Người dùng đã xóa'}
+                            {member.role && ` (${member.role})`}
+                          </div>
+                          <div className="member-sub">Tham gia: {formatDate(member.joinedAt)}</div>
+                        </div>
+                      </div>
+                      {canManageMembers && member.user?.id !== currentUserId && (
+                        <button
+                          className="friend-action-btn"
+                          onClick={() => handleRemoveMember(member.user.id)}
+                          title="Xóa khỏi nhóm"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-2">Chưa có thành viên</div>
+              )}
+            </div>
+
+            {isMember && (
+              <div className="discussion-container">
+                <div className="create-post-box">
+                  <div className="create-post-input">
+                    <div className="user-avatar">
+                      {getAuthenticatedUser()?.username?.substring(0, 2).toUpperCase() || 'U'}
+                    </div>
+                    <textarea
+                      className="create-post-textarea"
+                      placeholder="Chia sẻ suy nghĩ của bạn với nhóm..."
+                      rows="2"
+                      value={commentContent}
+                      onChange={(e) => setCommentContent(e.target.value)}
+                    />
+                  </div>
+                  <div className="create-post-actions">
+                    <label className="post-action-btn" title="Thêm ảnh">
+                      📷
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                        disabled={uploadingFile}
+                      />
+                    </label>
+                    <label className="post-action-btn" title="Thêm file">
+                      📎
+                      <input
+                        type="file"
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                        disabled={uploadingFile}
+                      />
+                    </label>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleAddComment}
+                      disabled={!commentContent.trim() || uploadingFile}
+                    >
+                      {uploadingFile ? <Spinner animation="border" size="sm" /> : 'Đăng'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="discussion-actions mt-3">
+                  <Button
+                    variant="outline-primary"
+                    onClick={() => {
+                      setShowComments(!showComments);
+                      if (!showComments) loadComments();
+                    }}
+                  >
+                    💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({comments.length})
+                  </Button>
+                </div>
+
+                {showComments && (
+                  <div className="discussion-feed mt-3">
+                    {loadingComments ? (
+                      <div className="text-center p-3">
+                        <Spinner animation="border" />
+                      </div>
+                    ) : comments.length > 0 ? (
+                      comments.map((comment) => (
+                        <CommentCard
+                          key={comment.id}
+                          comment={comment}
+                          group={group}
+                          onUpdate={loadComments}
+                          currentUserId={currentUserId}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center p-3">Chưa có bình luận nào</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <AddMemberModal
+        isOpen={showAddMember}
+        onClose={() => setShowAddMember(false)}
+        groupId={group.id}
+        onSuccess={() => {
+          onUpdate();
+          setShowAddMember(false);
+        }}
+      />
+    </>
+  );
+};
+
+// Main Component
 const StudyGroupsTab = () => {
   const { courseId } = useParams();
   const dispatch = useDispatch();
   const welcomeModel = useModel('welcome', courseId) || {};
+  const studyGroupsModel = useModel('study-groups', courseId) || {};
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const currentUser = getAuthenticatedUser();
+  const currentUserId = currentUser?.id;
+
   const userStats = welcomeModel.userStats || {
     streakDays: 0,
     lastDayOfStreak: null,
   };
 
-  const groups = useMemo(() => GROUPS_MOCK, []);
+  const groups = useMemo(() => {
+    if (studyGroupsModel.results && studyGroupsModel.results.length > 0) {
+      return studyGroupsModel.results;
+    }
+    return [];
+  }, [studyGroupsModel.results, refreshKey]);
+
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
 
   useEffect(() => {
+    logInfo('StudyGroupsTab mounted/updated', { courseId, refreshKey });
+    
     if (courseId && (!welcomeModel.userStats || !welcomeModel.success)) {
+      logInfo('Fetching welcome tab data', { courseId });
       dispatch(fetchWelcomeTab(courseId));
     }
-  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
+    if (courseId) {
+      logInfo('Fetching study groups data', { courseId });
+      dispatch(fetchStudyGroupsTab(courseId));
+    }
+  }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success, refreshKey]);
+
+  const handleRefresh = () => {
+    logInfo('Refreshing study groups', { courseId });
+    setRefreshKey(prev => prev + 1);
+    dispatch(fetchStudyGroupsTab(courseId));
+  };
 
   return (
     <Container className="study-groups-tab px-0">
@@ -290,7 +797,9 @@ const StudyGroupsTab = () => {
         <Col lg={8} md={12}>
           <div className="groups-header">
             <h2>Nhóm học tập</h2>
-            <button className="btn btn-primary">+ Tạo nhóm mới</button>
+            <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+              + Tạo nhóm mới
+            </Button>
           </div>
 
           <section className="panel">
@@ -298,9 +807,21 @@ const StudyGroupsTab = () => {
               <h3>Nhóm của bạn</h3>
             </div>
             <div className="group-list">
-              {groups.map(group => (
-                <GroupCard key={group.id} group={group} />
-              ))}
+              {groups.length > 0 ? (
+                groups.map((group) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    courseId={courseId}
+                    currentUserId={currentUserId}
+                    onUpdate={handleRefresh}
+                  />
+                ))
+              ) : (
+                <div className="text-center p-4">
+                  <p>Chưa có nhóm học tập nào. Hãy tạo nhóm mới để bắt đầu!</p>
+                </div>
+              )}
             </div>
           </section>
         </Col>
@@ -317,10 +838,15 @@ const StudyGroupsTab = () => {
           </div>
         </Col>
       </Row>
+
+      <CreateGroupModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        courseId={courseId}
+        onSuccess={handleRefresh}
+      />
     </Container>
   );
 };
 
 export default StudyGroupsTab;
-
-

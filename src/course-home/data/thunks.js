@@ -16,6 +16,7 @@ import {
   getCoursewareSearchEnabled,
   searchCourseContentFromAPI,
   getWelcomeTabData,
+  getStudyGroupsTabData,
 } from './api';
 
 import {
@@ -120,7 +121,7 @@ export function fetchBadgeTab(courseId) {
 }
 
 export function fetchStudyGroupsTab(courseId) {
-  return fetchTab(courseId, 'study-groups');
+  return fetchTab(courseId, 'study-groups', getStudyGroupsTabData);
 }
 
 export function fetchWelcomeTab(courseId) {
