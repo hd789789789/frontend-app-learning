@@ -772,39 +772,51 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
       )}
 
       {(() => {
-        // Debug logging
-        const hasAttachments = localComment.attachments && Array.isArray(localComment.attachments) && localComment.attachments.length > 0;
+        // Debug logging - check all possible attachment fields
+        const attachments = localComment.attachments || localComment.Attachments || [];
+        const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
+        
         if (hasAttachments) {
-          logInfo('Rendering attachments for comment', {
+          console.log('[CommentCard] Rendering attachments for comment', {
             commentId: localComment.id,
-            attachmentsCount: localComment.attachments.length,
-            attachments: localComment.attachments,
+            attachmentsCount: attachments.length,
+            attachments: attachments,
+            firstAttachment: attachments[0],
           });
         } else {
-          logInfo('Comment has no attachments to render', {
+          console.log('[CommentCard] Comment has no attachments to render', {
             commentId: localComment.id,
+            content: localComment.content,
             attachments: localComment.attachments,
+            Attachments: localComment.Attachments,
             attachmentsType: typeof localComment.attachments,
             isArray: Array.isArray(localComment.attachments),
+            allKeys: Object.keys(localComment),
           });
         }
         
-        return hasAttachments ? (
+        if (!hasAttachments) {
+          return null;
+        }
+        
+        return (
           <div className="post-attachments">
-            {localComment.attachments.map((attachment, index) => {
+            {attachments.map((attachment, index) => {
               // Ensure attachment has proper format - check all possible field names
               const att = {
-                id: attachment.id || attachment.Id || attachment.ID || `attachment-${index}`,
-                fileName: attachment.fileName || attachment.file_name || 'Unknown file',
-                fileUrl: attachment.fileUrl || attachment.file_url || attachment.url,
-                fileType: attachment.fileType || attachment.file_type || 'document',
+                id: attachment.id || attachment.Id || attachment.ID || `attachment-${localComment.id}-${index}`,
+                fileName: attachment.fileName || attachment.file_name || attachment.fileName || 'Unknown file',
+                fileUrl: attachment.fileUrl || attachment.file_url || attachment.url || attachment.fileUrl,
+                fileType: attachment.fileType || attachment.file_type || (attachment.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'document'),
               };
               
-              logInfo('Rendering attachment', {
+              console.log('[CommentCard] Rendering attachment', {
+                index,
                 original: attachment,
                 formatted: att,
                 hasFileUrl: !!att.fileUrl,
                 hasFileName: !!att.fileName,
+                fileUrl: att.fileUrl,
               });
               
               // Only show image if we have a valid URL and file type is image
@@ -818,8 +830,11 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
                       onClick={() => window.open(att.fileUrl, '_blank')}
                       onError={(e) => {
                         // If image fails to load, show as regular file link
-                        logError('Image failed to load', { attachment: att, error: e });
+                        console.error('[CommentCard] Image failed to load', { attachment: att, error: e });
                         e.target.style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log('[CommentCard] Image loaded successfully', { attachment: att });
                       }}
                     />
                     <a
@@ -851,7 +866,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
               );
             })}
           </div>
-        ) : null;
+        );
       })()}
 
       <div className="post-reactions">
@@ -987,30 +1002,55 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       });
       
       const fetchedComments = (data.results || []).map(comment => {
+        // Log raw comment data to see what we're getting
+        logInfo('Processing comment', {
+          commentId: comment.id,
+          hasAttachments: !!comment.attachments,
+          attachmentsType: typeof comment.attachments,
+          attachmentsIsArray: Array.isArray(comment.attachments),
+          attachmentsValue: comment.attachments,
+          allCommentKeys: Object.keys(comment),
+        });
+        
         // Ensure attachments are properly formatted
-        if (comment.attachments && Array.isArray(comment.attachments)) {
+        // Check multiple possible field names
+        let attachments = comment.attachments || comment.Attachments || comment.ATTACHMENTS || [];
+        
+        if (!Array.isArray(attachments)) {
+          logInfo('Attachments is not an array, trying to convert', {
+            commentId: comment.id,
+            attachments,
+            attachmentsType: typeof attachments,
+          });
+          attachments = [];
+        }
+        
+        if (attachments.length > 0) {
           logInfo('Formatting attachments for comment', {
             commentId: comment.id,
-            attachmentsCount: comment.attachments.length,
-            firstAttachment: comment.attachments[0],
-            attachmentKeys: comment.attachments[0] ? Object.keys(comment.attachments[0]) : [],
+            attachmentsCount: attachments.length,
+            firstAttachment: attachments[0],
+            attachmentKeys: attachments[0] ? Object.keys(attachments[0]) : [],
+            rawFirstAttachment: JSON.stringify(attachments[0]),
           });
           
-          comment.attachments = comment.attachments.map(att => {
+          comment.attachments = attachments.map((att, idx) => {
             const formatted = {
-              id: att.id || att.Id || att.ID,
-              fileName: att.fileName || att.file_name || 'Unknown',
-              fileUrl: att.fileUrl || att.file_url || att.url,
-              fileType: att.fileType || att.file_type || 'document',
+              id: att.id || att.Id || att.ID || `att-${comment.id}-${idx}`,
+              fileName: att.fileName || att.file_name || att.fileName || 'Unknown',
+              fileUrl: att.fileUrl || att.file_url || att.url || att.fileUrl,
+              fileType: att.fileType || att.file_type || (att.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'document'),
               fileSize: att.fileSize || att.file_size || 0,
               uploadedAt: att.uploadedAt || att.uploaded_at,
             };
             
             logInfo('Formatted attachment', {
+              index: idx,
               original: att,
               formatted,
               hasFileUrl: !!formatted.fileUrl,
               hasFileName: !!formatted.fileName,
+              fileUrlValue: formatted.fileUrl,
             });
             
             return formatted;
@@ -1018,9 +1058,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         } else {
           logInfo('Comment has no attachments', {
             commentId: comment.id,
+            content: comment.content,
             attachments: comment.attachments,
             attachmentsType: typeof comment.attachments,
           });
+          comment.attachments = [];
         }
         return comment;
       });

@@ -774,7 +774,37 @@ export async function getStudyGroupComments(groupId) {
       hasNext: !!data.next,
       hasPrevious: !!data.previous,
     });
-    return camelCaseObject(data);
+    
+    // Log first comment to see structure
+    if (data.results && data.results.length > 0) {
+      console.log('[Study Groups API] First comment structure:', {
+        commentId: data.results[0].id,
+        hasAttachments: !!data.results[0].attachments,
+        attachmentsType: typeof data.results[0].attachments,
+        attachmentsIsArray: Array.isArray(data.results[0].attachments),
+        attachmentsCount: Array.isArray(data.results[0].attachments) ? data.results[0].attachments.length : 0,
+        firstAttachment: data.results[0].attachments?.[0],
+        allKeys: Object.keys(data.results[0]),
+        rawComment: JSON.stringify(data.results[0]).substring(0, 500),
+      });
+    }
+    
+    const camelCased = camelCaseObject(data);
+    
+    // Log after camelCase conversion
+    if (camelCased.results && camelCased.results.length > 0) {
+      console.log('[Study Groups API] First comment after camelCase:', {
+        commentId: camelCased.results[0].id,
+        hasAttachments: !!camelCased.results[0].attachments,
+        attachmentsType: typeof camelCased.results[0].attachments,
+        attachmentsIsArray: Array.isArray(camelCased.results[0].attachments),
+        attachmentsCount: Array.isArray(camelCased.results[0].attachments) ? camelCased.results[0].attachments.length : 0,
+        firstAttachment: camelCased.results[0].attachments?.[0],
+        allKeys: Object.keys(camelCased.results[0]),
+      });
+    }
+    
+    return camelCased;
   } catch (error) {
     console.error('[Study Groups API] Error getting group comments:', {
       groupId,
