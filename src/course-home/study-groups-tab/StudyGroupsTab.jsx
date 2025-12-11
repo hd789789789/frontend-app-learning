@@ -1767,6 +1767,25 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
   return (
     <>
+      <ModalDialog
+        isOpen={!!errorModal}
+        onClose={() => setErrorModal(null)}
+        title={errorModal?.title || 'Thông báo'}
+        size="sm"
+        hasCloseButton
+      >
+        <ModalDialog.Body>
+          {errorModal?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'}
+        </ModalDialog.Body>
+        <ModalDialog.Footer>
+          <ActionRow>
+            <ModalDialog.CloseButton variant="primary" onClick={() => setErrorModal(null)}>
+              Đóng
+            </ModalDialog.CloseButton>
+          </ActionRow>
+        </ModalDialog.Footer>
+      </ModalDialog>
+
       <div className={`group-card ${collapsed ? 'collapsed' : ''}`}>
         <div className="group-header">
           <button className="group-collapse-toggle" onClick={() => setCollapsed(!collapsed)}>
@@ -2358,27 +2377,7 @@ const StudyGroupsTab = () => {
   }, [courseId]);
 
   return (
-    <>
-      <ModalDialog
-        isOpen={!!errorModal}
-        onClose={() => setErrorModal(null)}
-        title={errorModal?.title || 'Thông báo'}
-        size="sm"
-        hasCloseButton
-      >
-        <ModalDialog.Body>
-          {errorModal?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'}
-        </ModalDialog.Body>
-        <ModalDialog.Footer>
-          <ActionRow>
-            <ModalDialog.CloseButton variant="primary" onClick={() => setErrorModal(null)}>
-              Đóng
-            </ModalDialog.CloseButton>
-          </ActionRow>
-        </ModalDialog.Footer>
-      </ModalDialog>
-
-      <Container className="study-groups-tab px-0">
+    <Container className="study-groups-tab px-0">
       <Row>
         <Col lg={8} md={12}>
           <div className="groups-header">
@@ -2459,7 +2458,6 @@ const StudyGroupsTab = () => {
         onGroupCreated={addGroupToList}
       />
     </Container>
-    </>
   );
 };
 
