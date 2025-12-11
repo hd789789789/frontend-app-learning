@@ -774,35 +774,54 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
       {localComment.attachments && localComment.attachments.length > 0 && (
         <div className="post-attachments">
           {localComment.attachments.map((attachment) => {
-            if (attachment.fileType === 'image' && attachment.fileUrl) {
+            // Ensure attachment has proper format
+            const att = {
+              id: attachment.id,
+              fileName: attachment.fileName || attachment.file_name || 'Unknown file',
+              fileUrl: attachment.fileUrl || attachment.file_url || attachment.url,
+              fileType: attachment.fileType || attachment.file_type || 'document',
+            };
+            
+            // Only show image if we have a valid URL
+            if (att.fileType === 'image' && att.fileUrl) {
               return (
-                <div key={attachment.id} className="attachment-image-container">
+                <div key={att.id || attachment.id} className="attachment-image-container">
                   <img
-                    src={attachment.fileUrl}
-                    alt={attachment.fileName}
+                    src={att.fileUrl}
+                    alt={att.fileName}
                     className="attachment-image"
-                    onClick={() => window.open(attachment.fileUrl, '_blank')}
+                    onClick={() => window.open(att.fileUrl, '_blank')}
+                    onError={(e) => {
+                      // If image fails to load, show as regular file link
+                      logError('Image failed to load', { attachment: att, error: e });
+                      e.target.style.display = 'none';
+                    }}
                   />
                   <a
-                    href={attachment.fileUrl}
+                    href={att.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="attachment-link"
                   >
-                    {attachment.fileName}
+                    {att.fileName}
                   </a>
                 </div>
               );
             }
+            
+            // Show as file link (for documents or images without URL yet)
             return (
               <a
-                key={attachment.id}
-                href={attachment.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                key={att.id || attachment.id}
+                href={att.fileUrl || '#'}
+                target={att.fileUrl ? '_blank' : undefined}
+                rel={att.fileUrl ? 'noopener noreferrer' : undefined}
                 className="attachment-link"
+                onClick={!att.fileUrl ? (e) => { e.preventDefault(); } : undefined}
+                style={!att.fileUrl ? { cursor: 'default', opacity: 0.7 } : {}}
               >
-                📎 {attachment.fileName}
+                📎 {att.fileName}
+                {!att.fileUrl && ' (Đang xử lý...)'}
               </a>
             );
           })}
@@ -848,6 +867,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(getInitialCommentCount(group));
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [hasMoreComments, setHasMoreComments] = useState(false);
+  const [commentsPage, setCommentsPage] = useState(1);
   const [commentContent, setCommentContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -916,41 +938,93 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     commentCountLoadedRef.current = initialCount > 0;
   }, [localGroup.commentCount, localGroup.commentsCount, localGroup.comments_count, localGroup.comment_count, localGroup.comments, localGroup.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadComments = useCallback(async () => {
+  const loadComments = useCallback(async (reset = true, page = 1) => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
-    if (commentsLoadedRef.current === 'loading') {
+    if (commentsLoadedRef.current === 'loading' && reset) {
       logInfo('Comments already loading, skipping', { groupId: localGroup.id });
       return;
     }
     
-    commentsLoadedRef.current = 'loading';
-    setLoadingComments(true);
-    logInfo('Loading comments', { groupId: localGroup.id });
+    if (reset) {
+      commentsLoadedRef.current = 'loading';
+      setLoadingComments(true);
+      setCommentsPage(1);
+    } else {
+      setLoadingMoreComments(true);
+    }
+    
+    logInfo('Loading comments', { groupId: localGroup.id, page, reset });
     
     try {
-      const data = await getStudyGroupComments(localGroup.id);
-      logInfo('Comments loaded successfully', { groupId: localGroup.id, count: data.results?.length || 0 });
-      const fetchedComments = data.results || [];
-      setComments(fetchedComments);
-      setCommentCount(
-        typeof data.count === 'number'
-          ? data.count
-          : getInitialCommentCount(localGroup) || fetchedComments.length
-      );
+      // Load 5 comments for first page, 10 for subsequent pages
+      const pageSize = page === 1 ? 5 : 10;
+      const data = await getStudyGroupComments(localGroup.id, { page, pageSize });
+      logInfo('Comments loaded successfully', { 
+        groupId: localGroup.id, 
+        page,
+        pageSize,
+        count: data.results?.length || 0,
+        hasNext: !!data.next,
+        totalCount: data.count,
+      });
+      
+      const fetchedComments = (data.results || []).map(comment => {
+        // Ensure attachments are properly formatted
+        if (comment.attachments && Array.isArray(comment.attachments)) {
+          comment.attachments = comment.attachments.map(att => ({
+            id: att.id,
+            fileName: att.fileName || att.file_name || 'Unknown',
+            fileUrl: att.fileUrl || att.file_url || att.url,
+            fileType: att.fileType || att.file_type || 'document',
+            fileSize: att.fileSize || att.file_size || 0,
+            uploadedAt: att.uploadedAt || att.uploaded_at,
+          }));
+        }
+        return comment;
+      });
+      
+      if (reset) {
+        // Replace comments for first load
+        setComments(fetchedComments);
+      } else {
+        // Append comments for load more
+        setComments((prev) => [...prev, ...fetchedComments]);
+      }
+      
+      // Update pagination state
+      setHasMoreComments(!!data.next);
+      setCommentsPage(page);
+      
+      // Update comment count
+      if (typeof data.count === 'number') {
+        setCommentCount(data.count);
+      } else if (reset) {
+        setCommentCount(getInitialCommentCount(localGroup) || fetchedComments.length);
+      }
+      
       commentsLoadedRef.current = true;
       commentCountLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
         groupId: localGroup.id,
+        page,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
       });
-      commentsLoadedRef.current = false; // Reset on error to allow retry
+      if (reset) {
+        commentsLoadedRef.current = false; // Reset on error to allow retry
+      }
     } finally {
       setLoadingComments(false);
+      setLoadingMoreComments(false);
     }
   }, [localGroup.id]);
+
+  const loadMoreComments = useCallback(async () => {
+    const nextPage = commentsPage + 1;
+    await loadComments(false, nextPage);
+  }, [commentsPage, loadComments]);
 
   // Fetch comment count on mount if not present
   useEffect(() => {
@@ -977,7 +1051,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
   useEffect(() => {
     if (showComments && comments.length === 0 && !loadingComments && commentsLoadedRef.current !== true && commentsLoadedRef.current !== 'loading') {
-      loadComments();
+      loadComments(true, 1); // Load first page with 5 comments
     }
   }, [showComments, comments.length, loadingComments, loadComments]);
 
@@ -1054,6 +1128,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const addCommentToList = useCallback((newComment) => {
     setComments((prevComments) => [newComment, ...prevComments]);
     setCommentCount((prev) => prev + 1);
+    // Reset pagination when new comment is added
+    setCommentsPage(1);
+    setHasMoreComments(true); // Assume there are more comments
   }, []);
 
   const handleFileSelect = (e, isImage = false) => {
@@ -1116,7 +1193,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         logError('Comment created but no ID returned', { comment, status: comment?.status });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
-        await loadComments();
+        await loadComments(true, 1); // Reset to first page
         setCommentContent('');
         setSelectedFiles([]);
         setImagePreviews([]);
@@ -1138,9 +1215,36 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           logInfo('File uploaded successfully', { 
             commentId, 
             fileName: fileItem.file.name,
-            attachment 
+            attachment,
+            attachmentKeys: Object.keys(attachment || {}),
+            hasFileUrl: !!attachment?.fileUrl,
+            hasFileType: !!attachment?.fileType,
           });
-          uploadedAttachments.push(attachment);
+          
+          // Ensure attachment has all required fields
+          // Backend returns: id, file_name, file_url, file_type, file_size, uploaded_at
+          // camelCaseObject should convert to: id, fileName, fileUrl, fileType, fileSize, uploadedAt
+          const formattedAttachment = {
+            id: attachment.id || attachment.Id || attachment.ID,
+            fileName: attachment.fileName || attachment.file_name || fileItem.file.name,
+            fileUrl: attachment.fileUrl || attachment.file_url || attachment.url || attachment.fileUrl,
+            fileType: attachment.fileType || attachment.file_type || (fileItem.isImage ? 'image' : 'document'),
+            fileSize: attachment.fileSize || attachment.file_size || fileItem.file.size,
+            uploadedAt: attachment.uploadedAt || attachment.uploaded_at || new Date().toISOString(),
+          };
+          
+          logInfo('Formatted attachment', { 
+            original: attachment, 
+            formatted: formattedAttachment,
+            hasFileUrl: !!formattedAttachment.fileUrl 
+          });
+          
+          if (formattedAttachment.id) {
+            // Even without fileUrl, add it - fileUrl might be generated later
+            uploadedAttachments.push(formattedAttachment);
+          } else {
+            logError('Attachment missing ID', { attachment, formattedAttachment });
+          }
         } catch (err) {
           logError('Failed to upload file', {
             commentId,
@@ -1170,6 +1274,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           canEdit: comment.canEdit !== false,
           canDelete: comment.canDelete !== false,
         };
+        
+        logInfo('Adding comment with attachments', { 
+          camelCasedResult, 
+          attachmentsCount: camelCasedResult.attachments.length,
+          uploadedAttachmentsCount: uploadedAttachments.length 
+        });
         addCommentToList(camelCasedResult);
         
         // If some files failed to upload, show warning but don't block
@@ -1177,12 +1287,27 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           alert(`Bình luận đã được đăng, nhưng ${uploadErrors.length} file không thể tải lên. Vui lòng thử lại sau.`);
         }
         
-        // Always reload comments after a short delay to ensure sync with server
-        // This ensures we have the latest data including any attachments that were uploaded
+        // Always reload comments after uploads complete to ensure sync with server
+        // Wait longer to ensure backend has processed all attachments
+        // Use a longer delay to ensure all files are processed and URLs are generated
+        // Reset to first page when new comment with attachments is added
         setTimeout(async () => {
+          logInfo('Reloading comments after file upload', { 
+            commentId, 
+            uploadedAttachmentsCount: uploadedAttachments.length,
+            uploadedFiles: uploadedAttachments.map(a => ({ id: a.id, fileName: a.fileName, hasUrl: !!a.fileUrl }))
+          });
           commentsLoadedRef.current = false;
-          await loadComments();
-        }, 500);
+          await loadComments(true, 1); // Reset to first page
+          
+          // Check again after a delay to see if attachments are loaded
+          setTimeout(async () => {
+            // Reload one more time to ensure attachments are included
+            commentsLoadedRef.current = false;
+            await loadComments(true, 1); // Reset to first page
+            logInfo('Second reload completed to ensure attachments are loaded');
+          }, 1000);
+        }, 2000); // Increased delay to ensure backend processing and URL generation
       }
       
       // Clear form
@@ -1260,7 +1385,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
-        await loadComments();
+        await loadComments(true, 1); // Reset to first page
         setCommentContent('');
         setShowComments(true);
         return;
@@ -1288,7 +1413,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       // This handles cases where response format might be different
       setTimeout(async () => {
         commentsLoadedRef.current = false;
-        await loadComments();
+        await loadComments(true, 1); // Reset to first page
       }, 500);
       
       setCommentContent('');
@@ -1314,7 +1439,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         // Comment was created, just reload to get it
         logInfo('Comment was created (status 201/200 or flag set) despite error, reloading comments');
         commentsLoadedRef.current = false;
-        await loadComments();
+        await loadComments(true, 1); // Reset to first page
         setCommentContent('');
         setShowComments(true);
       } else {
@@ -1649,23 +1774,43 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                         <Spinner animation="border" />
                       </div>
                     ) : comments.length > 0 ? (
-                      comments.map((comment) => (
-                        <CommentCard
-                          key={comment.id}
-                          comment={comment}
-                          group={group}
-                          onReactionChange={(commentId, reactionType, reactionCounts) => {
-                            updateCommentReaction(commentId, reactionType, reactionCounts);
-                          }}
-                          onCommentUpdate={(commentId, updatedData) => {
-                            updateCommentInList(commentId, updatedData);
-                          }}
-                          onCommentDelete={(commentId) => {
-                            removeCommentFromList(commentId);
-                          }}
-                          currentUserId={currentUserId}
-                        />
-                      ))
+                      <>
+                        {comments.map((comment) => (
+                          <CommentCard
+                            key={comment.id}
+                            comment={comment}
+                            group={localGroup}
+                            onReactionChange={(commentId, reactionType, reactionCounts) => {
+                              updateCommentReaction(commentId, reactionType, reactionCounts);
+                            }}
+                            onCommentUpdate={(commentId, updatedData) => {
+                              updateCommentInList(commentId, updatedData);
+                            }}
+                            onCommentDelete={(commentId) => {
+                              removeCommentFromList(commentId);
+                            }}
+                            currentUserId={currentUserId}
+                          />
+                        ))}
+                        {hasMoreComments && (
+                          <div className="text-center mt-3">
+                            <Button
+                              variant="outline-primary"
+                              onClick={loadMoreComments}
+                              disabled={loadingMoreComments}
+                            >
+                              {loadingMoreComments ? (
+                                <>
+                                  <Spinner animation="border" size="sm" className="me-2" />
+                                  Đang tải...
+                                </>
+                              ) : (
+                                'Tải thêm bình luận'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="text-center p-3">Chưa có bình luận nào</div>
                     )}
