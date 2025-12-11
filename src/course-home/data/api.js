@@ -954,9 +954,10 @@ export async function uploadCommentAttachment(commentId, file) {
       url,
       formData,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        // Let the browser/axios set the correct multipart boundary for FormData
+        headers: { Accept: 'application/json' },
+        // Prevent any default JSON transforms that would strip the file
+        transformRequest: [(requestData) => requestData],
       },
     );
     console.log('[Study Groups API] Attachment upload success', {
