@@ -1253,6 +1253,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
     // Add file to selected files
     const newFile = { file, id: Date.now(), isImage };
+    console.log('[File Select] Added file', {
+      name: file.name,
+      size: file.size,
+      isImage,
+    });
     setSelectedFiles((prev) => [...prev, newFile]);
 
     // Create preview for images
@@ -1275,8 +1280,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
   const handleFileUpload = async () => {
     if (selectedFiles.length === 0) {
+      console.warn('[File Upload] selectedFiles is empty, aborting upload');
       return;
     }
+    console.log('[File Upload] Starting upload', {
+      selectedFiles: selectedFiles.map((f) => ({
+        name: f.file.name,
+        size: f.file.size,
+        isImage: f.isImage,
+      })),
+    });
 
     // Create comment first with content
     let commentId = null;
@@ -1533,6 +1546,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   };
 
   const handleAddComment = async () => {
+    console.log('[Add Comment] Triggered', {
+      selectedFilesCount: selectedFiles.length,
+      selectedFiles: selectedFiles.map((f) => f.file.name),
+      contentLength: commentContent.length,
+    });
+
     // If there are files selected, use file upload handler
     if (selectedFiles.length > 0) {
       await handleFileUpload();
