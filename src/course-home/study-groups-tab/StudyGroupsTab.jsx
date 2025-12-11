@@ -36,6 +36,7 @@ import {
   getAvailableMembers,
   getStudyGroupMembers,
   getStudyGroupComments,
+  getCommentDetail,
   createComment,
   updateComment,
   deleteComment,
@@ -1403,13 +1404,51 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           commentsLoadedRef.current = false;
           await loadComments(true); // Reload all comments
           
-          // Check again after a delay to see if attachments are loaded
+          // Check if the comment now has attachments after reload
           setTimeout(async () => {
+            // Get the updated comment detail from server to check attachments
+            // Comment detail endpoint should return full comment with attachments
+            try {
+              const updatedComment = await getCommentDetail(commentId);
+              
+              console.log('[File Upload] Updated comment detail from server:', {
+                commentId,
+                hasAttachments: !!updatedComment.attachments,
+                attachmentsCount: updatedComment.attachments?.length || 0,
+                attachments: updatedComment.attachments,
+                attachmentKeys: updatedComment.attachments?.[0] ? Object.keys(updatedComment.attachments[0]) : [],
+              });
+              
+              // Format attachments
+              if (updatedComment.attachments && Array.isArray(updatedComment.attachments) && updatedComment.attachments.length > 0) {
+                const formattedAttachments = updatedComment.attachments.map(att => ({
+                  id: att.id || att.Id || att.ID,
+                  fileName: att.fileName || att.file_name || 'Unknown',
+                  fileUrl: att.fileUrl || att.file_url || att.url,
+                  fileType: att.fileType || att.file_type || 'document',
+                  fileSize: att.fileSize || att.file_size || 0,
+                  uploadedAt: att.uploadedAt || att.uploaded_at,
+                }));
+                
+                console.log('[File Upload] Formatted attachments:', formattedAttachments);
+                
+                // Update the comment in the list with attachments from server
+                updateCommentInList(commentId, { attachments: formattedAttachments });
+              } else {
+                console.log('[File Upload] Comment detail has no attachments', {
+                  commentId,
+                  attachments: updatedComment.attachments,
+                });
+              }
+            } catch (err) {
+              logError('Failed to get updated comment detail', { commentId, error: err });
+            }
+            
             // Reload one more time to ensure attachments are included
             commentsLoadedRef.current = false;
             await loadComments(true); // Reload all comments
             logInfo('Second reload completed to ensure attachments are loaded');
-          }, 1000);
+          }, 1500);
         }, 2000); // Increased delay to ensure backend processing and URL generation
       }
       

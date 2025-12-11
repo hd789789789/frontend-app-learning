@@ -836,6 +836,30 @@ export async function createComment(groupId, commentData) {
   }
 }
 
+export async function getCommentDetail(commentId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
+  
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    console.log('[Study Groups API] Comment detail retrieved:', {
+      commentId,
+      hasAttachments: !!data.attachments,
+      attachmentsCount: data.attachments?.length || 0,
+      attachments: data.attachments,
+    });
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error getting comment detail:', {
+      commentId,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
 export async function updateComment(commentId, content) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
   
