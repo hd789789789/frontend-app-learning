@@ -557,13 +557,10 @@ export async function getWelcomeTabData(courseId) {
 
 export async function getStudyGroupsTabData(courseId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/courses/${encodeURIComponent(courseId)}/study-groups/`;
-  console.log('[Study Groups API] Fetching groups for course:', courseId, 'URL:', url);
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Success response:', data);
     const camelCased = camelCaseObject(data);
-    console.log('[Study Groups API] Camel cased response:', camelCased);
     return camelCased;
   } catch (error) {
     const httpErrorStatus = error?.response?.status;
@@ -596,11 +593,8 @@ export async function createStudyGroup(courseId, groupData) {
     course_id: courseId,
   };
   
-  console.log('[Study Groups API] Creating group:', { courseId, groupData: requestData, url });
-  
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, requestData);
-    console.log('[Study Groups API] Group created successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error creating group:', {
@@ -617,11 +611,9 @@ export async function createStudyGroup(courseId, groupData) {
 
 export async function updateStudyGroup(groupId, groupData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  console.log('[Study Groups API] Updating group:', { groupId, groupData, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().put(url, groupData);
-    console.log('[Study Groups API] Group updated successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error updating group:', {
@@ -638,11 +630,9 @@ export async function updateStudyGroup(groupId, groupData) {
 
 export async function deleteStudyGroup(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  console.log('[Study Groups API] Deleting group:', { groupId, url });
   
   try {
     await getAuthenticatedHttpClient().delete(url);
-    console.log('[Study Groups API] Group deleted successfully:', { groupId });
     return { success: true };
   } catch (error) {
     console.error('[Study Groups API] Error deleting group:', {
@@ -658,11 +648,9 @@ export async function deleteStudyGroup(groupId) {
 
 export async function getStudyGroupDetails(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  console.log('[Study Groups API] Getting group details:', { groupId, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Group details retrieved successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error getting group details:', {
@@ -678,11 +666,9 @@ export async function getStudyGroupDetails(groupId) {
 
 export async function getStudyGroupMembers(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/`;
-  console.log('[Study Groups API] Getting group members:', { groupId, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Group members retrieved successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error getting group members:', {
@@ -711,13 +697,11 @@ export async function findUserByUsernameOrEmail(usernameOrEmail) {
 
 export async function addStudyGroupMember(groupId, usernameOrEmail) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/`;
-  console.log('[Study Groups API] Adding member:', { groupId, usernameOrEmail, url });
   
   try {
     // Backend StudyGroupMemberCreateSerializer accepts username or email in 'user' field
     // It will automatically find the user by username or email
     const { data } = await getAuthenticatedHttpClient().post(url, { user: usernameOrEmail });
-    console.log('[Study Groups API] Member added successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error adding member:', {
@@ -735,11 +719,9 @@ export async function addStudyGroupMember(groupId, usernameOrEmail) {
 export async function removeStudyGroupMember(groupId, userId) {
   // Backend expects user_id (int) in path
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/${userId}/`;
-  console.log('[Study Groups API] Removing member:', { groupId, userId, url });
   
   try {
     await getAuthenticatedHttpClient().delete(url);
-    console.log('[Study Groups API] Member removed successfully:', { groupId, userId });
     return { success: true };
   } catch (error) {
     console.error('[Study Groups API] Error removing member:', {
@@ -761,14 +743,9 @@ export async function getAvailableMembers(groupId, { search = '', page = 1, page
   if (pageSize) params.append('page_size', pageSize);
   
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/available-members/?${params.toString()}`;
-  console.log('[Study Groups API] Getting available members:', { groupId, search, page, pageSize, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Available members retrieved successfully:', {
-      groupId,
-      count: Array.isArray(data.results) ? data.results.length : 0,
-    });
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error getting available members:', {
@@ -787,14 +764,9 @@ export async function getAvailableMembers(groupId, { search = '', page = 1, page
 
 export async function getStudyGroupComments(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
-  console.log('[Study Groups API] Getting group comments:', { groupId, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Group comments retrieved successfully:', {
-      groupId,
-      count: data.results?.length || 0,
-    });
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error getting group comments:', {
@@ -810,11 +782,9 @@ export async function getStudyGroupComments(groupId) {
 
 export async function createComment(groupId, commentData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
-  console.log('[Study Groups API] Creating comment:', { groupId, commentData, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, commentData);
-    console.log('[Study Groups API] Comment created successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error creating comment:', {
@@ -831,11 +801,9 @@ export async function createComment(groupId, commentData) {
 
 export async function updateComment(commentId, content) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
-  console.log('[Study Groups API] Updating comment:', { commentId, contentLength: content.length, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().put(url, { content });
-    console.log('[Study Groups API] Comment updated successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error updating comment:', {
@@ -851,11 +819,9 @@ export async function updateComment(commentId, content) {
 
 export async function deleteComment(commentId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
-  console.log('[Study Groups API] Deleting comment:', { commentId, url });
   
   try {
     await getAuthenticatedHttpClient().delete(url);
-    console.log('[Study Groups API] Comment deleted successfully:', { commentId });
     return { success: true };
   } catch (error) {
     console.error('[Study Groups API] Error deleting comment:', {
@@ -871,11 +837,9 @@ export async function deleteComment(commentId) {
 
 export async function addReaction(commentId, reactionType) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/reactions/`;
-  console.log('[Study Groups API] Adding reaction:', { commentId, reactionType, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, { reaction_type: reactionType });
-    console.log('[Study Groups API] Reaction added successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error adding reaction:', {
@@ -892,11 +856,9 @@ export async function addReaction(commentId, reactionType) {
 
 export async function removeReaction(commentId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/reactions/`;
-  console.log('[Study Groups API] Removing reaction:', { commentId, url });
   
   try {
     await getAuthenticatedHttpClient().delete(url);
-    console.log('[Study Groups API] Reaction removed successfully:', { commentId });
     return { success: true };
   } catch (error) {
     console.error('[Study Groups API] Error removing reaction:', {
@@ -912,13 +874,6 @@ export async function removeReaction(commentId) {
 
 export async function uploadCommentAttachment(commentId, file) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/attachments/`;
-  console.log('[Study Groups API] Uploading attachment:', {
-    commentId,
-    fileName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-    url,
-  });
   
   try {
     const formData = new FormData();
@@ -928,7 +883,6 @@ export async function uploadCommentAttachment(commentId, file) {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log('[Study Groups API] Attachment uploaded successfully:', data);
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error uploading attachment:', {

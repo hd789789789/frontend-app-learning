@@ -34,6 +34,7 @@ import {
   addStudyGroupMember,
   removeStudyGroupMember,
   getAvailableMembers,
+  getStudyGroupMembers,
   getStudyGroupComments,
   createComment,
   updateComment,
@@ -363,9 +364,37 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
       const result = await addStudyGroupMember(groupId, usernameOrEmail);
       logInfo('Member added successfully', { groupId, usernameOrEmail, result });
       
-      // Pass the new member to onSuccess callback
+      // Ensure the member data is properly formatted
+      // Backend may return user as collapsed reference (just username) or expanded (full user object)
+      const formattedMember = {
+        id: result.id,
+        user_id: result.user_id || result.userId || result.user?.id,
+        user: result.user || (typeof result.user === 'string' ? { username: result.user } : null),
+        role: result.role || 'member',
+        joinedAt: result.joinedAt || result.joined_at || new Date().toISOString(),
+      };
+      
+      // If user is just a string (username), try to get full user info from the users list
+      if (typeof formattedMember.user === 'string' || !formattedMember.user) {
+        const foundUser = users.find(u => u.username === usernameOrEmail || u.email === usernameOrEmail);
+        if (foundUser) {
+          formattedMember.user = {
+            id: foundUser.id,
+            username: foundUser.username,
+            email: foundUser.email,
+            fullName: foundUser.full_name || foundUser.fullName,
+          };
+        } else if (typeof formattedMember.user === 'string') {
+          // Fallback: create minimal user object from username
+          formattedMember.user = {
+            username: formattedMember.user,
+          };
+        }
+      }
+      
+      // Pass the formatted member to onSuccess callback
       if (onSuccess) {
-        onSuccess(result);
+        onSuccess(formattedMember);
       }
       
       // refresh list to remove added user
@@ -876,9 +905,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       derived: { canManageMembers, canEdit, canDelete, showGroupMenu },
     };
     logInfo('GroupCard permission check', payload);
-    // Fallback console log to ensure visibility when logInfo is filtered
-    // eslint-disable-next-line no-console
-    console.log('[GroupCard permission check]', payload);
   }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, localGroup.canManageMembers, localGroup.canEdit, localGroup.canDelete]);
   const isMember = localGroup.isMember;
   const commentsLoadedRef = useRef(false);
@@ -1072,25 +1098,40 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     }
 
     // Create comment first with content
+    let commentId = null;
+    let commentCreated = false;
+    
     try {
       const content = commentContent.trim() || (selectedFiles.length === 1 && selectedFiles[0].isImage 
         ? 'Đã đính kèm ảnh' 
         : 'Đã đính kèm file');
       
       const comment = await createComment(localGroup.id, { content });
-      logInfo('Comment created for attachment', { comment, commentId: comment.id });
+      logInfo('Comment created for attachment', { comment, commentId: comment.id, commentType: typeof comment, commentKeys: Object.keys(comment || {}) });
       
-      // Ensure we have a valid ID
-      const commentId = comment.id || comment.Id || comment.ID;
+      // Ensure we have a valid ID - check multiple possible formats
+      commentId = comment?.id || comment?.Id || comment?.ID || comment?.data?.id || comment?.data?.Id;
+      
       if (!commentId) {
-        logError('Comment created but no ID returned', { comment });
-        throw new Error('Comment created but no ID returned from server');
+        logError('Comment created but no ID returned', { comment, status: comment?.status });
+        // Even if no ID, try to reload comments to get the new comment from server
+        commentsLoadedRef.current = false;
+        await loadComments();
+        setCommentContent('');
+        setSelectedFiles([]);
+        setImagePreviews([]);
+        setUploadingFile(null);
+        setShowComments(true);
+        return;
       }
       
+      commentCreated = true;
       setUploadingFile(true);
       
       // Upload all selected files
       const uploadedAttachments = [];
+      let uploadErrors = [];
+      
       for (const fileItem of selectedFiles) {
         try {
           const attachment = await uploadCommentAttachment(commentId, fileItem.file);
@@ -1108,25 +1149,41 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             status: err.response?.status,
             message: err.message,
           });
+          uploadErrors.push({ fileName: fileItem.file.name, error: err });
           // Continue with other files even if one fails
         }
       }
       
-      // Add comment to list with attachments
-      const camelCasedResult = {
-        id: commentId,
-        content: comment.content || content,
-        user: comment.user || getAuthenticatedUser(),
-        createdAt: comment.createdAt || new Date().toISOString(),
-        updatedAt: comment.updatedAt || new Date().toISOString(),
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : (comment.attachments || []),
-        reactions: comment.reactions || [],
-        reactionCounts: comment.reactionCounts || {},
-        userReaction: comment.userReaction || null,
-        canEdit: comment.canEdit !== false,
-        canDelete: comment.canDelete !== false,
-      };
-      addCommentToList(camelCasedResult);
+      // If comment was created successfully, add it to list even if some files failed
+      if (commentCreated && commentId) {
+        // Add comment to list with attachments
+        const camelCasedResult = {
+          id: commentId,
+          content: comment.content || comment.data?.content || content,
+          user: comment.user || comment.data?.user || getAuthenticatedUser(),
+          createdAt: comment.createdAt || comment.data?.createdAt || comment.created_at || comment.data?.created_at || new Date().toISOString(),
+          updatedAt: comment.updatedAt || comment.data?.updatedAt || comment.updated_at || comment.data?.updated_at || new Date().toISOString(),
+          attachments: uploadedAttachments.length > 0 ? uploadedAttachments : (comment.attachments || comment.data?.attachments || []),
+          reactions: comment.reactions || comment.data?.reactions || [],
+          reactionCounts: comment.reactionCounts || comment.data?.reactionCounts || {},
+          userReaction: comment.userReaction || comment.data?.userReaction || null,
+          canEdit: comment.canEdit !== false,
+          canDelete: comment.canDelete !== false,
+        };
+        addCommentToList(camelCasedResult);
+        
+        // If some files failed to upload, show warning but don't block
+        if (uploadErrors.length > 0 && uploadErrors.length < selectedFiles.length) {
+          alert(`Bình luận đã được đăng, nhưng ${uploadErrors.length} file không thể tải lên. Vui lòng thử lại sau.`);
+        }
+        
+        // Always reload comments after a short delay to ensure sync with server
+        // This ensures we have the latest data including any attachments that were uploaded
+        setTimeout(async () => {
+          commentsLoadedRef.current = false;
+          await loadComments();
+        }, 500);
+      }
       
       // Clear form
       setCommentContent('');
@@ -1140,9 +1197,23 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
+        fullError: err,
       });
       setUploadingFile(null);
-      alert('Không thể đăng bình luận với file đính kèm. Vui lòng thử lại.');
+      
+      // Check if comment was actually created (status 201 or 200)
+      if (err.response?.status === 201 || err.response?.status === 200 || commentCreated) {
+        // Comment was created, reload to get it with attachments
+        logInfo('Comment was created despite error, reloading comments');
+        commentsLoadedRef.current = false;
+        await loadComments();
+        setCommentContent('');
+        setSelectedFiles([]);
+        setImagePreviews([]);
+        setShowComments(true);
+      } else {
+        alert('Không thể đăng bình luận với file đính kèm. Vui lòng thử lại.');
+      }
     }
   };
 
@@ -1161,43 +1232,111 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
     logInfo('Adding comment', { groupId: localGroup.id, contentLength: commentContent.length });
     
+    let commentCreatedSuccessfully = false;
+    
     try {
       const result = await createComment(localGroup.id, { content: commentContent });
-      logInfo('Comment added successfully', { groupId: localGroup.id, result });
+      commentCreatedSuccessfully = true;
       
-      // Ensure we have a valid ID
-      const commentId = result.id || result.Id || result.ID;
+      logInfo('Comment API response', { 
+        groupId: localGroup.id, 
+        result, 
+        resultType: typeof result, 
+        resultKeys: Object.keys(result || {}),
+        hasId: !!result?.id,
+        hasData: !!result?.data,
+        stringified: JSON.stringify(result).substring(0, 200)
+      });
+      
+      // Ensure we have a valid ID - check multiple possible formats
+      const commentId = result?.id || result?.Id || result?.ID || result?.data?.id || result?.data?.Id;
+      
       if (!commentId) {
-        logError('Comment created but no ID returned', { result });
-        throw new Error('Comment created but no ID returned from server');
+        logError('Comment created but no ID returned - reloading comments', { 
+          result, 
+          status: result?.status, 
+          response: result,
+          stringified: JSON.stringify(result)
+        });
+        // Even if no ID, try to reload comments to get the new comment from server
+        commentsLoadedRef.current = false;
+        await loadComments();
+        setCommentContent('');
+        setShowComments(true);
+        return;
       }
       
       // Add comment to list immediately (optimistic update)
       const camelCasedResult = {
         id: commentId,
-        content: result.content || commentContent,
-        user: result.user || getAuthenticatedUser(),
-        createdAt: result.createdAt || new Date().toISOString(),
-        updatedAt: result.updatedAt || new Date().toISOString(),
-        attachments: result.attachments || [],
-        reactions: result.reactions || [],
-        reactionCounts: result.reactionCounts || {},
-        userReaction: result.userReaction || null,
+        content: result.content || result.data?.content || commentContent,
+        user: result.user || result.data?.user || getAuthenticatedUser(),
+        createdAt: result.createdAt || result.data?.createdAt || result.created_at || result.data?.created_at || new Date().toISOString(),
+        updatedAt: result.updatedAt || result.data?.updatedAt || result.updated_at || result.data?.updated_at || new Date().toISOString(),
+        attachments: result.attachments || result.data?.attachments || [],
+        reactions: result.reactions || result.data?.reactions || [],
+        reactionCounts: result.reactionCounts || result.data?.reactionCounts || {},
+        userReaction: result.userReaction || result.data?.userReaction || null,
         canEdit: result.canEdit !== false,
         canDelete: result.canDelete !== false,
       };
+      
+      logInfo('Adding comment to list', { camelCasedResult });
       addCommentToList(camelCasedResult);
+      
+      // Reload comments after a short delay to ensure sync with server
+      // This handles cases where response format might be different
+      setTimeout(async () => {
+        commentsLoadedRef.current = false;
+        await loadComments();
+      }, 500);
       
       setCommentContent('');
       setShowComments(true);
     } catch (err) {
-      logError('Failed to add comment', {
+      const httpStatus = err.response?.status;
+      const errorData = err.response?.data;
+      
+      logError('Error adding comment', {
         groupId: localGroup.id,
-        error: err.response?.data,
-        status: err.response?.status,
+        error: errorData,
+        status: httpStatus,
         message: err.message,
+        commentCreatedSuccessfully,
+        fullError: err,
+        errorString: JSON.stringify(err).substring(0, 300),
       });
-      alert('Không thể đăng bình luận. Vui lòng thử lại.');
+      
+      // If we got here, the API call completed (either success or error)
+      // Check if comment was actually created (status 201 or 200)
+      // Sometimes API returns error but comment is still created
+      if (httpStatus === 201 || httpStatus === 200 || commentCreatedSuccessfully) {
+        // Comment was created, just reload to get it
+        logInfo('Comment was created (status 201/200 or flag set) despite error, reloading comments');
+        commentsLoadedRef.current = false;
+        await loadComments();
+        setCommentContent('');
+        setShowComments(true);
+      } else {
+        // Check if error response contains comment data (some APIs return error with data)
+        const commentInError = errorData?.id || errorData?.Id || errorData?.ID;
+        if (commentInError) {
+          logInfo('Comment data found in error response, reloading comments');
+          commentsLoadedRef.current = false;
+          await loadComments();
+          setCommentContent('');
+          setShowComments(true);
+        } else {
+          // Only show error if we're sure comment wasn't created
+          // But still try to reload in case it was created
+          logInfo('Uncertain if comment was created, reloading comments to check');
+          commentsLoadedRef.current = false;
+          await loadComments();
+          setCommentContent('');
+          setShowComments(true);
+          // Don't show alert - let user see if comment appears after reload
+        }
+      }
     }
   };
 
@@ -1542,19 +1681,94 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         isOpen={showAddMember}
         onClose={() => setShowAddMember(false)}
         groupId={localGroup.id}
-        onSuccess={(newMember) => {
-          // Optimistic update: add member to UI immediately
-          if (onMemberAdded && newMember) {
-            onMemberAdded(localGroup.id, newMember);
-            // Update local group
+        onSuccess={async (newMember) => {
+          // Fetch full member list to ensure we have complete data
+          try {
+            const membersData = await getStudyGroupMembers(localGroup.id);
+            logInfo('Fetched members after adding', { groupId: localGroup.id, membersData });
+            
+            // Handle different response formats
+            const allMembers = Array.isArray(membersData) 
+              ? membersData 
+              : (membersData.results || membersData.members || []);
+            
+            if (allMembers.length > 0) {
+              // Format all members to ensure consistency
+              const formattedMembers = allMembers.map(m => ({
+                id: m.id,
+                user_id: m.user_id || m.userId || m.user?.id,
+                user: m.user || (typeof m.user === 'string' ? { username: m.user } : { username: 'Người dùng đã xóa' }),
+                role: m.role || 'member',
+                joinedAt: m.joinedAt || m.joined_at || new Date().toISOString(),
+              }));
+              
+              // Update local group with full member list
+              setLocalGroup((prev) => ({
+                ...prev,
+                members: formattedMembers,
+                memberCount: formattedMembers.length,
+              }));
+              
+              // Also update parent groups list
+              if (onMemberAdded) {
+                // Find the newly added member
+                const addedMember = formattedMembers.find(m => 
+                  m.id === newMember.id || 
+                  (m.user?.username && newMember.user?.username && m.user.username === newMember.user.username) ||
+                  (m.user_id === (newMember.user_id || newMember.userId))
+                );
+                if (addedMember) {
+                  onMemberAdded(localGroup.id, addedMember);
+                }
+              }
+            } else {
+              // Fallback: use the returned member data
+              const formattedMember = {
+                id: newMember.id,
+                user_id: newMember.user_id || newMember.userId || newMember.user?.id,
+                user: newMember.user || (typeof newMember.user === 'string' ? { username: newMember.user } : { username: 'Người dùng đã xóa' }),
+                role: newMember.role || 'member',
+                joinedAt: newMember.joinedAt || newMember.joined_at || new Date().toISOString(),
+              };
+              
+              if (onMemberAdded) {
+                onMemberAdded(localGroup.id, formattedMember);
+              }
+              
+              setLocalGroup((prev) => ({
+                ...prev,
+                members: [...(prev.members || []), formattedMember],
+                memberCount: (prev.memberCount || 0) + 1,
+              }));
+            }
+          } catch (err) {
+            logError('Failed to fetch members after adding', {
+              groupId: localGroup.id,
+              error: err.response?.data,
+              status: err.response?.status,
+              message: err.message,
+            });
+            
+            // Fallback: use the returned member data with better formatting
+            const formattedMember = {
+              id: newMember.id,
+              user_id: newMember.user_id || newMember.userId || newMember.user?.id,
+              user: newMember.user || (typeof newMember.user === 'string' ? { username: newMember.user } : { username: 'Người dùng đã xóa' }),
+              role: newMember.role || 'member',
+              joinedAt: newMember.joinedAt || newMember.joined_at || new Date().toISOString(),
+            };
+            
+            if (onMemberAdded) {
+              onMemberAdded(localGroup.id, formattedMember);
+            }
+            
             setLocalGroup((prev) => ({
               ...prev,
-              members: [...(prev.members || []), newMember],
+              members: [...(prev.members || []), formattedMember],
               memberCount: (prev.memberCount || 0) + 1,
             }));
-          } else if (onUpdate) {
-            onUpdate();
           }
+          
           setShowAddMember(false);
         }}
       />
