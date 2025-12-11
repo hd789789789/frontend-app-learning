@@ -439,8 +439,32 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
   const handleReaction = async (reactionType) => {
     logInfo('Handling reaction', { commentId: comment.id, reactionType, currentReaction: userReaction });
     
+    // Optimistic update: update UI immediately
+    const isRemoving = userReaction === reactionType;
+    const newReactionType = isRemoving ? null : reactionType;
+    
+    // Calculate new reaction counts optimistically
+    const newReactionCounts = { ...comment.reactionCounts };
+    if (isRemoving) {
+      // Removing reaction
+      if (userReaction) {
+        newReactionCounts[userReaction] = Math.max(0, (newReactionCounts[userReaction] || 0) - 1);
+      }
+    } else {
+      // Adding/changing reaction
+      const oldReaction = userReaction;
+      if (oldReaction && oldReaction !== reactionType) {
+        newReactionCounts[oldReaction] = Math.max(0, (newReactionCounts[oldReaction] || 0) - 1);
+      }
+      newReactionCounts[reactionType] = (newReactionCounts[reactionType] || 0) + 1;
+    }
+    
+    // Update UI immediately
+    onReactionChange(comment.id, newReactionType, newReactionCounts);
+    setShowPicker(false);
+    
     try {
-      if (userReaction === reactionType) {
+      if (isRemoving) {
         // Remove reaction
         logInfo('Removing reaction', { commentId: comment.id, reactionType });
         await removeReaction(comment.id);
@@ -450,9 +474,12 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
         logInfo('Adding/changing reaction', { commentId: comment.id, reactionType });
         const result = await addReaction(comment.id, reactionType);
         logInfo('Reaction added/changed successfully', { commentId: comment.id, result });
+        
+        // Update with server response if available
+        if (result && result.reactionCounts) {
+          onReactionChange(comment.id, reactionType, result.reactionCounts);
+        }
       }
-      onReactionChange();
-      setShowPicker(false);
     } catch (err) {
       logError('Failed to handle reaction', {
         commentId: comment.id,
@@ -461,6 +488,9 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
         status: err.response?.status,
         message: err.message,
       });
+      
+      // Revert optimistic update on error
+      onReactionChange(comment.id, userReaction, comment.reactionCounts);
     }
   };
 
@@ -502,31 +532,51 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
 };
 
 // Comment Card Component
-const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => {
+const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onCommentDelete, currentUserId }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [loading, setLoading] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
+  const [localComment, setLocalComment] = useState(comment);
 
-  const canEdit = comment.canEdit !== false || comment.user?.id === currentUserId;
-  const canDelete = comment.canDelete !== false || comment.user?.id === currentUserId;
+  // Update local comment when prop changes
+  useEffect(() => {
+    setLocalComment(comment);
+  }, [comment]);
+
+  const canEdit = localComment.canEdit !== false || localComment.user?.id === currentUserId;
+  const canDelete = localComment.canDelete !== false || localComment.user?.id === currentUserId;
 
   const handleUpdate = async () => {
     setLoading(true);
-    logInfo('Updating comment', { commentId: comment.id, content: editContent });
+    logInfo('Updating comment', { commentId: localComment.id, content: editContent });
+    
+    // Optimistic update
+    const oldContent = localComment.content;
+    setLocalComment((prev) => ({ ...prev, content: editContent }));
+    setIsEditing(false);
     
     try {
-      const result = await updateComment(comment.id, editContent);
-      logInfo('Comment updated successfully', { commentId: comment.id, result });
-      setIsEditing(false);
-      onUpdate();
+      const result = await updateComment(localComment.id, editContent);
+      logInfo('Comment updated successfully', { commentId: localComment.id, result });
+      
+      // Update with server response
+      const updatedData = {
+        content: result.content || editContent,
+        updatedAt: result.updatedAt || new Date().toISOString(),
+      };
+      onCommentUpdate(localComment.id, updatedData);
     } catch (err) {
       logError('Failed to update comment', {
-        commentId: comment.id,
+        commentId: localComment.id,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
       });
+      
+      // Revert on error
+      setLocalComment((prev) => ({ ...prev, content: oldContent }));
+      setIsEditing(true);
     } finally {
       setLoading(false);
     }
@@ -535,22 +585,27 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
   const handleDelete = async () => {
     if (window.confirm('Bạn có chắc muốn xóa bình luận này?')) {
       setLoading(true);
-      logInfo('Deleting comment', { commentId: comment.id });
+      logInfo('Deleting comment', { commentId: localComment.id });
+      
+      // Optimistic update: remove from UI immediately
+      const commentId = localComment.id;
+      onCommentDelete(commentId);
       
       try {
-        await deleteComment(comment.id);
-        logInfo('Comment deleted successfully', { commentId: comment.id });
-        onUpdate();
-        if (onDeleted) {
-          onDeleted();
-        }
+        await deleteComment(commentId);
+        logInfo('Comment deleted successfully', { commentId });
       } catch (err) {
         logError('Failed to delete comment', {
-          commentId: comment.id,
+          commentId,
           error: err.response?.data,
           status: err.response?.status,
           message: err.message,
         });
+        
+        // Revert on error - show error message
+        alert('Không thể xóa bình luận. Vui lòng thử lại.');
+        // Note: Comment is already removed from UI optimistically
+        // In a production app, you might want to reload comments here
       } finally {
         setLoading(false);
       }
@@ -575,7 +630,7 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
     return date.toLocaleDateString('vi-VN');
   };
 
-  const fallbackUser = comment.user || (comment.createdBy ? { username: comment.createdBy } : null);
+  const fallbackUser = localComment.user || (localComment.createdBy ? { username: localComment.createdBy } : null);
   const displayUsername = fallbackUser?.username || 'Người dùng đã xóa';
   const userInitials = displayUsername.substring(0, 2).toUpperCase();
   const userColor = `#${(fallbackUser?.id || 0).toString(16).padStart(6, '0').substring(0, 6)}`;
@@ -586,10 +641,10 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
         <div className="user-avatar" style={{ background: userColor }}>{userInitials}</div>
         <div className="post-author-info">
           <div className="post-author-name">
-            {comment.user?.username || 'Người dùng đã xóa'}
-            {comment.user?.id === currentUserId && ' (Bạn)'}
+            {localComment.user?.username || 'Người dùng đã xóa'}
+            {localComment.user?.id === currentUserId && ' (Bạn)'}
           </div>
-          <div className="post-time">{formatDate(comment.createdAt)} • 👥 Nhóm</div>
+          <div className="post-time">{formatDate(localComment.createdAt)} • 👥 Nhóm</div>
         </div>
         {(canEdit || canDelete) && (
           <div className="comment-menu-inline">
@@ -598,6 +653,7 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
                 size="sm"
                 variant="outline-primary"
                 onClick={() => setIsEditing(true)}
+                disabled={loading}
               >
                 <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa
               </Button>
@@ -607,6 +663,7 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
                 size="sm"
                 variant="outline-danger"
                 onClick={handleDelete}
+                disabled={loading}
               >
                 <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa
               </Button>
@@ -622,43 +679,70 @@ const CommentCard = ({ comment, group, onUpdate, currentUserId, onDeleted }) => 
             rows={3}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
+            disabled={loading}
           />
           <div className="d-flex gap-2 mt-2">
             <Button size="sm" onClick={handleUpdate} disabled={loading}>
+              {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
               Lưu
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>
+            <Button size="sm" variant="secondary" onClick={() => {
+              setIsEditing(false);
+              setEditContent(localComment.content);
+            }} disabled={loading}>
               Hủy
             </Button>
           </div>
         </div>
       ) : (
-        <div className="post-content">{comment.content}</div>
+        <div className="post-content">{localComment.content}</div>
       )}
 
-      {comment.attachments && comment.attachments.length > 0 && (
+      {localComment.attachments && localComment.attachments.length > 0 && (
         <div className="post-attachments">
-          {comment.attachments.map((attachment) => (
-            <a
-              key={attachment.id}
-              href={attachment.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="attachment-link"
-            >
-              📎 {attachment.fileName}
-            </a>
-          ))}
+          {localComment.attachments.map((attachment) => {
+            if (attachment.fileType === 'image' && attachment.fileUrl) {
+              return (
+                <div key={attachment.id} className="attachment-image-container">
+                  <img
+                    src={attachment.fileUrl}
+                    alt={attachment.fileName}
+                    className="attachment-image"
+                    onClick={() => window.open(attachment.fileUrl, '_blank')}
+                  />
+                  <a
+                    href={attachment.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="attachment-link"
+                  >
+                    {attachment.fileName}
+                  </a>
+                </div>
+              );
+            }
+            return (
+              <a
+                key={attachment.id}
+                href={attachment.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="attachment-link"
+              >
+                📎 {attachment.fileName}
+              </a>
+            );
+          })}
         </div>
       )}
 
       <div className="post-reactions">
-        <ReactionPicker comment={comment} onReactionChange={onUpdate} />
+        <ReactionPicker comment={localComment} onReactionChange={onReactionChange} />
         {/* Display all reaction types with counts */}
-        {comment.reactionCounts && Object.keys(comment.reactionCounts).length > 0 && (
+        {localComment.reactionCounts && Object.keys(localComment.reactionCounts).length > 0 && (
           <div className="reaction-counts">
             {REACTION_TYPES.map((reaction) => {
-              const count = comment.reactionCounts[reaction.type] || 0;
+              const count = localComment.reactionCounts[reaction.type] || 0;
               if (count > 0) {
                 return (
                   <span key={reaction.type} className="reaction-count-badge" title={reaction.label}>
@@ -693,6 +777,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentContent, setCommentContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [showComments, setShowComments] = useState(false);
 
   const ownerId = group.ownerId || group.owner?.id || group.createdById;
@@ -819,7 +905,180 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     }
   }, [showComments, comments.length, loadingComments, loadComments]);
 
+  // Helper functions to update comments state without reloading
+  const updateCommentInList = useCallback((commentId, updatedData) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) => {
+        if (comment.id === commentId) {
+          // Deep merge to handle nested objects like reactionCounts
+          return {
+            ...comment,
+            ...updatedData,
+            // Preserve nested objects if not explicitly updated
+            reactionCounts: updatedData.reactionCounts !== undefined 
+              ? updatedData.reactionCounts 
+              : comment.reactionCounts,
+            attachments: updatedData.attachments !== undefined 
+              ? updatedData.attachments 
+              : comment.attachments,
+            reactions: updatedData.reactions !== undefined 
+              ? updatedData.reactions 
+              : comment.reactions,
+          };
+        }
+        return comment;
+      })
+    );
+  }, []);
+
+  const updateCommentReaction = useCallback((commentId, reactionType, reactionCounts) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) => {
+        if (comment.id === commentId) {
+          const currentUser = getAuthenticatedUser();
+          const newUserReaction = reactionType || null;
+          
+          // Update reaction counts
+          const updatedReactionCounts = { ...comment.reactionCounts };
+          if (reactionCounts) {
+            Object.keys(reactionCounts).forEach((type) => {
+              updatedReactionCounts[type] = reactionCounts[type];
+            });
+          } else if (reactionType) {
+            // Optimistic update: increment the new reaction, decrement old if exists
+            const oldReaction = comment.userReaction;
+            if (oldReaction && oldReaction !== reactionType) {
+              updatedReactionCounts[oldReaction] = Math.max(0, (updatedReactionCounts[oldReaction] || 0) - 1);
+            }
+            updatedReactionCounts[reactionType] = (updatedReactionCounts[reactionType] || 0) + 1;
+          } else {
+            // Removing reaction
+            const oldReaction = comment.userReaction;
+            if (oldReaction) {
+              updatedReactionCounts[oldReaction] = Math.max(0, (updatedReactionCounts[oldReaction] || 0) - 1);
+            }
+          }
+          
+          return {
+            ...comment,
+            userReaction: newUserReaction,
+            reactionCounts: updatedReactionCounts,
+          };
+        }
+        return comment;
+      })
+    );
+  }, []);
+
+  const removeCommentFromList = useCallback((commentId) => {
+    setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+    setCommentCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const addCommentToList = useCallback((newComment) => {
+    setComments((prevComments) => [newComment, ...prevComments]);
+    setCommentCount((prev) => prev + 1);
+  }, []);
+
+  const handleFileSelect = (e, isImage = false) => {
+    const file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    // Validate file size
+    const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for images, 10MB for files
+    if (file.size > maxSize) {
+      alert(isImage ? 'Kích thước ảnh không được vượt quá 5MB' : 'Kích thước file không được vượt quá 10MB');
+      e.target.value = '';
+      return;
+    }
+
+    // Add file to selected files
+    const newFile = { file, id: Date.now(), isImage };
+    setSelectedFiles((prev) => [...prev, newFile]);
+
+    // Create preview for images
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews((prev) => [...prev, { id: newFile.id, url: reader.result }]);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Reset input
+    e.target.value = '';
+  };
+
+  const handleRemoveFile = (fileId) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== fileId));
+    setImagePreviews((prev) => prev.filter((p) => p.id !== fileId));
+  };
+
+  const handleFileUpload = async () => {
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    // Create comment first with content
+    try {
+      const content = commentContent.trim() || (selectedFiles.length === 1 && selectedFiles[0].isImage 
+        ? 'Đã đính kèm ảnh' 
+        : 'Đã đính kèm file');
+      
+      const comment = await createComment(group.id, { content });
+      logInfo('Comment created for attachment', { commentId: comment.id });
+      
+      setUploadingFile(true);
+      
+      // Upload all selected files
+      for (const fileItem of selectedFiles) {
+        try {
+          await uploadCommentAttachment(comment.id, fileItem.file);
+          logInfo('File uploaded successfully', { 
+            commentId: comment.id, 
+            fileName: fileItem.file.name 
+          });
+        } catch (err) {
+          logError('Failed to upload file', {
+            commentId: comment.id,
+            fileName: fileItem.file.name,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+        }
+      }
+      
+      // Reload to get the full comment with attachments
+      // We need to reload because attachments are added separately
+      setCommentContent('');
+      setSelectedFiles([]);
+      setImagePreviews([]);
+      setUploadingFile(null);
+      commentsLoadedRef.current = false;
+      setShowComments(true);
+      await loadComments();
+    } catch (err) {
+      logError('Failed to create comment with attachments', {
+        groupId: group.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      setUploadingFile(null);
+    }
+  };
+
   const handleAddComment = async () => {
+    // If there are files selected, use file upload handler
+    if (selectedFiles.length > 0) {
+      await handleFileUpload();
+      return;
+    }
+
+    // Otherwise, create comment normally
     if (!commentContent.trim()) {
       logInfo('Comment content is empty, skipping');
       return;
@@ -830,11 +1089,25 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     try {
       const result = await createComment(group.id, { content: commentContent });
       logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
+      
+      // Add comment to list immediately (optimistic update)
+      const camelCasedResult = {
+        id: result.id,
+        content: result.content || commentContent,
+        user: result.user || getAuthenticatedUser(),
+        createdAt: result.createdAt || new Date().toISOString(),
+        updatedAt: result.updatedAt || new Date().toISOString(),
+        attachments: result.attachments || [],
+        reactions: result.reactions || [],
+        reactionCounts: result.reactionCounts || {},
+        userReaction: result.userReaction || null,
+        canEdit: result.canEdit !== false,
+        canDelete: result.canDelete !== false,
+      };
+      addCommentToList(camelCasedResult);
+      
       setCommentContent('');
       setShowComments(true);
-      setCommentCount((prev) => prev + 1);
-      commentsLoadedRef.current = false;
-      await loadComments();
     } catch (err) {
       logError('Failed to add comment', {
         groupId: group.id,
@@ -842,52 +1115,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         status: err.response?.status,
         message: err.message,
       });
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      logInfo('No file selected for upload');
-      return;
-    }
-
-    logInfo('Uploading file attachment', { 
-      groupId: group.id, 
-      fileName: file.name, 
-      fileSize: file.size,
-      fileType: file.type 
-    });
-
-    // Create comment first, then upload attachment
-    try {
-      const comment = await createComment(group.id, { content: commentContent || 'Đã đính kèm file' });
-      logInfo('Comment created for attachment', { commentId: comment.id });
-      
-      setUploadingFile(true);
-      const attachment = await uploadCommentAttachment(comment.id, file);
-      logInfo('File uploaded successfully', { 
-        commentId: comment.id, 
-        attachmentId: attachment.id,
-        fileName: attachment.fileName 
-      });
-      
-      setCommentContent('');
-      setUploadingFile(null);
-      e.target.value = '';
-      commentsLoadedRef.current = false;
-      setShowComments(true);
-      setCommentCount((prev) => prev + 1);
-      await loadComments();
-    } catch (err) {
-      logError('Failed to upload file', {
-        groupId: group.id,
-        fileName: file.name,
-        error: err.response?.data,
-        status: err.response?.status,
-        message: err.message,
-      });
-      setUploadingFile(null);
     }
   };
 
@@ -1089,6 +1316,37 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       onChange={(e) => setCommentContent(e.target.value)}
                     />
                   </div>
+                  {/* File previews */}
+                  {selectedFiles.length > 0 && (
+                    <div className="file-previews mb-2">
+                      {imagePreviews.map((preview) => (
+                        <div key={preview.id} className="image-preview-container">
+                          <img src={preview.url} alt="Preview" className="image-preview" />
+                          <button
+                            type="button"
+                            className="remove-file-btn"
+                            onClick={() => handleRemoveFile(preview.id)}
+                            title="Xóa ảnh"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      {selectedFiles.filter((f) => !f.isImage).map((fileItem) => (
+                        <div key={fileItem.id} className="file-preview-item">
+                          <span>📎 {fileItem.file.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file-btn"
+                            onClick={() => handleRemoveFile(fileItem.id)}
+                            title="Xóa file"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="create-post-actions">
                     <label className="post-action-btn" title="Thêm ảnh">
                       📷
@@ -1096,7 +1354,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                         type="file"
                         accept="image/*"
                         style={{ display: 'none' }}
-                        onChange={handleFileUpload}
+                        onChange={(e) => handleFileSelect(e, true)}
                         disabled={uploadingFile}
                       />
                     </label>
@@ -1105,7 +1363,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       <input
                         type="file"
                         style={{ display: 'none' }}
-                        onChange={handleFileUpload}
+                        onChange={(e) => handleFileSelect(e, false)}
                         disabled={uploadingFile}
                       />
                     </label>
@@ -1113,7 +1371,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       variant="primary"
                       size="sm"
                       onClick={handleAddComment}
-                      disabled={!commentContent.trim() || uploadingFile}
+                      disabled={(!commentContent.trim() && selectedFiles.length === 0) || uploadingFile}
                     >
                       {uploadingFile ? <Spinner animation="border" size="sm" /> : 'Đăng'}
                     </Button>
@@ -1143,15 +1401,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                           key={comment.id}
                           comment={comment}
                           group={group}
-                          onUpdate={() => {
-                            commentsLoadedRef.current = false;
-                            // Reload comments after reaction/update/delete
-                            if (showComments) {
-                              loadComments();
-                            }
+                          onReactionChange={(commentId, reactionType, reactionCounts) => {
+                            updateCommentReaction(commentId, reactionType, reactionCounts);
+                          }}
+                          onCommentUpdate={(commentId, updatedData) => {
+                            updateCommentInList(commentId, updatedData);
+                          }}
+                          onCommentDelete={(commentId) => {
+                            removeCommentFromList(commentId);
                           }}
                           currentUserId={currentUserId}
-                          onDeleted={() => setCommentCount((prev) => Math.max(0, prev - 1))}
                         />
                       ))
                     ) : (
