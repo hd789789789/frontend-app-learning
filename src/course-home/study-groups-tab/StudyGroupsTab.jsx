@@ -771,62 +771,88 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
         <div className="post-content">{localComment.content}</div>
       )}
 
-      {localComment.attachments && localComment.attachments.length > 0 && (
-        <div className="post-attachments">
-          {localComment.attachments.map((attachment) => {
-            // Ensure attachment has proper format
-            const att = {
-              id: attachment.id,
-              fileName: attachment.fileName || attachment.file_name || 'Unknown file',
-              fileUrl: attachment.fileUrl || attachment.file_url || attachment.url,
-              fileType: attachment.fileType || attachment.file_type || 'document',
-            };
-            
-            // Only show image if we have a valid URL
-            if (att.fileType === 'image' && att.fileUrl) {
+      {(() => {
+        // Debug logging
+        const hasAttachments = localComment.attachments && Array.isArray(localComment.attachments) && localComment.attachments.length > 0;
+        if (hasAttachments) {
+          logInfo('Rendering attachments for comment', {
+            commentId: localComment.id,
+            attachmentsCount: localComment.attachments.length,
+            attachments: localComment.attachments,
+          });
+        } else {
+          logInfo('Comment has no attachments to render', {
+            commentId: localComment.id,
+            attachments: localComment.attachments,
+            attachmentsType: typeof localComment.attachments,
+            isArray: Array.isArray(localComment.attachments),
+          });
+        }
+        
+        return hasAttachments ? (
+          <div className="post-attachments">
+            {localComment.attachments.map((attachment, index) => {
+              // Ensure attachment has proper format - check all possible field names
+              const att = {
+                id: attachment.id || attachment.Id || attachment.ID || `attachment-${index}`,
+                fileName: attachment.fileName || attachment.file_name || 'Unknown file',
+                fileUrl: attachment.fileUrl || attachment.file_url || attachment.url,
+                fileType: attachment.fileType || attachment.file_type || 'document',
+              };
+              
+              logInfo('Rendering attachment', {
+                original: attachment,
+                formatted: att,
+                hasFileUrl: !!att.fileUrl,
+                hasFileName: !!att.fileName,
+              });
+              
+              // Only show image if we have a valid URL and file type is image
+              if (att.fileType === 'image' && att.fileUrl) {
+                return (
+                  <div key={att.id} className="attachment-image-container">
+                    <img
+                      src={att.fileUrl}
+                      alt={att.fileName}
+                      className="attachment-image"
+                      onClick={() => window.open(att.fileUrl, '_blank')}
+                      onError={(e) => {
+                        // If image fails to load, show as regular file link
+                        logError('Image failed to load', { attachment: att, error: e });
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <a
+                      href={att.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="attachment-link"
+                    >
+                      {att.fileName}
+                    </a>
+                  </div>
+                );
+              }
+              
+              // Show as file link (for documents or images without URL yet)
               return (
-                <div key={att.id || attachment.id} className="attachment-image-container">
-                  <img
-                    src={att.fileUrl}
-                    alt={att.fileName}
-                    className="attachment-image"
-                    onClick={() => window.open(att.fileUrl, '_blank')}
-                    onError={(e) => {
-                      // If image fails to load, show as regular file link
-                      logError('Image failed to load', { attachment: att, error: e });
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                  <a
-                    href={att.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="attachment-link"
-                  >
-                    {att.fileName}
-                  </a>
-                </div>
+                <a
+                  key={att.id}
+                  href={att.fileUrl || '#'}
+                  target={att.fileUrl ? '_blank' : undefined}
+                  rel={att.fileUrl ? 'noopener noreferrer' : undefined}
+                  className="attachment-link"
+                  onClick={!att.fileUrl ? (e) => { e.preventDefault(); } : undefined}
+                  style={!att.fileUrl ? { cursor: 'default', opacity: 0.7 } : {}}
+                >
+                  📎 {att.fileName}
+                  {!att.fileUrl && ' (Đang xử lý...)'}
+                </a>
               );
-            }
-            
-            // Show as file link (for documents or images without URL yet)
-            return (
-              <a
-                key={att.id || attachment.id}
-                href={att.fileUrl || '#'}
-                target={att.fileUrl ? '_blank' : undefined}
-                rel={att.fileUrl ? 'noopener noreferrer' : undefined}
-                className="attachment-link"
-                onClick={!att.fileUrl ? (e) => { e.preventDefault(); } : undefined}
-                style={!att.fileUrl ? { cursor: 'default', opacity: 0.7 } : {}}
-              >
-                📎 {att.fileName}
-                {!att.fileUrl && ' (Đang xử lý...)'}
-              </a>
-            );
-          })}
-        </div>
-      )}
+            })}
+          </div>
+        ) : null;
+      })()}
 
       <div className="post-reactions">
         <ReactionPicker comment={localComment} onReactionChange={onReactionChange} />
@@ -864,12 +890,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
-  const [comments, setComments] = useState([]);
+  const [allComments, setAllComments] = useState([]); // Store all loaded comments
+  const [displayedComments, setDisplayedComments] = useState([]); // Comments to display
   const [commentCount, setCommentCount] = useState(getInitialCommentCount(group));
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [hasMoreComments, setHasMoreComments] = useState(false);
-  const [commentsPage, setCommentsPage] = useState(1);
+  const [displayLimit, setDisplayLimit] = useState(5); // Start with 5 comments
   const [commentContent, setCommentContent] = useState('');
   const [uploadingFile, setUploadingFile] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -938,67 +965,94 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     commentCountLoadedRef.current = initialCount > 0;
   }, [localGroup.commentCount, localGroup.commentsCount, localGroup.comments_count, localGroup.comment_count, localGroup.comments, localGroup.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadComments = useCallback(async (reset = true, page = 1) => {
+  const loadComments = useCallback(async (reset = true) => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
     if (commentsLoadedRef.current === 'loading' && reset) {
       logInfo('Comments already loading, skipping', { groupId: localGroup.id });
       return;
     }
     
-    if (reset) {
-      commentsLoadedRef.current = 'loading';
-      setLoadingComments(true);
-      setCommentsPage(1);
-    } else {
-      setLoadingMoreComments(true);
-    }
+    commentsLoadedRef.current = 'loading';
+    setLoadingComments(true);
     
-    logInfo('Loading comments', { groupId: localGroup.id, page, reset });
+    logInfo('Loading comments', { groupId: localGroup.id, reset });
     
     try {
-      // Load 5 comments for first page, 10 for subsequent pages
-      const pageSize = page === 1 ? 5 : 10;
-      const data = await getStudyGroupComments(localGroup.id, { page, pageSize });
+      // Load all comments from server (no pagination parameters)
+      const data = await getStudyGroupComments(localGroup.id);
       logInfo('Comments loaded successfully', { 
         groupId: localGroup.id, 
-        page,
-        pageSize,
         count: data.results?.length || 0,
-        hasNext: !!data.next,
         totalCount: data.count,
       });
       
       const fetchedComments = (data.results || []).map(comment => {
         // Ensure attachments are properly formatted
         if (comment.attachments && Array.isArray(comment.attachments)) {
-          comment.attachments = comment.attachments.map(att => ({
-            id: att.id,
-            fileName: att.fileName || att.file_name || 'Unknown',
-            fileUrl: att.fileUrl || att.file_url || att.url,
-            fileType: att.fileType || att.file_type || 'document',
-            fileSize: att.fileSize || att.file_size || 0,
-            uploadedAt: att.uploadedAt || att.uploaded_at,
-          }));
+          logInfo('Formatting attachments for comment', {
+            commentId: comment.id,
+            attachmentsCount: comment.attachments.length,
+            firstAttachment: comment.attachments[0],
+            attachmentKeys: comment.attachments[0] ? Object.keys(comment.attachments[0]) : [],
+          });
+          
+          comment.attachments = comment.attachments.map(att => {
+            const formatted = {
+              id: att.id || att.Id || att.ID,
+              fileName: att.fileName || att.file_name || 'Unknown',
+              fileUrl: att.fileUrl || att.file_url || att.url,
+              fileType: att.fileType || att.file_type || 'document',
+              fileSize: att.fileSize || att.file_size || 0,
+              uploadedAt: att.uploadedAt || att.uploaded_at,
+            };
+            
+            logInfo('Formatted attachment', {
+              original: att,
+              formatted,
+              hasFileUrl: !!formatted.fileUrl,
+              hasFileName: !!formatted.fileName,
+            });
+            
+            return formatted;
+          });
+        } else {
+          logInfo('Comment has no attachments', {
+            commentId: comment.id,
+            attachments: comment.attachments,
+            attachmentsType: typeof comment.attachments,
+          });
         }
         return comment;
       });
       
+      logInfo('Comments with attachments summary', {
+        totalComments: fetchedComments.length,
+        commentsWithAttachments: fetchedComments.filter(c => c.attachments?.length > 0).map(c => ({
+          id: c.id,
+          attachmentsCount: c.attachments.length,
+          attachments: c.attachments,
+        })),
+      });
+      
+      // Store all comments
+      setAllComments(fetchedComments);
+      
+      // Update displayed comments based on current limit
+      const currentLimit = reset ? 5 : displayLimit;
+      const commentsToDisplay = fetchedComments.slice(0, currentLimit);
+      setDisplayedComments(commentsToDisplay);
+      
       if (reset) {
-        // Replace comments for first load
-        setComments(fetchedComments);
-      } else {
-        // Append comments for load more
-        setComments((prev) => [...prev, ...fetchedComments]);
+        setDisplayLimit(5);
       }
       
-      // Update pagination state
-      setHasMoreComments(!!data.next);
-      setCommentsPage(page);
+      // Update pagination state (client-side)
+      setHasMoreComments(fetchedComments.length > currentLimit);
       
       // Update comment count
       if (typeof data.count === 'number') {
         setCommentCount(data.count);
-      } else if (reset) {
+      } else {
         setCommentCount(getInitialCommentCount(localGroup) || fetchedComments.length);
       }
       
@@ -1007,24 +1061,26 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     } catch (err) {
       logError('Failed to load comments', {
         groupId: localGroup.id,
-        page,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
       });
-      if (reset) {
-        commentsLoadedRef.current = false; // Reset on error to allow retry
-      }
+      commentsLoadedRef.current = false; // Reset on error to allow retry
     } finally {
       setLoadingComments(false);
       setLoadingMoreComments(false);
     }
-  }, [localGroup.id]);
+  }, [localGroup.id, displayLimit]);
 
-  const loadMoreComments = useCallback(async () => {
-    const nextPage = commentsPage + 1;
-    await loadComments(false, nextPage);
-  }, [commentsPage, loadComments]);
+  const loadMoreComments = useCallback(() => {
+    // Load 10 more comments (client-side pagination)
+    setLoadingMoreComments(true);
+    const newLimit = displayLimit + 10;
+    setDisplayLimit(newLimit);
+    setDisplayedComments(allComments.slice(0, newLimit));
+    setHasMoreComments(allComments.length > newLimit);
+    setLoadingMoreComments(false);
+  }, [displayLimit, allComments]);
 
   // Fetch comment count on mount if not present
   useEffect(() => {
@@ -1050,10 +1106,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   }, [localGroup.id]);
 
   useEffect(() => {
-    if (showComments && comments.length === 0 && !loadingComments && commentsLoadedRef.current !== true && commentsLoadedRef.current !== 'loading') {
-      loadComments(true, 1); // Load first page with 5 comments
+    if (showComments && allComments.length === 0 && !loadingComments && commentsLoadedRef.current !== true && commentsLoadedRef.current !== 'loading') {
+      loadComments(true); // Load all comments
     }
-  }, [showComments, comments.length, loadingComments, loadComments]);
+  }, [showComments, allComments.length, loadingComments, loadComments]);
 
   // Helper functions to update comments state without reloading
   const updateCommentInList = useCallback((commentId, updatedData) => {
@@ -1121,15 +1177,20 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   }, []);
 
   const removeCommentFromList = useCallback((commentId) => {
-    setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+    setAllComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+    setDisplayedComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
     setCommentCount((prev) => Math.max(0, prev - 1));
-  }, []);
+    // Update hasMoreComments
+    setHasMoreComments(allComments.length - 1 > displayLimit);
+  }, [allComments.length, displayLimit]);
 
   const addCommentToList = useCallback((newComment) => {
-    setComments((prevComments) => [newComment, ...prevComments]);
+    // Add to all comments
+    setAllComments((prevComments) => [newComment, ...prevComments]);
     setCommentCount((prev) => prev + 1);
-    // Reset pagination when new comment is added
-    setCommentsPage(1);
+    // Reset display limit and update displayed comments
+    setDisplayLimit(5);
+    setDisplayedComments((prev) => [newComment, ...prev.slice(0, 4)]);
     setHasMoreComments(true); // Assume there are more comments
   }, []);
 
@@ -1193,7 +1254,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         logError('Comment created but no ID returned', { comment, status: comment?.status });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
-        await loadComments(true, 1); // Reset to first page
+        await loadComments(true); // Reload all comments
         setCommentContent('');
         setSelectedFiles([]);
         setImagePreviews([]);
@@ -1298,13 +1359,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             uploadedFiles: uploadedAttachments.map(a => ({ id: a.id, fileName: a.fileName, hasUrl: !!a.fileUrl }))
           });
           commentsLoadedRef.current = false;
-          await loadComments(true, 1); // Reset to first page
+          await loadComments(true); // Reload all comments
           
           // Check again after a delay to see if attachments are loaded
           setTimeout(async () => {
             // Reload one more time to ensure attachments are included
             commentsLoadedRef.current = false;
-            await loadComments(true, 1); // Reset to first page
+            await loadComments(true); // Reload all comments
             logInfo('Second reload completed to ensure attachments are loaded');
           }, 1000);
         }, 2000); // Increased delay to ensure backend processing and URL generation
@@ -1331,7 +1392,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         // Comment was created, reload to get it with attachments
         logInfo('Comment was created despite error, reloading comments');
         commentsLoadedRef.current = false;
-        await loadComments();
+        await loadComments(true);
         setCommentContent('');
         setSelectedFiles([]);
         setImagePreviews([]);
@@ -1385,7 +1446,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
-        await loadComments(true, 1); // Reset to first page
+        await loadComments(true); // Reload all comments
         setCommentContent('');
         setShowComments(true);
         return;
@@ -1413,7 +1474,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       // This handles cases where response format might be different
       setTimeout(async () => {
         commentsLoadedRef.current = false;
-        await loadComments(true, 1); // Reset to first page
+        await loadComments(true); // Reload all comments
       }, 500);
       
       setCommentContent('');
@@ -1439,7 +1500,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         // Comment was created, just reload to get it
         logInfo('Comment was created (status 201/200 or flag set) despite error, reloading comments');
         commentsLoadedRef.current = false;
-        await loadComments(true, 1); // Reset to first page
+        await loadComments(true); // Reload all comments
         setCommentContent('');
         setShowComments(true);
       } else {
@@ -1448,7 +1509,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         if (commentInError) {
           logInfo('Comment data found in error response, reloading comments');
           commentsLoadedRef.current = false;
-          await loadComments();
+          await loadComments(true);
           setCommentContent('');
           setShowComments(true);
         } else {
@@ -1456,7 +1517,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           // But still try to reload in case it was created
           logInfo('Uncertain if comment was created, reloading comments to check');
           commentsLoadedRef.current = false;
-          await loadComments();
+          await loadComments(true);
           setCommentContent('');
           setShowComments(true);
           // Don't show alert - let user see if comment appears after reload
@@ -1773,9 +1834,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       <div className="text-center p-3">
                         <Spinner animation="border" />
                       </div>
-                    ) : comments.length > 0 ? (
+                    ) : displayedComments.length > 0 ? (
                       <>
-                        {comments.map((comment) => (
+                        {displayedComments.map((comment) => (
                           <CommentCard
                             key={comment.id}
                             comment={comment}

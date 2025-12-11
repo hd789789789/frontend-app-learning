@@ -762,13 +762,9 @@ export async function getAvailableMembers(groupId, { search = '', page = 1, page
   }
 }
 
-export async function getStudyGroupComments(groupId, { page = 1, pageSize = 50 } = {}) {
-  const params = new URLSearchParams();
-  if (page) params.append('page', page);
-  if (pageSize) params.append('page_size', pageSize);
-  
-  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/?${params.toString()}`;
-  console.log('[Study Groups API] Getting group comments:', { groupId, page, pageSize, url });
+export async function getStudyGroupComments(groupId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
+  console.log('[Study Groups API] Getting group comments:', { groupId, url });
   
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
@@ -782,8 +778,6 @@ export async function getStudyGroupComments(groupId, { page = 1, pageSize = 50 }
   } catch (error) {
     console.error('[Study Groups API] Error getting group comments:', {
       groupId,
-      page,
-      pageSize,
       url,
       status: error.response?.status,
       error: error.response?.data,
