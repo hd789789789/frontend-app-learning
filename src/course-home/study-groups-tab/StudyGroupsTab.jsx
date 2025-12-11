@@ -1364,50 +1364,14 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       // If comment was created successfully, add it to list even if some files failed
       if (commentCreated && commentId) {
-        // Wait a bit for backend to process attachments, then fetch comment detail
-        // This ensures we get attachments with proper URLs from server
-        let finalAttachments = uploadedAttachments; // Use uploaded as initial
-        
-        // Try to fetch comment detail after a short delay to get attachments from server
-        setTimeout(async () => {
-          try {
-            const commentWithAttachments = await getCommentDetail(commentId);
-            console.log('[File Upload] Fetched comment detail after upload:', {
-              commentId,
-              hasAttachments: !!commentWithAttachments.attachments,
-              attachmentsCount: commentWithAttachments.attachments?.length || 0,
-              attachments: commentWithAttachments.attachments,
-            });
-            
-            // Format attachments from server
-            if (commentWithAttachments.attachments && Array.isArray(commentWithAttachments.attachments) && commentWithAttachments.attachments.length > 0) {
-              const serverAttachments = commentWithAttachments.attachments.map(att => ({
-                id: att.id || att.Id || att.ID,
-                fileName: att.fileName || att.file_name || 'Unknown',
-                fileUrl: att.fileUrl || att.file_url || att.url,
-                fileType: att.fileType || att.file_type || 'document',
-                fileSize: att.fileSize || att.file_size || 0,
-                uploadedAt: att.uploadedAt || att.uploaded_at,
-              }));
-              
-              console.log('[File Upload] Updating comment with attachments from server:', serverAttachments);
-              
-              // Update the comment in the list with attachments from server
-              updateCommentInList(commentId, { attachments: serverAttachments });
-            }
-          } catch (err) {
-            logError('Failed to fetch comment detail after upload', { commentId, error: err });
-          }
-        }, 500);
-        
-        // Add comment to list with uploaded attachments (will be updated from server)
+        // Add comment to list immediately with uploaded attachments
         const camelCasedResult = {
           id: commentId,
           content: comment.content || comment.data?.content || content,
           user: comment.user || comment.data?.user || getAuthenticatedUser(),
           createdAt: comment.createdAt || comment.data?.createdAt || comment.created_at || comment.data?.created_at || new Date().toISOString(),
           updatedAt: comment.updatedAt || comment.data?.updatedAt || comment.updated_at || comment.data?.updated_at || new Date().toISOString(),
-          attachments: finalAttachments,
+          attachments: uploadedAttachments, // Use uploaded attachments initially
           reactions: comment.reactions || comment.data?.reactions || [],
           reactionCounts: comment.reactionCounts || comment.data?.reactionCounts || {},
           userReaction: comment.userReaction || comment.data?.userReaction || null,
@@ -1421,6 +1385,54 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           uploadedAttachmentsCount: uploadedAttachments.length,
         });
         addCommentToList(camelCasedResult);
+        
+        // Fetch comment detail immediately to get attachments from server
+        // This ensures we have the correct attachments with URLs
+        (async () => {
+          try {
+            // Wait a bit for backend to process attachments
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const commentWithAttachments = await getCommentDetail(commentId);
+            console.log('[File Upload] Fetched comment detail after upload:', {
+              commentId,
+              hasAttachments: !!commentWithAttachments.attachments,
+              attachmentsCount: commentWithAttachments.attachments?.length || 0,
+              attachments: commentWithAttachments.attachments,
+              attachmentKeys: commentWithAttachments.attachments?.[0] ? Object.keys(commentWithAttachments.attachments[0]) : [],
+            });
+            
+            // Format attachments from server
+            if (commentWithAttachments.attachments && Array.isArray(commentWithAttachments.attachments) && commentWithAttachments.attachments.length > 0) {
+              const serverAttachments = commentWithAttachments.attachments.map(att => ({
+                id: att.id || att.Id || att.ID,
+                fileName: att.fileName || att.file_name || 'Unknown',
+                fileUrl: att.fileUrl || att.file_url || att.url,
+                fileType: att.fileType || att.file_type || 'document',
+                fileSize: att.fileSize || att.file_size || 0,
+                uploadedAt: att.uploadedAt || att.uploaded_at,
+              }));
+              
+              console.log('[File Upload] Updating comment with attachments from server:', {
+                commentId,
+                serverAttachments,
+                attachmentsCount: serverAttachments.length,
+                hasFileUrls: serverAttachments.map(a => ({ fileName: a.fileName, hasUrl: !!a.fileUrl })),
+              });
+              
+              // Update the comment in the list with attachments from server
+              updateCommentInList(commentId, { attachments: serverAttachments });
+            } else {
+              console.warn('[File Upload] Comment detail has no attachments:', {
+                commentId,
+                attachments: commentWithAttachments.attachments,
+                uploadedCount: uploadedAttachments.length,
+              });
+            }
+          } catch (err) {
+            logError('Failed to fetch comment detail after upload', { commentId, error: err });
+          }
+        })();
         
         // If some files failed to upload, show warning but don't block
         if (uploadErrors.length > 0 && uploadErrors.length < selectedFiles.length) {
