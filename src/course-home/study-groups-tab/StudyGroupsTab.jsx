@@ -1333,8 +1333,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         isImage: f?.isImage,
       })),
     });
+    if (typeof uploadCommentAttachment !== 'function') {
+      console.error('[File Upload] uploadCommentAttachment is not a function');
+    }
       const uploadedAttachments = [];
       let uploadErrors = [];
+    console.log('[File Upload] Entering loop, total files:', selectedFiles.length);
       
       for (const fileItem of selectedFiles) {
         try {

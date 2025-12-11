@@ -545,11 +545,15 @@ export async function getWelcomeTabData(courseId) {
   } catch (error) {
     const httpErrorStatus = error?.response?.status;
     if (httpErrorStatus === 401 || httpErrorStatus === 403) {
-      return { success: false, userStats: {}, importantDates: [], dailyQuests: [] };
+      return {
+        success: false, userStats: {}, importantDates: [], dailyQuests: [],
+      };
     }
     if (httpErrorStatus === 404) {
       // API might not be deployed yet, return empty data
-      return { success: false, userStats: {}, importantDates: [], dailyQuests: [] };
+      return {
+        success: false, userStats: {}, importantDates: [], dailyQuests: [],
+      };
     }
     throw error;
   }
@@ -557,7 +561,7 @@ export async function getWelcomeTabData(courseId) {
 
 export async function getStudyGroupsTabData(courseId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/courses/${encodeURIComponent(courseId)}/study-groups/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     const camelCased = camelCaseObject(data);
@@ -571,7 +575,7 @@ export async function getStudyGroupsTabData(courseId) {
       error: error.response?.data,
       message: error.message,
     });
-    
+
     if (httpErrorStatus === 401 || httpErrorStatus === 403) {
       return { success: false, results: [], count: 0 };
     }
@@ -586,13 +590,13 @@ export async function getStudyGroupsTabData(courseId) {
 // Study Groups API functions
 export async function createStudyGroup(courseId, groupData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/courses/${encodeURIComponent(courseId)}/study-groups/`;
-  
+
   // Backend requires course_id in the request body
   const requestData = {
     ...groupData,
     course_id: courseId,
   };
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, requestData);
     return camelCaseObject(data);
@@ -611,7 +615,7 @@ export async function createStudyGroup(courseId, groupData) {
 
 export async function updateStudyGroup(groupId, groupData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().put(url, groupData);
     return camelCaseObject(data);
@@ -630,7 +634,7 @@ export async function updateStudyGroup(groupId, groupData) {
 
 export async function deleteStudyGroup(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  
+
   try {
     await getAuthenticatedHttpClient().delete(url);
     return { success: true };
@@ -648,7 +652,7 @@ export async function deleteStudyGroup(groupId) {
 
 export async function getStudyGroupDetails(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     return camelCaseObject(data);
@@ -666,7 +670,7 @@ export async function getStudyGroupDetails(groupId) {
 
 export async function getStudyGroupMembers(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     return camelCaseObject(data);
@@ -697,7 +701,7 @@ export async function findUserByUsernameOrEmail(usernameOrEmail) {
 
 export async function addStudyGroupMember(groupId, usernameOrEmail) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/`;
-  
+
   try {
     // Backend StudyGroupMemberCreateSerializer accepts username or email in 'user' field
     // It will automatically find the user by username or email
@@ -719,7 +723,7 @@ export async function addStudyGroupMember(groupId, usernameOrEmail) {
 export async function removeStudyGroupMember(groupId, userId) {
   // Backend expects user_id (int) in path
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/members/${userId}/`;
-  
+
   try {
     await getAuthenticatedHttpClient().delete(url);
     return { success: true };
@@ -738,12 +742,12 @@ export async function removeStudyGroupMember(groupId, userId) {
 
 export async function getAvailableMembers(groupId, { search = '', page = 1, pageSize = 5 } = {}) {
   const params = new URLSearchParams();
-  if (search) params.append('search', search);
-  if (page) params.append('page', page);
-  if (pageSize) params.append('page_size', pageSize);
-  
+  if (search) { params.append('search', search); }
+  if (page) { params.append('page', page); }
+  if (pageSize) { params.append('page_size', pageSize); }
+
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/available-members/?${params.toString()}`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     return camelCaseObject(data);
@@ -765,7 +769,7 @@ export async function getAvailableMembers(groupId, { search = '', page = 1, page
 export async function getStudyGroupComments(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
   console.log('[Study Groups API] Getting group comments:', { groupId, url });
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     console.log('[Study Groups API] Group comments retrieved successfully:', {
@@ -774,7 +778,7 @@ export async function getStudyGroupComments(groupId) {
       hasNext: !!data.next,
       hasPrevious: !!data.previous,
     });
-    
+
     // Log first comment to see structure
     if (data.results && data.results.length > 0) {
       console.log('[Study Groups API] First comment structure:', {
@@ -788,9 +792,9 @@ export async function getStudyGroupComments(groupId) {
         rawComment: JSON.stringify(data.results[0]).substring(0, 500),
       });
     }
-    
+
     const camelCased = camelCaseObject(data);
-    
+
     // Log after camelCase conversion
     if (camelCased.results && camelCased.results.length > 0) {
       console.log('[Study Groups API] First comment after camelCase:', {
@@ -803,7 +807,7 @@ export async function getStudyGroupComments(groupId) {
         allKeys: Object.keys(camelCased.results[0]),
       });
     }
-    
+
     return camelCased;
   } catch (error) {
     console.error('[Study Groups API] Error getting group comments:', {
@@ -819,7 +823,7 @@ export async function getStudyGroupComments(groupId) {
 
 export async function createComment(groupId, commentData) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, commentData);
     return camelCaseObject(data);
@@ -838,7 +842,7 @@ export async function createComment(groupId, commentData) {
 
 export async function getCommentDetail(commentId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
     console.log('[Study Groups API] Comment detail retrieved:', {
@@ -862,7 +866,7 @@ export async function getCommentDetail(commentId) {
 
 export async function updateComment(commentId, content) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().put(url, { content });
     return camelCaseObject(data);
@@ -880,7 +884,7 @@ export async function updateComment(commentId, content) {
 
 export async function deleteComment(commentId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/`;
-  
+
   try {
     await getAuthenticatedHttpClient().delete(url);
     return { success: true };
@@ -898,7 +902,7 @@ export async function deleteComment(commentId) {
 
 export async function addReaction(commentId, reactionType) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/reactions/`;
-  
+
   try {
     const { data } = await getAuthenticatedHttpClient().post(url, { reaction_type: reactionType });
     return camelCaseObject(data);
@@ -917,7 +921,7 @@ export async function addReaction(commentId, reactionType) {
 
 export async function removeReaction(commentId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/reactions/`;
-  
+
   try {
     await getAuthenticatedHttpClient().delete(url);
     return { success: true };
@@ -935,7 +939,7 @@ export async function removeReaction(commentId) {
 
 export async function uploadCommentAttachment(commentId, file) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/attachments/`;
-  
+
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -946,11 +950,15 @@ export async function uploadCommentAttachment(commentId, file) {
       fileSize: file?.size,
       hasFile: !!file,
     });
-    const { data } = await getAuthenticatedHttpClient().post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    const { data } = await getAuthenticatedHttpClient().post(
+      url,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
-    });
+    );
     console.log('[Study Groups API] Attachment upload success', {
       commentId,
       url,
