@@ -942,7 +942,8 @@ export async function uploadCommentAttachment(commentId, file) {
 
   try {
     const formData = new FormData();
-    formData.append('file', file);
+    // Append with filename to help Django build correct name
+    formData.append('file', file, file?.name);
     console.log('[Study Groups API] Uploading attachment', {
       commentId,
       url,
@@ -955,7 +956,11 @@ export async function uploadCommentAttachment(commentId, file) {
       formData,
       {
         // Let the browser/axios set the correct multipart boundary for FormData
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': undefined,
+        },
+        withCredentials: true,
         // Prevent any default JSON transforms that would strip the file
         transformRequest: [(requestData) => requestData],
       },
