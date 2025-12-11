@@ -1308,8 +1308,23 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       // Ensure we have a valid ID - check multiple possible formats
       commentId = comment?.id || comment?.Id || comment?.ID || comment?.data?.id || comment?.data?.Id;
       
+      // Backend comment create serializer currently does not return id; fallback: fetch latest comment
       if (!commentId) {
-        logError('Comment created but no ID returned', { comment, status: comment?.status });
+        logError('Comment created but no ID returned, fetching latest comment to recover id', { comment, status: comment?.status });
+        try {
+          const latestComments = await getStudyGroupComments(localGroup.id);
+          const newest = latestComments?.results?.[0];
+          if (newest?.id) {
+            commentId = newest.id;
+            logInfo('Recovered commentId from latest comments', { commentId, newest });
+          }
+        } catch (fetchErr) {
+          logError('Failed to recover commentId by fetching comments', { error: fetchErr });
+        }
+      }
+      
+      if (!commentId) {
+        logError('Comment created but still no ID after recovery', { comment, status: comment?.status });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
         await loadComments(true); // Reload all comments
