@@ -892,10 +892,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   };
 
   const handleRemoveMember = async (memberIdentifier, memberObj) => {
-    // Try multiple possible fields for user id
-    const target = memberIdentifier || 
+    // Try multiple possible fields for user id - prioritize user_id from backend
+    const target = memberObj?.user_id ||  // Backend now returns user_id field
                    memberObj?.user?.id || 
-                   memberObj?.user_id || 
+                   memberIdentifier || 
                    memberObj?.userId ||
                    memberObj?.user?.userId ||
                    null;
@@ -905,11 +905,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       target,
       memberObj,
       availableFields: {
-        memberIdentifier,
-        'memberObj.user?.id': memberObj?.user?.id,
         'memberObj.user_id': memberObj?.user_id,
+        'memberObj.user?.id': memberObj?.user?.id,
+        memberIdentifier,
         'memberObj.userId': memberObj?.userId,
         'memberObj.user?.userId': memberObj?.user?.userId,
+        allKeys: Object.keys(memberObj || {}),
       },
     });
 
@@ -917,6 +918,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       logError('Cannot remove member: user id not found in member object', { 
         memberObj,
         availableFields: Object.keys(memberObj || {}),
+        memberString: JSON.stringify(memberObj),
       });
       alert('Không thể xóa thành viên: Không tìm thấy ID người dùng. Vui lòng thử lại sau.');
       return;
