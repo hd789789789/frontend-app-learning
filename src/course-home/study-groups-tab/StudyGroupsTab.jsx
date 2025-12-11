@@ -1323,6 +1323,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       setUploadingFile(true);
       
       // Upload all selected files
+    console.log('[File Upload] Debug before loop', {
+      commentId,
+      uploadFnType: typeof uploadCommentAttachment,
+      selectedFilesCount: selectedFiles.length,
+      selectedFiles: selectedFiles.map(f => ({
+        name: f?.file?.name,
+        size: f?.file?.size,
+        isImage: f?.isImage,
+      })),
+    });
       const uploadedAttachments = [];
       let uploadErrors = [];
       

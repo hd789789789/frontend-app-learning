@@ -944,6 +944,7 @@ export async function uploadCommentAttachment(commentId, file) {
       url,
       fileName: file?.name,
       fileSize: file?.size,
+      hasFile: !!file,
     });
     const { data } = await getAuthenticatedHttpClient().post(url, formData, {
       headers: {
