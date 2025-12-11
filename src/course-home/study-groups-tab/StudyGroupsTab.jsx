@@ -1770,10 +1770,18 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       <ModalDialog
         isOpen={!!errorModal}
         onClose={() => setErrorModal(null)}
-        title={errorModal?.title || 'Thông báo'}
         size="sm"
-        hasCloseButton
+        hasCloseButton={false}
       >
+        <ModalDialog.Header>
+          <ModalDialog.Title>{errorModal?.title || 'Thông báo'}</ModalDialog.Title>
+          <ModalDialog.CloseButton
+            variant="tertiary"
+            size="sm"
+            onClick={() => setErrorModal(null)}
+            aria-label="Đóng"
+          />
+        </ModalDialog.Header>
         <ModalDialog.Body>
           {errorModal?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'}
         </ModalDialog.Body>
