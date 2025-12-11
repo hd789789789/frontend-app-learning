@@ -1364,14 +1364,50 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       // If comment was created successfully, add it to list even if some files failed
       if (commentCreated && commentId) {
-        // Add comment to list with attachments
+        // Wait a bit for backend to process attachments, then fetch comment detail
+        // This ensures we get attachments with proper URLs from server
+        let finalAttachments = uploadedAttachments; // Use uploaded as initial
+        
+        // Try to fetch comment detail after a short delay to get attachments from server
+        setTimeout(async () => {
+          try {
+            const commentWithAttachments = await getCommentDetail(commentId);
+            console.log('[File Upload] Fetched comment detail after upload:', {
+              commentId,
+              hasAttachments: !!commentWithAttachments.attachments,
+              attachmentsCount: commentWithAttachments.attachments?.length || 0,
+              attachments: commentWithAttachments.attachments,
+            });
+            
+            // Format attachments from server
+            if (commentWithAttachments.attachments && Array.isArray(commentWithAttachments.attachments) && commentWithAttachments.attachments.length > 0) {
+              const serverAttachments = commentWithAttachments.attachments.map(att => ({
+                id: att.id || att.Id || att.ID,
+                fileName: att.fileName || att.file_name || 'Unknown',
+                fileUrl: att.fileUrl || att.file_url || att.url,
+                fileType: att.fileType || att.file_type || 'document',
+                fileSize: att.fileSize || att.file_size || 0,
+                uploadedAt: att.uploadedAt || att.uploaded_at,
+              }));
+              
+              console.log('[File Upload] Updating comment with attachments from server:', serverAttachments);
+              
+              // Update the comment in the list with attachments from server
+              updateCommentInList(commentId, { attachments: serverAttachments });
+            }
+          } catch (err) {
+            logError('Failed to fetch comment detail after upload', { commentId, error: err });
+          }
+        }, 500);
+        
+        // Add comment to list with uploaded attachments (will be updated from server)
         const camelCasedResult = {
           id: commentId,
           content: comment.content || comment.data?.content || content,
           user: comment.user || comment.data?.user || getAuthenticatedUser(),
           createdAt: comment.createdAt || comment.data?.createdAt || comment.created_at || comment.data?.created_at || new Date().toISOString(),
           updatedAt: comment.updatedAt || comment.data?.updatedAt || comment.updated_at || comment.data?.updated_at || new Date().toISOString(),
-          attachments: uploadedAttachments.length > 0 ? uploadedAttachments : (comment.attachments || comment.data?.attachments || []),
+          attachments: finalAttachments,
           reactions: comment.reactions || comment.data?.reactions || [],
           reactionCounts: comment.reactionCounts || comment.data?.reactionCounts || {},
           userReaction: comment.userReaction || comment.data?.userReaction || null,
@@ -1382,7 +1418,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         logInfo('Adding comment with attachments', { 
           camelCasedResult, 
           attachmentsCount: camelCasedResult.attachments.length,
-          uploadedAttachmentsCount: uploadedAttachments.length 
+          uploadedAttachmentsCount: uploadedAttachments.length,
         });
         addCommentToList(camelCasedResult);
         
