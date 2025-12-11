@@ -41,7 +41,6 @@ import {
   addReaction,
   removeReaction,
   uploadCommentAttachment,
-  findUserByUsernameOrEmail,
 } from '../data/api';
 
 import './StudyGroupsTab.scss';
@@ -893,36 +892,33 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   };
 
   const handleRemoveMember = async (memberIdentifier, memberObj) => {
-    let target = memberIdentifier || null;
-    const usernameFallback = memberObj?.user?.username || memberObj?.user_username;
+    // Try multiple possible fields for user id
+    const target = memberIdentifier || 
+                   memberObj?.user?.id || 
+                   memberObj?.user_id || 
+                   memberObj?.userId ||
+                   memberObj?.user?.userId ||
+                   null;
 
     logInfo('Removing member from group (client)', {
       groupId: group.id,
       target,
-      usernameFallback,
       memberObj,
+      availableFields: {
+        memberIdentifier,
+        'memberObj.user?.id': memberObj?.user?.id,
+        'memberObj.user_id': memberObj?.user_id,
+        'memberObj.userId': memberObj?.userId,
+        'memberObj.user?.userId': memberObj?.user?.userId,
+      },
     });
 
-    // Resolve user id if missing or not numeric
-    if (!target || Number.isNaN(Number(target))) {
-      if (usernameFallback) {
-        try {
-          const userInfo = await findUserByUsernameOrEmail(usernameFallback);
-          target = userInfo?.id;
-          logInfo('Resolved user id from username', { username: usernameFallback, userId: target });
-        } catch (err) {
-          logError('Failed to resolve user id from username', {
-            username: usernameFallback,
-            error: err.response?.data,
-            status: err.response?.status,
-            message: err.message,
-          });
-        }
-      }
-    }
-
     if (!target) {
-      logError('Cannot remove member: user id not found', { memberObj });
+      logError('Cannot remove member: user id not found in member object', { 
+        memberObj,
+        availableFields: Object.keys(memberObj || {}),
+      });
+      alert('Không thể xóa thành viên: Không tìm thấy ID người dùng. Vui lòng thử lại sau.');
       return;
     }
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
@@ -1050,14 +1046,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                       {canManageMembers && member.user?.id !== currentUserId && (
                         <button
                           className="friend-action-btn"
-                          onClick={() =>
-                            handleRemoveMember(
-                              member.user?.id ||
-                                member.user_id ||
-                                member.userId,
-                              member
-                            )
-                          }
+                          onClick={() => handleRemoveMember(null, member)}
                           title="Xóa khỏi nhóm"
                         >
                           <svg
