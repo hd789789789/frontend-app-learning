@@ -1361,9 +1361,9 @@
   // Add margin-top for sidebar cards on mobile
   // This creates space between main content and sidebar when stacked
   // Target the sidebar column (second Col in the Row)
-  .row > [class*="col-"]:nth-child(2) {
-    margin-top: 2rem !important;
-  }
+  // .row > [class*="col-"]:nth-child(2) {
+  //   margin-top: 2rem !important;
+  // }
 
   // Ensure sidebar cards have proper spacing
   .streak-calendar-card,

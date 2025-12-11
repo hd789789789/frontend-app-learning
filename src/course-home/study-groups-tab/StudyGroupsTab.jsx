@@ -62,7 +62,7 @@ const getAvatarColor = (id) => {
 const getInitials = (text) => (text ? text.substring(0, 2).toUpperCase() : 'U');
 
 // Create Group Modal
-const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
+const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess, onGroupCreated }) => {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -76,7 +76,13 @@ const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     
     try {
       const result = await createStudyGroup(courseId, formData);
-      logInfo('Study group created successfully', { groupId: result.id, courseId });
+      logInfo('Study group created successfully', { groupId: result.id, courseId, result });
+      
+      // Add group to list immediately (optimistic update)
+      if (onGroupCreated && result) {
+        onGroupCreated(result);
+      }
+      
       setFormData({ name: '', description: '' });
       onSuccess();
       onClose();
@@ -151,7 +157,7 @@ const CreateGroupModal = ({ isOpen, onClose, courseId, onSuccess }) => {
 };
 
 // Edit Group Modal
-const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
+const EditGroupModal = ({ isOpen, onClose, group, onSuccess, onGroupUpdated }) => {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -174,9 +180,24 @@ const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
     
     logInfo('Updating study group', { groupId: group.id, formData });
     
+    // Optimistic update
+    if (onGroupUpdated) {
+      onGroupUpdated(group.id, formData);
+    }
+    
     try {
       const result = await updateStudyGroup(group.id, formData);
       logInfo('Study group updated successfully', { groupId: group.id, result });
+      
+      // Update with server response
+      if (onGroupUpdated && result) {
+        onGroupUpdated(group.id, {
+          name: result.name,
+          description: result.description,
+          updatedAt: result.updatedAt,
+        });
+      }
+      
       onSuccess();
       onClose();
     } catch (err) {
@@ -189,6 +210,14 @@ const EditGroupModal = ({ isOpen, onClose, group, onSuccess }) => {
         message: errorMessage,
       });
       setError(errorMessage);
+      
+      // Revert optimistic update on error
+      if (onGroupUpdated && group) {
+        onGroupUpdated(group.id, {
+          name: group.name,
+          description: group.description,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -331,8 +360,14 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     setLoadingAdd(true);
     setError(null);
     try {
-      await addStudyGroupMember(groupId, usernameOrEmail);
-      onSuccess();
+      const result = await addStudyGroupMember(groupId, usernameOrEmail);
+      logInfo('Member added successfully', { groupId, usernameOrEmail, result });
+      
+      // Pass the new member to onSuccess callback
+      if (onSuccess) {
+        onSuccess(result);
+      }
+      
       // refresh list to remove added user
       setUsers([]);
       setHasMore(false);
@@ -585,10 +620,19 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   const handleDelete = async () => {
     if (window.confirm('Bạn có chắc muốn xóa bình luận này?')) {
       setLoading(true);
-      logInfo('Deleting comment', { commentId: localComment.id });
+      
+      // Ensure we have a valid ID
+      const commentId = localComment.id || localComment.Id || localComment.ID;
+      if (!commentId) {
+        logError('Cannot delete comment: no ID found', { localComment });
+        alert('Không thể xóa bình luận: Không tìm thấy ID. Vui lòng refresh trang.');
+        setLoading(false);
+        return;
+      }
+      
+      logInfo('Deleting comment', { commentId });
       
       // Optimistic update: remove from UI immediately
-      const commentId = localComment.id;
       onCommentDelete(commentId);
       
       try {
@@ -768,7 +812,7 @@ const getInitialCommentCount = (group) =>
   (Array.isArray(group?.comments) ? group.comments.length : 0) ??
   0;
 
-const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
+const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, onGroupDeleted, onMemberAdded, onMemberRemoved }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
@@ -780,12 +824,18 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showComments, setShowComments] = useState(false);
+  const [localGroup, setLocalGroup] = useState(group);
 
-  const ownerId = group.ownerId || group.owner?.id || group.createdById;
+  // Sync local group with prop when it changes
+  useEffect(() => {
+    setLocalGroup(group);
+  }, [group]);
+
+  const ownerId = localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
   const currentUserKey = currentUserId;
   const isOwner = ownerId && currentUserKey && (ownerId === currentUserKey || ownerId?.toString() === currentUserKey?.toString());
   const currentMember =
-    (group.members || []).find((m) => {
+    (localGroup.members || []).find((m) => {
       const memberId = m.user?.id;
       const memberUsername = m.user?.username;
       const matchesId =
@@ -800,9 +850,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
 
-  const apiCanManage = group.canManageMembers !== false ? (group.canManageMembers ?? false) : false;
-  const apiCanEdit = group.canEdit !== false ? (group.canEdit ?? false) : false;
-  const apiCanDelete = group.canDelete !== false ? (group.canDelete ?? false) : false;
+  const apiCanManage = localGroup.canManageMembers !== false ? (localGroup.canManageMembers ?? false) : false;
+  const apiCanEdit = localGroup.canEdit !== false ? (localGroup.canEdit ?? false) : false;
+  const apiCanDelete = localGroup.canDelete !== false ? (localGroup.canDelete ?? false) : false;
 
   const canManageMembers = apiCanManage || apiCanEdit || apiCanDelete || isOwner || isGroupAdmin;
   const canEdit = apiCanEdit || canManageMembers || isOwner || isGroupAdmin;
@@ -812,16 +862,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
   // Debug logs for permission issues
   useEffect(() => {
     const payload = {
-      groupId: group.id,
+      groupId: localGroup.id,
       currentUserId,
       ownerId,
       currentRole,
       isOwner,
       isGroupAdmin,
       flags: {
-        canManageMembersFromApi: group.canManageMembers,
-        canEditFromApi: group.canEdit,
-        canDeleteFromApi: group.canDelete,
+        canManageMembersFromApi: localGroup.canManageMembers,
+        canEditFromApi: localGroup.canEdit,
+        canDeleteFromApi: localGroup.canDelete,
       },
       derived: { canManageMembers, canEdit, canDelete, showGroupMenu },
     };
@@ -829,43 +879,43 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     // Fallback console log to ensure visibility when logInfo is filtered
     // eslint-disable-next-line no-console
     console.log('[GroupCard permission check]', payload);
-  }, [group.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, group.canManageMembers, group.canEdit, group.canDelete]);
-  const isMember = group.isMember;
+  }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, localGroup.canManageMembers, localGroup.canEdit, localGroup.canDelete]);
+  const isMember = localGroup.isMember;
   const commentsLoadedRef = useRef(false);
   const commentCountLoadedRef = useRef(false);
 
   useEffect(() => {
-    const initialCount = getInitialCommentCount(group);
+    const initialCount = getInitialCommentCount(localGroup);
     setCommentCount(initialCount);
     commentCountLoadedRef.current = initialCount > 0;
-  }, [group.commentCount, group.commentsCount, group.comments_count, group.comment_count, group.comments, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [localGroup.commentCount, localGroup.commentsCount, localGroup.comments_count, localGroup.comment_count, localGroup.comments, localGroup.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComments = useCallback(async () => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
     if (commentsLoadedRef.current === 'loading') {
-      logInfo('Comments already loading, skipping', { groupId: group.id });
+      logInfo('Comments already loading, skipping', { groupId: localGroup.id });
       return;
     }
     
     commentsLoadedRef.current = 'loading';
     setLoadingComments(true);
-    logInfo('Loading comments', { groupId: group.id });
+    logInfo('Loading comments', { groupId: localGroup.id });
     
     try {
-      const data = await getStudyGroupComments(group.id);
-      logInfo('Comments loaded successfully', { groupId: group.id, count: data.results?.length || 0 });
+      const data = await getStudyGroupComments(localGroup.id);
+      logInfo('Comments loaded successfully', { groupId: localGroup.id, count: data.results?.length || 0 });
       const fetchedComments = data.results || [];
       setComments(fetchedComments);
       setCommentCount(
         typeof data.count === 'number'
           ? data.count
-          : getInitialCommentCount(group) || fetchedComments.length
+          : getInitialCommentCount(localGroup) || fetchedComments.length
       );
       commentsLoadedRef.current = true;
       commentCountLoadedRef.current = true;
     } catch (err) {
       logError('Failed to load comments', {
-        groupId: group.id,
+        groupId: localGroup.id,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
@@ -874,22 +924,22 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
     } finally {
       setLoadingComments(false);
     }
-  }, [group.id]);
+  }, [localGroup.id]);
 
   // Fetch comment count on mount if not present
   useEffect(() => {
     if (!commentCountLoadedRef.current) {
-      getStudyGroupComments(group.id)
+      getStudyGroupComments(localGroup.id)
         .then((data) => {
           const newCount = typeof data.count === 'number'
             ? data.count
-            : getInitialCommentCount(group) || (data.results || []).length || 0;
+            : getInitialCommentCount(localGroup) || (data.results || []).length || 0;
           setCommentCount(newCount);
           commentCountLoadedRef.current = true;
         })
         .catch((err) => {
           logError('Failed to preload comment count', {
-            groupId: group.id,
+            groupId: localGroup.id,
             error: err.response?.data,
             status: err.response?.status,
             message: err.message,
@@ -897,7 +947,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group.id]);
+  }, [localGroup.id]);
 
   useEffect(() => {
     if (showComments && comments.length === 0 && !loadingComments && commentsLoadedRef.current !== true && commentsLoadedRef.current !== 'loading') {
@@ -1027,47 +1077,72 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
         ? 'Đã đính kèm ảnh' 
         : 'Đã đính kèm file');
       
-      const comment = await createComment(group.id, { content });
-      logInfo('Comment created for attachment', { commentId: comment.id });
+      const comment = await createComment(localGroup.id, { content });
+      logInfo('Comment created for attachment', { comment, commentId: comment.id });
+      
+      // Ensure we have a valid ID
+      const commentId = comment.id || comment.Id || comment.ID;
+      if (!commentId) {
+        logError('Comment created but no ID returned', { comment });
+        throw new Error('Comment created but no ID returned from server');
+      }
       
       setUploadingFile(true);
       
       // Upload all selected files
+      const uploadedAttachments = [];
       for (const fileItem of selectedFiles) {
         try {
-          await uploadCommentAttachment(comment.id, fileItem.file);
+          const attachment = await uploadCommentAttachment(commentId, fileItem.file);
           logInfo('File uploaded successfully', { 
-            commentId: comment.id, 
-            fileName: fileItem.file.name 
+            commentId, 
+            fileName: fileItem.file.name,
+            attachment 
           });
+          uploadedAttachments.push(attachment);
         } catch (err) {
           logError('Failed to upload file', {
-            commentId: comment.id,
+            commentId,
             fileName: fileItem.file.name,
             error: err.response?.data,
             status: err.response?.status,
             message: err.message,
           });
+          // Continue with other files even if one fails
         }
       }
       
-      // Reload to get the full comment with attachments
-      // We need to reload because attachments are added separately
+      // Add comment to list with attachments
+      const camelCasedResult = {
+        id: commentId,
+        content: comment.content || content,
+        user: comment.user || getAuthenticatedUser(),
+        createdAt: comment.createdAt || new Date().toISOString(),
+        updatedAt: comment.updatedAt || new Date().toISOString(),
+        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : (comment.attachments || []),
+        reactions: comment.reactions || [],
+        reactionCounts: comment.reactionCounts || {},
+        userReaction: comment.userReaction || null,
+        canEdit: comment.canEdit !== false,
+        canDelete: comment.canDelete !== false,
+      };
+      addCommentToList(camelCasedResult);
+      
+      // Clear form
       setCommentContent('');
       setSelectedFiles([]);
       setImagePreviews([]);
       setUploadingFile(null);
-      commentsLoadedRef.current = false;
       setShowComments(true);
-      await loadComments();
     } catch (err) {
       logError('Failed to create comment with attachments', {
-        groupId: group.id,
+        groupId: localGroup.id,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
       });
       setUploadingFile(null);
+      alert('Không thể đăng bình luận với file đính kèm. Vui lòng thử lại.');
     }
   };
 
@@ -1084,15 +1159,22 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       return;
     }
 
-    logInfo('Adding comment', { groupId: group.id, contentLength: commentContent.length });
+    logInfo('Adding comment', { groupId: localGroup.id, contentLength: commentContent.length });
     
     try {
-      const result = await createComment(group.id, { content: commentContent });
-      logInfo('Comment added successfully', { groupId: group.id, commentId: result.id });
+      const result = await createComment(localGroup.id, { content: commentContent });
+      logInfo('Comment added successfully', { groupId: localGroup.id, result });
+      
+      // Ensure we have a valid ID
+      const commentId = result.id || result.Id || result.ID;
+      if (!commentId) {
+        logError('Comment created but no ID returned', { result });
+        throw new Error('Comment created but no ID returned from server');
+      }
       
       // Add comment to list immediately (optimistic update)
       const camelCasedResult = {
-        id: result.id,
+        id: commentId,
         content: result.content || commentContent,
         user: result.user || getAuthenticatedUser(),
         createdAt: result.createdAt || new Date().toISOString(),
@@ -1110,11 +1192,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       setShowComments(true);
     } catch (err) {
       logError('Failed to add comment', {
-        groupId: group.id,
+        groupId: localGroup.id,
         error: err.response?.data,
         status: err.response?.status,
         message: err.message,
       });
+      alert('Không thể đăng bình luận. Vui lòng thử lại.');
     }
   };
 
@@ -1128,7 +1211,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                    null;
 
     logInfo('Removing member from group (client)', {
-      groupId: group.id,
+      groupId: localGroup.id,
       target,
       memberObj,
       availableFields: {
@@ -1151,20 +1234,36 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       return;
     }
     if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
-      logInfo('Removing member from group', { groupId: group.id, userId: target });
+      logInfo('Removing member from group', { groupId: localGroup.id, userId: target });
+      
+      // Optimistic update: remove member from UI immediately
+      if (onMemberRemoved) {
+        onMemberRemoved(localGroup.id, target);
+        // Update local group
+        setLocalGroup((prev) => ({
+          ...prev,
+          members: (prev.members || []).filter((m) => {
+            const memberId = m.user_id || m.user?.id || m.userId;
+            return memberId !== target;
+          }),
+          memberCount: Math.max(0, (prev.memberCount || 0) - 1),
+        }));
+      }
       
       try {
-        await removeStudyGroupMember(group.id, target);
-        logInfo('Member removed successfully', { groupId: group.id, userId: target });
-        onUpdate();
+        await removeStudyGroupMember(localGroup.id, target);
+        logInfo('Member removed successfully', { groupId: localGroup.id, userId: target });
       } catch (err) {
         logError('Failed to remove member', {
-          groupId: group.id,
+          groupId: localGroup.id,
           userId: target,
           error: err.response?.data,
           status: err.response?.status,
           message: err.message,
         });
+        alert('Không thể xóa thành viên. Vui lòng thử lại.');
+        // Revert on error - reload group data
+        if (onUpdate) onUpdate();
       }
     }
   };
@@ -1182,10 +1281,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
             {collapsed ? '▶' : '▼'}
           </button>
           <div className="group-info">
-            <h3>{group.name}</h3>
+            <h3>{localGroup.name}</h3>
             <div className="group-stats">
-              <span>👥 {group.memberCount || 0} thành viên</span>
-              <span>📅 Tạo: {formatDate(group.createdAt)}</span>
+              <span>👥 {localGroup.memberCount || localGroup.members?.length || 0} thành viên</span>
+              <span>📅 Tạo: {formatDate(localGroup.createdAt)}</span>
             </div>
           </div>
           <div
@@ -1212,11 +1311,26 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
                     variant="outline-danger"
                     onClick={async () => {
                       if (window.confirm('Bạn có chắc muốn xóa nhóm này?')) {
+                        const groupId = localGroup.id;
+                        
+                        // Optimistic update: remove from UI immediately
+                        if (onGroupDeleted) {
+                          onGroupDeleted(groupId);
+                        }
+                        
                         try {
-                          await deleteStudyGroup(group.id);
-                          onUpdate();
+                          await deleteStudyGroup(groupId);
+                          logInfo('Group deleted successfully', { groupId });
                         } catch (err) {
-                          logError(err);
+                          logError('Failed to delete group', {
+                            groupId,
+                            error: err.response?.data,
+                            status: err.response?.status,
+                            message: err.message,
+                          });
+                          alert('Không thể xóa nhóm. Vui lòng thử lại.');
+                          // Revert on error - reload groups
+                          if (onUpdate) onUpdate();
                         }
                       }
                     }}
@@ -1233,32 +1347,32 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
           <div className="collapsed-group-summary">
             <div className="collapsed-stat">
               <span>👥</span>
-              <strong>{group.memberCount || 0}</strong>
+              <strong>{localGroup.memberCount || localGroup.members?.length || 0}</strong>
               <span>thành viên</span>
             </div>
             <div className="collapsed-stat">
               <span>📅</span>
-              <strong>{formatDate(group.createdAt)}</strong>
+              <strong>{formatDate(localGroup.createdAt)}</strong>
             </div>
           </div>
         )}
 
         {!collapsed && (
           <>
-            <div className="group-subtitle">{group.description || 'Chưa có mô tả'}</div>
+            <div className="group-subtitle">{localGroup.description || 'Chưa có mô tả'}</div>
 
             <div className="members-block">
               <div className="members-head">
-                <span>Thành viên ({group.memberCount || 0})</span>
+                <span>Thành viên ({localGroup.memberCount || localGroup.members?.length || 0})</span>
                 {canManageMembers && (
                   <Button size="sm" variant="primary" onClick={() => setShowAddMember(true)}>
                     + Thêm
                   </Button>
                 )}
               </div>
-                  {group.members && group.members.length > 0 ? (
+                  {localGroup.members && localGroup.members.length > 0 ? (
                 <div className="members-list">
-                  {group.members.slice(0, 5).map((member) => (
+                  {localGroup.members.slice(0, 5).map((member) => (
                     <div key={member.id} className="member-row">
                       <div className="member-info">
                         <div className="member-avatar" style={{ background: getAvatarColor(member.user?.id) }}>
@@ -1427,9 +1541,20 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       <AddMemberModal
         isOpen={showAddMember}
         onClose={() => setShowAddMember(false)}
-        groupId={group.id}
-        onSuccess={() => {
-          onUpdate();
+        groupId={localGroup.id}
+        onSuccess={(newMember) => {
+          // Optimistic update: add member to UI immediately
+          if (onMemberAdded && newMember) {
+            onMemberAdded(localGroup.id, newMember);
+            // Update local group
+            setLocalGroup((prev) => ({
+              ...prev,
+              members: [...(prev.members || []), newMember],
+              memberCount: (prev.memberCount || 0) + 1,
+            }));
+          } else if (onUpdate) {
+            onUpdate();
+          }
           setShowAddMember(false);
         }}
       />
@@ -1437,11 +1562,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate }) => {
       <EditGroupModal
         isOpen={showEditGroup}
         onClose={() => setShowEditGroup(false)}
-        group={group}
+        group={localGroup}
         onSuccess={() => {
-          onUpdate();
           setShowEditGroup(false);
         }}
+        onGroupUpdated={onGroupUpdated}
       />
     </>
   );
@@ -1467,15 +1592,48 @@ const StudyGroupsTab = () => {
     lastDayOfStreak: null,
   };
 
+  // Local state for groups to enable optimistic updates
+  const [localGroups, setLocalGroups] = useState([]);
+  
+  // Sync local groups with model when model changes
+  useEffect(() => {
+    if (studyGroupsModel.results && studyGroupsModel.results.length > 0) {
+      setLocalGroups(studyGroupsModel.results);
+    } else if (studyGroupsModel.results && studyGroupsModel.results.length === 0) {
+      setLocalGroups([]);
+    }
+  }, [studyGroupsModel.results]);
+
   const groups = useMemo(() => {
+    // Use local groups if available, otherwise fall back to model
+    if (localGroups.length > 0) {
+      return localGroups;
+    }
     if (studyGroupsModel.results && studyGroupsModel.results.length > 0) {
       return studyGroupsModel.results;
     }
     return [];
-  }, [studyGroupsModel.results]);
+  }, [localGroups, studyGroupsModel.results]);
 
   // Get permission to create group from model
   const canCreateGroup = studyGroupsModel.canCreateGroup !== false; // Default to true if not set (for backward compatibility)
+
+  // Helper functions to update groups state without reloading
+  const addGroupToList = useCallback((newGroup) => {
+    setLocalGroups((prevGroups) => [newGroup, ...prevGroups]);
+  }, []);
+
+  const updateGroupInList = useCallback((groupId, updatedData) => {
+    setLocalGroups((prevGroups) =>
+      prevGroups.map((group) =>
+        group.id === groupId ? { ...group, ...updatedData } : group
+      )
+    );
+  }, []);
+
+  const removeGroupFromList = useCallback((groupId) => {
+    setLocalGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
+  }, []);
 
   const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
 
@@ -1638,6 +1796,26 @@ const StudyGroupsTab = () => {
                     courseId={courseId}
                     currentUserId={currentUserId}
                     onUpdate={handleRefresh}
+                    onGroupUpdated={updateGroupInList}
+                    onGroupDeleted={removeGroupFromList}
+                    onMemberAdded={(groupId, newMember) => {
+                      updateGroupInList(groupId, {
+                        members: [...(groups.find(g => g.id === groupId)?.members || []), newMember],
+                        memberCount: (groups.find(g => g.id === groupId)?.memberCount || 0) + 1,
+                      });
+                    }}
+                    onMemberRemoved={(groupId, userId) => {
+                      const group = groups.find(g => g.id === groupId);
+                      if (group) {
+                        updateGroupInList(groupId, {
+                          members: (group.members || []).filter((m) => {
+                            const memberId = m.user_id || m.user?.id || m.userId;
+                            return memberId !== userId;
+                          }),
+                          memberCount: Math.max(0, (group.memberCount || 0) - 1),
+                        });
+                      }
+                    }}
                   />
                 ))
               ) : (
@@ -1671,6 +1849,7 @@ const StudyGroupsTab = () => {
         onClose={() => setShowCreateModal(false)}
         courseId={courseId}
         onSuccess={handleRefresh}
+        onGroupCreated={addGroupToList}
       />
     </Container>
   );
