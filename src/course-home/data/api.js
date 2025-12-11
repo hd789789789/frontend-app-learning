@@ -943,7 +943,7 @@ export async function uploadCommentAttachment(commentId, file) {
   try {
     const formData = new FormData();
     // Append with filename to help Django build correct name
-    formData.append('file', file, file?.name);
+    formData.append('file', file, file?.name || 'attachment');
     console.log('[Study Groups API] Uploading attachment', {
       commentId,
       url,

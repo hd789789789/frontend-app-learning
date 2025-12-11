@@ -1341,6 +1341,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     console.log('[File Upload] Entering loop, total files:', selectedFiles.length);
       
       for (const fileItem of selectedFiles) {
+        if (!fileItem?.file) {
+          console.error('[File Upload] Missing file object in selectedFiles item', { fileItem });
+          uploadErrors.push({ fileName: '(missing)', error: new Error('Missing file object') });
+          continue;
+        }
         try {
         console.log('[File Upload] Uploading file...', {
           commentId,
