@@ -1296,12 +1296,14 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     let commentCreated = false;
     
     try {
+      console.log('[File Upload] Before createComment', { groupId: localGroup.id, contentLength: commentContent.length, selectedFilesCount: selectedFiles.length });
       const content = commentContent.trim() || (selectedFiles.length === 1 && selectedFiles[0].isImage 
         ? 'Đã đính kèm ảnh' 
         : 'Đã đính kèm file');
       
       const comment = await createComment(localGroup.id, { content });
       logInfo('Comment created for attachment', { comment, commentId: comment.id, commentType: typeof comment, commentKeys: Object.keys(comment || {}) });
+      console.log('[File Upload] After createComment', { rawComment: comment, keys: Object.keys(comment || {}) });
       
       // Ensure we have a valid ID - check multiple possible formats
       commentId = comment?.id || comment?.Id || comment?.ID || comment?.data?.id || comment?.data?.Id;
@@ -1321,6 +1323,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       commentCreated = true;
       setUploadingFile(true);
+      console.log('[File Upload] Ready to upload attachments', { commentId, selectedFilesCount: selectedFiles.length });
       
       // Upload all selected files
     console.log('[File Upload] Debug before loop', {
