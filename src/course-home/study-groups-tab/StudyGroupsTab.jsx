@@ -918,6 +918,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showComments, setShowComments] = useState(false);
+  const [errorModal, setErrorModal] = useState(null);
   const [localGroup, setLocalGroup] = useState(group);
 
   // Sync local group with prop when it changes
@@ -1237,6 +1238,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     setHasMoreComments(true); // Assume there are more comments
   }, []);
 
+  const showErrorDialog = (title, message) => {
+    setErrorModal({ title, message });
+  };
+
   const handleFileSelect = (e, isImage = false) => {
     const file = e.target.files[0];
     if (!file) {
@@ -1246,18 +1251,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     // Validate file size
     const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for images, 10MB for files
     if (file.size > maxSize) {
-      alert(isImage ? 'Kích thước ảnh không được vượt quá 5MB' : 'Kích thước file không được vượt quá 10MB');
+      showErrorDialog(
+        'File quá lớn',
+        isImage ? 'Ảnh không được vượt quá 5MB.' : 'File đính kèm không được vượt quá 10MB.',
+      );
       e.target.value = '';
       return;
     }
 
     // Add file to selected files
     const newFile = { file, id: Date.now(), isImage };
-    console.log('[File Select] Added file', {
-      name: file.name,
-      size: file.size,
-      isImage,
-    });
     setSelectedFiles((prev) => [...prev, newFile]);
 
     // Create preview for images
@@ -1283,27 +1286,18 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       console.warn('[File Upload] selectedFiles is empty, aborting upload');
       return;
     }
-    console.log('[File Upload] Starting upload', {
-      selectedFiles: selectedFiles.map((f) => ({
-        name: f.file.name,
-        size: f.file.size,
-        isImage: f.isImage,
-      })),
-    });
 
     // Create comment first with content
     let commentId = null;
     let commentCreated = false;
     
     try {
-      console.log('[File Upload] Before createComment', { groupId: localGroup.id, contentLength: commentContent.length, selectedFilesCount: selectedFiles.length });
       const content = commentContent.trim() || (selectedFiles.length === 1 && selectedFiles[0].isImage 
         ? 'Đã đính kèm ảnh' 
         : 'Đã đính kèm file');
       
       const comment = await createComment(localGroup.id, { content });
       logInfo('Comment created for attachment', { comment, commentId: comment.id, commentType: typeof comment, commentKeys: Object.keys(comment || {}) });
-      console.log('[File Upload] After createComment', { rawComment: comment, keys: Object.keys(comment || {}) });
       
       // Ensure we have a valid ID - check multiple possible formats
       commentId = comment?.id || comment?.Id || comment?.ID || comment?.data?.id || comment?.data?.Id;
@@ -1338,25 +1332,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       commentCreated = true;
       setUploadingFile(true);
-      console.log('[File Upload] Ready to upload attachments', { commentId, selectedFilesCount: selectedFiles.length });
       
       // Upload all selected files
-    console.log('[File Upload] Debug before loop', {
-      commentId,
-      uploadFnType: typeof uploadCommentAttachment,
-      selectedFilesCount: selectedFiles.length,
-      selectedFiles: selectedFiles.map(f => ({
-        name: f?.file?.name,
-        size: f?.file?.size,
-        isImage: f?.isImage,
-      })),
-    });
-    if (typeof uploadCommentAttachment !== 'function') {
-      console.error('[File Upload] uploadCommentAttachment is not a function');
-    }
       const uploadedAttachments = [];
       let uploadErrors = [];
-    console.log('[File Upload] Entering loop, total files:', selectedFiles.length);
       
       for (const fileItem of selectedFiles) {
         if (!fileItem?.file) {
@@ -1365,12 +1344,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           continue;
         }
         try {
-        console.log('[File Upload] Uploading file...', {
-          commentId,
-          fileName: fileItem.file.name,
-          size: fileItem.file.size,
-          isImage: fileItem.isImage,
-        });
           const attachment = await uploadCommentAttachment(commentId, fileItem.file);
           logInfo('File uploaded successfully', { 
             commentId, 
@@ -1406,12 +1379,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             logError('Attachment missing ID', { attachment, formattedAttachment });
           }
         } catch (err) {
-        console.error('[File Upload] Upload failed', {
-          commentId,
-          fileName: fileItem?.file?.name,
-          error: err?.response?.data || err?.message || err,
-          status: err?.response?.status,
-        });
           logError('Failed to upload file', {
             commentId,
             fileName: fileItem.file.name,
@@ -1419,18 +1386,44 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             status: err.response?.status,
             message: err.message,
           });
+          const status = err?.response?.status;
+          let userMessage = 'Không thể tải lên file. Vui lòng thử lại.';
+          if (status === 413) {
+            userMessage = 'File vượt quá giới hạn (ảnh tối đa 5MB, tài liệu tối đa 10MB).';
+          } else if (status === 400 && err?.response?.data?.error) {
+            userMessage = err.response.data.error;
+          }
+          showErrorDialog('Lỗi tải file', userMessage);
           uploadErrors.push({ fileName: fileItem.file.name, error: err });
           // Continue with other files even if one fails
         }
       }
     
-    console.log('[File Upload] Upload loop completed', {
-      commentId,
-      uploadedCount: uploadedAttachments.length,
-      uploadErrorsCount: uploadErrors.length,
-    });
-      
-      // If comment was created successfully, add it to list even if some files failed
+      // If any upload failed, block posting and clean up the created comment
+      if (uploadErrors.length > 0) {
+        const failedNames = uploadErrors.map(e => e.fileName).filter(Boolean).join(', ');
+        showErrorDialog(
+          'Tải file thất bại',
+          failedNames
+            ? `Các file không tải lên được: ${failedNames}. Bình luận chưa được đăng.`
+            : 'Một số file không tải lên được. Bình luận chưa được đăng.'
+        );
+        // Best-effort cleanup: delete the newly created comment without attachments
+        if (commentCreated && commentId) {
+          try {
+            await deleteComment(commentId);
+          } catch (cleanupErr) {
+            logError('Failed to delete comment after attachment errors', { commentId, error: cleanupErr });
+          }
+        }
+        setUploadingFile(null);
+        setCommentContent('');
+        setSelectedFiles([]);
+        setImagePreviews([]);
+        return;
+      }
+    
+      // If comment was created successfully and uploads succeeded
       if (commentCreated && commentId) {
         // Add comment to list immediately with uploaded attachments
         const camelCasedResult = {
@@ -1462,13 +1455,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             const commentWithAttachments = await getCommentDetail(commentId);
-            console.log('[File Upload] Fetched comment detail after upload:', {
-              commentId,
-              hasAttachments: !!commentWithAttachments.attachments,
-              attachmentsCount: commentWithAttachments.attachments?.length || 0,
-              attachments: commentWithAttachments.attachments,
-              attachmentKeys: commentWithAttachments.attachments?.[0] ? Object.keys(commentWithAttachments.attachments[0]) : [],
-            });
             
             // Format attachments from server
             if (commentWithAttachments.attachments && Array.isArray(commentWithAttachments.attachments) && commentWithAttachments.attachments.length > 0) {
@@ -1481,21 +1467,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                 uploadedAt: att.uploadedAt || att.uploaded_at,
               }));
               
-              console.log('[File Upload] Updating comment with attachments from server:', {
-                commentId,
-                serverAttachments,
-                attachmentsCount: serverAttachments.length,
-                hasFileUrls: serverAttachments.map(a => ({ fileName: a.fileName, hasUrl: !!a.fileUrl })),
-              });
-              
               // Update the comment in the list with attachments from server
               updateCommentInList(commentId, { attachments: serverAttachments });
             } else {
-              console.warn('[File Upload] Comment detail has no attachments:', {
-                commentId,
-                attachments: commentWithAttachments.attachments,
-                uploadedCount: uploadedAttachments.length,
-              });
+              // No attachments returned; keep optimistic ones
             }
           } catch (err) {
             logError('Failed to fetch comment detail after upload', { commentId, error: err });
@@ -1504,7 +1479,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         
         // If some files failed to upload, show warning but don't block
         if (uploadErrors.length > 0 && uploadErrors.length < selectedFiles.length) {
-          alert(`Bình luận đã được đăng, nhưng ${uploadErrors.length} file không thể tải lên. Vui lòng thử lại sau.`);
+          showErrorDialog('Tải file chưa hoàn tất', `${uploadErrors.length} file không tải lên được. Vui lòng thử lại sau.`);
         }
         
         // Always reload comments after uploads complete to ensure sync with server
@@ -1527,14 +1502,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             try {
               const updatedComment = await getCommentDetail(commentId);
               
-              console.log('[File Upload] Updated comment detail from server:', {
-                commentId,
-                hasAttachments: !!updatedComment.attachments,
-                attachmentsCount: updatedComment.attachments?.length || 0,
-                attachments: updatedComment.attachments,
-                attachmentKeys: updatedComment.attachments?.[0] ? Object.keys(updatedComment.attachments[0]) : [],
-              });
-              
               // Format attachments
               if (updatedComment.attachments && Array.isArray(updatedComment.attachments) && updatedComment.attachments.length > 0) {
                 const formattedAttachments = updatedComment.attachments.map(att => ({
@@ -1546,15 +1513,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   uploadedAt: att.uploadedAt || att.uploaded_at,
                 }));
                 
-                console.log('[File Upload] Formatted attachments:', formattedAttachments);
-                
                 // Update the comment in the list with attachments from server
                 updateCommentInList(commentId, { attachments: formattedAttachments });
               } else {
-                console.log('[File Upload] Comment detail has no attachments', {
-                  commentId,
-                  attachments: updatedComment.attachments,
-                });
+                // Keep optimistic attachments if server still empty
               }
             } catch (err) {
               logError('Failed to get updated comment detail', { commentId, error: err });
@@ -1595,17 +1557,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         setImagePreviews([]);
         setShowComments(true);
       } else {
-        alert('Không thể đăng bình luận với file đính kèm. Vui lòng thử lại.');
+        const status = err?.response?.status;
+        let userMessage = 'Không thể đăng bình luận với file đính kèm. Vui lòng thử lại.';
+        if (status === 413) {
+          userMessage = 'File vượt quá giới hạn (ảnh tối đa 5MB, tài liệu tối đa 10MB).';
+        } else if (status === 400 && err?.response?.data?.error) {
+          userMessage = err.response.data.error;
+        }
+        showErrorDialog('Đăng bình luận thất bại', userMessage);
       }
     }
   };
 
   const handleAddComment = async () => {
-    console.log('[Add Comment] Triggered', {
-      selectedFilesCount: selectedFiles.length,
-      selectedFiles: selectedFiles.map((f) => f.file.name),
-      contentLength: commentContent.length,
-    });
 
     // If there are files selected, use file upload handler
     if (selectedFiles.length > 0) {
@@ -2394,7 +2358,27 @@ const StudyGroupsTab = () => {
   }, [courseId]);
 
   return (
-    <Container className="study-groups-tab px-0">
+    <>
+      <ModalDialog
+        isOpen={!!errorModal}
+        onClose={() => setErrorModal(null)}
+        title={errorModal?.title || 'Thông báo'}
+        size="sm"
+        hasCloseButton
+      >
+        <ModalDialog.Body>
+          {errorModal?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'}
+        </ModalDialog.Body>
+        <ModalDialog.Footer>
+          <ActionRow>
+            <ModalDialog.CloseButton variant="primary" onClick={() => setErrorModal(null)}>
+              Đóng
+            </ModalDialog.CloseButton>
+          </ActionRow>
+        </ModalDialog.Footer>
+      </ModalDialog>
+
+      <Container className="study-groups-tab px-0">
       <Row>
         <Col lg={8} md={12}>
           <div className="groups-header">
@@ -2475,6 +2459,7 @@ const StudyGroupsTab = () => {
         onGroupCreated={addGroupToList}
       />
     </Container>
+    </>
   );
 };
 
