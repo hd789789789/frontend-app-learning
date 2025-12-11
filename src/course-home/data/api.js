@@ -939,10 +939,22 @@ export async function uploadCommentAttachment(commentId, file) {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    console.log('[Study Groups API] Uploading attachment', {
+      commentId,
+      url,
+      fileName: file?.name,
+      fileSize: file?.size,
+    });
     const { data } = await getAuthenticatedHttpClient().post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+    });
+    console.log('[Study Groups API] Attachment upload success', {
+      commentId,
+      url,
+      data,
+      keys: Object.keys(data || {}),
     });
     return camelCaseObject(data);
   } catch (error) {

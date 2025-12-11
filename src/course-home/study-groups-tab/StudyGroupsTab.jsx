@@ -1328,6 +1328,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       for (const fileItem of selectedFiles) {
         try {
+        console.log('[File Upload] Uploading file...', {
+          commentId,
+          fileName: fileItem.file.name,
+          size: fileItem.file.size,
+          isImage: fileItem.isImage,
+        });
           const attachment = await uploadCommentAttachment(commentId, fileItem.file);
           logInfo('File uploaded successfully', { 
             commentId, 
@@ -1363,6 +1369,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             logError('Attachment missing ID', { attachment, formattedAttachment });
           }
         } catch (err) {
+        console.error('[File Upload] Upload failed', {
+          commentId,
+          fileName: fileItem?.file?.name,
+          error: err?.response?.data || err?.message || err,
+          status: err?.response?.status,
+        });
           logError('Failed to upload file', {
             commentId,
             fileName: fileItem.file.name,
@@ -1374,6 +1386,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           // Continue with other files even if one fails
         }
       }
+    
+    console.log('[File Upload] Upload loop completed', {
+      commentId,
+      uploadedCount: uploadedAttachments.length,
+      uploadErrorsCount: uploadErrors.length,
+    });
       
       // If comment was created successfully, add it to list even if some files failed
       if (commentCreated && commentId) {
