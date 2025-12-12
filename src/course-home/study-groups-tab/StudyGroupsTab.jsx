@@ -649,42 +649,46 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Bạn có chắc muốn xóa bình luận này?')) {
-      setLoading(true);
-      
-      // Ensure we have a valid ID
-      const commentId = localComment.id || localComment.Id || localComment.ID;
-      if (!commentId) {
-        logError('Cannot delete comment: no ID found', { localComment });
-        alert('Không thể xóa bình luận: Không tìm thấy ID. Vui lòng refresh trang.');
-        setLoading(false);
-        return;
-      }
-      
-      logInfo('Deleting comment', { commentId });
-      
-      // Optimistic update: remove from UI immediately
-      onCommentDelete(commentId);
-      
-      try {
-        await deleteComment(commentId);
-        logInfo('Comment deleted successfully', { commentId });
-      } catch (err) {
-        logError('Failed to delete comment', {
-          commentId,
-          error: err.response?.data,
-          status: err.response?.status,
-          message: err.message,
-        });
+    openConfirmDialog({
+      title: 'Xóa bình luận',
+      message: 'Bạn có chắc muốn xóa bình luận này?',
+      confirmText: 'Xóa',
+      onConfirm: async () => {
+        setLoading(true);
         
-        // Revert on error - show error message
-        alert('Không thể xóa bình luận. Vui lòng thử lại.');
-        // Note: Comment is already removed from UI optimistically
-        // In a production app, you might want to reload comments here
-      } finally {
-        setLoading(false);
-      }
-    }
+        // Ensure we have a valid ID
+        const commentId = localComment.id || localComment.Id || localComment.ID;
+        if (!commentId) {
+          logError('Cannot delete comment: no ID found', { localComment });
+          showErrorDialog('Không thể xóa bình luận', 'Không tìm thấy ID. Vui lòng refresh trang.');
+          setLoading(false);
+          return;
+        }
+        
+        logInfo('Deleting comment', { commentId });
+        
+        // Optimistic update: remove from UI immediately
+        onCommentDelete(commentId);
+        
+        try {
+          await deleteComment(commentId);
+          logInfo('Comment deleted successfully', { commentId });
+        } catch (err) {
+          logError('Failed to delete comment', {
+            commentId,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+          
+          showErrorDialog('Không thể xóa bình luận', 'Vui lòng thử lại.');
+          // Note: Comment is already removed from UI optimistically
+          // In a production app, you might want to reload comments here
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const formatDate = (dateString) => {
@@ -920,6 +924,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const [imagePreviews, setImagePreviews] = useState([]);
   const [showComments, setShowComments] = useState(false);
   const [errorModal, setErrorModal] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const [localGroup, setLocalGroup] = useState(group);
 
   // Sync local group with prop when it changes
@@ -1243,6 +1248,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
   const showErrorDialog = (title, message) => {
     setErrorModal({ title, message });
+  };
+
+  const openConfirmDialog = ({ title, message, onConfirm, confirmText = 'Xác nhận', cancelText = 'Hủy' }) => {
+    setConfirmDialog({ title, message, onConfirm, confirmText, cancelText });
   };
 
   const handleFileSelect = (e, isImage = false) => {
@@ -1728,39 +1737,44 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       alert('Không thể xóa thành viên: Không tìm thấy ID người dùng. Vui lòng thử lại sau.');
       return;
     }
-    if (window.confirm('Bạn có chắc muốn xóa thành viên này khỏi nhóm?')) {
-      logInfo('Removing member from group', { groupId: localGroup.id, userId: target });
-      
-      // Optimistic update: remove member from UI immediately
-      if (onMemberRemoved) {
-        onMemberRemoved(localGroup.id, target);
-        // Update local group
-        setLocalGroup((prev) => ({
-          ...prev,
-          members: (prev.members || []).filter((m) => {
-            const memberId = m.user_id || m.user?.id || m.userId;
-            return memberId !== target;
-          }),
-          memberCount: Math.max(0, (prev.memberCount || 0) - 1),
-        }));
-      }
-      
-      try {
-        await removeStudyGroupMember(localGroup.id, target);
-        logInfo('Member removed successfully', { groupId: localGroup.id, userId: target });
-      } catch (err) {
-        logError('Failed to remove member', {
-          groupId: localGroup.id,
-          userId: target,
-          error: err.response?.data,
-          status: err.response?.status,
-          message: err.message,
-        });
-        alert('Không thể xóa thành viên. Vui lòng thử lại.');
-        // Revert on error - reload group data
-        if (onUpdate) onUpdate();
-      }
-    }
+    openConfirmDialog({
+      title: 'Xóa thành viên',
+      message: 'Bạn có chắc muốn xóa thành viên này khỏi nhóm?',
+      confirmText: 'Xóa',
+      onConfirm: async () => {
+        logInfo('Removing member from group', { groupId: localGroup.id, userId: target });
+        
+        // Optimistic update: remove member from UI immediately
+        if (onMemberRemoved) {
+          onMemberRemoved(localGroup.id, target);
+          // Update local group
+          setLocalGroup((prev) => ({
+            ...prev,
+            members: (prev.members || []).filter((m) => {
+              const memberId = m.user_id || m.user?.id || m.userId;
+              return memberId !== target;
+            }),
+            memberCount: Math.max(0, (prev.memberCount || 0) - 1),
+          }));
+        }
+        
+        try {
+          await removeStudyGroupMember(localGroup.id, target);
+          logInfo('Member removed successfully', { groupId: localGroup.id, userId: target });
+        } catch (err) {
+          logError('Failed to remove member', {
+            groupId: localGroup.id,
+            userId: target,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+          showErrorDialog('Không thể xóa thành viên', 'Vui lòng thử lại.');
+          // Revert on error - reload group data
+          if (onUpdate) onUpdate();
+        }
+      },
+    });
   };
 
   const handleLeaveGroup = async () => {
@@ -1780,40 +1794,43 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       return;
     }
 
-    if (!window.confirm('Bạn có chắc muốn rời nhóm này?')) {
-      return;
-    }
+    openConfirmDialog({
+      title: 'Rời nhóm',
+      message: 'Bạn có chắc muốn rời nhóm này?',
+      confirmText: 'Rời nhóm',
+      onConfirm: async () => {
+        logInfo('Member leaving group', { groupId: localGroup.id, userId: targetId });
 
-    logInfo('Member leaving group', { groupId: localGroup.id, userId: targetId });
+        // Optimistic update: cập nhật UI ngay
+        if (onMemberRemoved) {
+          onMemberRemoved(localGroup.id, targetId);
+        }
+        setLocalGroup((prev) => ({
+          ...prev,
+          members: (prev.members || []).filter((m) => {
+            const memberId = m.user_id || m.user?.id || m.userId || m.user?.userId;
+            return !(memberId === targetId || memberId?.toString() === targetId?.toString());
+          }),
+          memberCount: Math.max(0, (prev.memberCount || 0) - 1),
+          isMember: false,
+        }));
 
-    // Optimistic update: cập nhật UI ngay
-    if (onMemberRemoved) {
-      onMemberRemoved(localGroup.id, targetId);
-    }
-    setLocalGroup((prev) => ({
-      ...prev,
-      members: (prev.members || []).filter((m) => {
-        const memberId = m.user_id || m.user?.id || m.userId || m.user?.userId;
-        return !(memberId === targetId || memberId?.toString() === targetId?.toString());
-      }),
-      memberCount: Math.max(0, (prev.memberCount || 0) - 1),
-      isMember: false,
-    }));
-
-    try {
-      await removeStudyGroupMember(localGroup.id, targetId);
-      logInfo('Left group successfully', { groupId: localGroup.id, userId: targetId });
-    } catch (err) {
-      logError('Failed to leave group', {
-        groupId: localGroup.id,
-        userId: targetId,
-        error: err.response?.data,
-        status: err.response?.status,
-        message: err.message,
-      });
-      alert('Không thể rời nhóm. Vui lòng thử lại.');
-      if (onUpdate) onUpdate();
-    }
+        try {
+          await removeStudyGroupMember(localGroup.id, targetId);
+          logInfo('Left group successfully', { groupId: localGroup.id, userId: targetId });
+        } catch (err) {
+          logError('Failed to leave group', {
+            groupId: localGroup.id,
+            userId: targetId,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+          showErrorDialog('Không thể rời nhóm', 'Vui lòng thử lại.');
+          if (onUpdate) onUpdate();
+        }
+      },
+    });
   };
 
   const formatDate = (dateString) => {
@@ -1840,6 +1857,39 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             <ModalDialog.CloseButton variant="primary" onClick={() => setErrorModal(null)}>
               Đóng
             </ModalDialog.CloseButton>
+          </ActionRow>
+        </ModalDialog.Footer>
+      </ModalDialog>
+
+      <ModalDialog
+        isOpen={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        size="sm"
+        hasCloseButton
+      >
+        <ModalDialog.Header>
+          <ModalDialog.Title>{confirmDialog?.title || 'Xác nhận'}</ModalDialog.Title>
+        </ModalDialog.Header>
+        <ModalDialog.Body>
+          {confirmDialog?.message || 'Bạn chắc chắn muốn tiếp tục?'}
+        </ModalDialog.Body>
+        <ModalDialog.Footer>
+          <ActionRow>
+            <ModalDialog.CloseButton variant="tertiary" onClick={() => setConfirmDialog(null)}>
+              {confirmDialog?.cancelText || 'Hủy'}
+            </ModalDialog.CloseButton>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                const onConfirm = confirmDialog?.onConfirm;
+                setConfirmDialog(null);
+                if (onConfirm) {
+                  await onConfirm();
+                }
+              }}
+            >
+              {confirmDialog?.confirmText || 'Xác nhận'}
+            </Button>
           </ActionRow>
         </ModalDialog.Footer>
       </ModalDialog>
@@ -1883,30 +1933,36 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   <Button
                     size="sm"
                     variant="outline-danger"
-                    onClick={async () => {
-                      if (window.confirm('Bạn có chắc muốn xóa nhóm này?')) {
-                        const groupId = localGroup.id;
-                        
-                        // Optimistic update: remove from UI immediately
-                        if (onGroupDeleted) {
-                          onGroupDeleted(groupId);
-                        }
-                        
-                        try {
-                          await deleteStudyGroup(groupId);
-                          logInfo('Group deleted successfully', { groupId });
-                        } catch (err) {
-                          logError('Failed to delete group', {
-                            groupId,
-                            error: err.response?.data,
-                            status: err.response?.status,
-                            message: err.message,
-                          });
-                          alert('Không thể xóa nhóm. Vui lòng thử lại.');
-                          // Revert on error - reload groups
-                          if (onUpdate) onUpdate();
-                        }
-                      }
+                    onClick={() => {
+                      openConfirmDialog({
+                        title: 'Xóa nhóm học tập',
+                        message: 'Bạn có chắc muốn xóa nhóm này?',
+                        confirmText: 'Xóa nhóm',
+                        onConfirm: async () => {
+                          const groupId = localGroup.id;
+                          
+                          // Optimistic update: remove from UI immediately
+                          if (onGroupDeleted) {
+                            onGroupDeleted(groupId);
+                          }
+                          
+                          try {
+                            await deleteStudyGroup(groupId);
+                            logInfo('Group deleted successfully', { groupId });
+                            if (onUpdate) onUpdate();
+                          } catch (err) {
+                            logError('Failed to delete group', {
+                              groupId,
+                              error: err.response?.data,
+                              status: err.response?.status,
+                              message: err.message,
+                            });
+                            showErrorDialog('Không thể xóa nhóm', 'Vui lòng thử lại.');
+                            // Revert on error - reload groups
+                            if (onUpdate) onUpdate();
+                          }
+                        },
+                      });
                     }}
                   >
                     <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa nhóm

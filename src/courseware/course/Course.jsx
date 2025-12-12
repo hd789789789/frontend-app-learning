@@ -8,7 +8,6 @@ import { breakpoints, useWindowSize } from '@openedx/paragon';
 
 import { AlertList } from '@src/generic/user-messages';
 import { useModel } from '@src/generic/model-store';
-import { BookmarkButton } from '@src/courseware/course/bookmark';
 import { getCoursewareOutlineSidebarSettings } from '../data/selectors';
 import Chat from './chat/Chat';
 import SidebarProvider from './sidebar/SidebarContextProvider';
@@ -38,7 +37,6 @@ const Course = ({
   } = useModel('courseHomeMeta', courseId);
   const sequence = useModel('sequences', sequenceId);
   const section = useModel('sections', sequence ? sequence.sectionId : null);
-  const unit = useModel('units', unitId);
   const { enableNavigationSidebar } = useSelector(getCoursewareOutlineSidebarSettings);
   const navigationDisabled = enableNavigationSidebar || (sequence?.navigationDisabled ?? false);
   const navigate = useNavigate();
@@ -111,13 +109,6 @@ const Course = ({
         )}
         <div className="w-100 d-flex align-items-center justify-content-end gap-2">
           <CourseOutlineMobileSidebarTriggerSlot />
-          {unitId && unit ? (
-            <BookmarkButton
-              unitId={unitId}
-              isBookmarked={unit.bookmarked}
-              isProcessing={unit.bookmarkedUpdateState === 'loading'}
-            />
-          ) : null}
           <NotificationsDiscussionsSidebarTriggerSlot courseId={courseId} />
         </div>
       </div>
