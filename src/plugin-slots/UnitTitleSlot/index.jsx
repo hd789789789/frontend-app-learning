@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { PluginSlot } from '@openedx/frontend-plugin-framework';
 import { useIntl } from '@edx/frontend-platform/i18n';
 
-import { BookmarkButton } from '@src/courseware/course/bookmark';
+import UnitIconsRow from '@src/courseware/course/sequence/UnitIconsRow';
 import messages from '@src/courseware/course/sequence/messages';
 
 const UnitTitleSlot = ({
@@ -10,6 +10,7 @@ const UnitTitleSlot = ({
   unit,
   isEnabledOutlineSidebar,
   renderUnitNavigation,
+  courseId,
 }) => {
   const { formatMessage } = useIntl();
   const isProcessing = unit.bookmarkedUpdateState === 'loading';
@@ -23,21 +24,27 @@ const UnitTitleSlot = ({
         unit,
         isEnabledOutlineSidebar,
         renderUnitNavigation,
+        courseId,
       }}
     >
-      <div className="d-flex justify-content-between">
-        <div className="mb-0">
-          <h3 className="h3">{unit.title}</h3>
-        </div>
-        {isEnabledOutlineSidebar && (
-          <div className="d-flex align-items-center">
-            <BookmarkButton
-              unitId={unit.id}
-              isBookmarked={unit.bookmarked}
-              isProcessing={isProcessing}
-            />
-            {renderUnitNavigation(true)}
+      <div className="position-relative">
+        <div className="d-flex justify-content-between">
+          <div className="mb-0">
+            <h3 className="h3">{unit.title}</h3>
           </div>
+          {isEnabledOutlineSidebar && (
+            <div className="d-flex align-items-center">
+              {renderUnitNavigation(true)}
+            </div>
+          )}
+        </div>
+        {courseId && (
+          <UnitIconsRow
+            unitId={unit.id}
+            unit={unit}
+            isProcessing={isProcessing}
+            courseId={courseId}
+          />
         )}
       </div>
       <p className="sr-only">{formatMessage(messages.headerPlaceholder)}</p>
@@ -55,6 +62,7 @@ UnitTitleSlot.propTypes = {
   }).isRequired,
   isEnabledOutlineSidebar: PropTypes.bool.isRequired,
   renderUnitNavigation: PropTypes.func.isRequired,
+  courseId: PropTypes.string,
 };
 
 export default UnitTitleSlot;

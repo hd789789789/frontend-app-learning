@@ -973,7 +973,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     };
     logInfo('GroupCard permission check', payload);
   }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, localGroup.canManageMembers, localGroup.canEdit, localGroup.canDelete]);
-  const isMember = localGroup.isMember;
+  const isMember = localGroup.isMember !== undefined
+    ? localGroup.isMember
+    : Boolean(currentMember || isOwner);
   const commentsLoadedRef = useRef(false);
   const commentCountLoadedRef = useRef(false);
 
@@ -1761,6 +1763,59 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     }
   };
 
+  const handleLeaveGroup = async () => {
+    if (!isMember) {
+      alert('Bạn chưa tham gia nhóm này.');
+      return;
+    }
+
+    if (isOwner) {
+      alert('Trưởng nhóm không thể rời nhóm. Bạn có thể chuyển quyền hoặc xóa nhóm.');
+      return;
+    }
+
+    const targetId = currentUserId;
+    if (!targetId) {
+      alert('Không thể xác định người dùng hiện tại.');
+      return;
+    }
+
+    if (!window.confirm('Bạn có chắc muốn rời nhóm này?')) {
+      return;
+    }
+
+    logInfo('Member leaving group', { groupId: localGroup.id, userId: targetId });
+
+    // Optimistic update: cập nhật UI ngay
+    if (onMemberRemoved) {
+      onMemberRemoved(localGroup.id, targetId);
+    }
+    setLocalGroup((prev) => ({
+      ...prev,
+      members: (prev.members || []).filter((m) => {
+        const memberId = m.user_id || m.user?.id || m.userId || m.user?.userId;
+        return !(memberId === targetId || memberId?.toString() === targetId?.toString());
+      }),
+      memberCount: Math.max(0, (prev.memberCount || 0) - 1),
+      isMember: false,
+    }));
+
+    try {
+      await removeStudyGroupMember(localGroup.id, targetId);
+      logInfo('Left group successfully', { groupId: localGroup.id, userId: targetId });
+    } catch (err) {
+      logError('Failed to leave group', {
+        groupId: localGroup.id,
+        userId: targetId,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      alert('Không thể rời nhóm. Vui lòng thử lại.');
+      if (onUpdate) onUpdate();
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -1796,6 +1851,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           </button>
           <div className="group-info">
             <h3>{localGroup.name}</h3>
+            {isOwner && (
+              <Badge variant="primary" className="ms-2">
+                Trưởng nhóm
+              </Badge>
+            )}
             <div className="group-stats">
               <span>👥 {localGroup.memberCount || localGroup.members?.length || 0} thành viên</span>
               <span>📅 Tạo: {formatDate(localGroup.createdAt)}</span>
@@ -1854,6 +1914,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                 )}
               </div>
             )}
+            {isMember && !isOwner && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ms-2"
+                onClick={handleLeaveGroup}
+              >
+                <span className="fa fa-sign-out me-1" aria-hidden="true" /> Rời nhóm
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1895,7 +1965,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                         <div>
                           <div className="member-name">
                             {member.user?.username || 'Người dùng đã xóa'}
-                            {member.role && ` (${member.role})`}
+                            {(() => {
+                              const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
+                              const isLeader = ownerId && memberId && (ownerId === memberId || ownerId?.toString() === memberId?.toString());
+                              if (isLeader) return ' (Trưởng nhóm)';
+                              return member.role ? ` (${member.role})` : '';
+                            })()}
                           </div>
                           <div className="member-sub">Tham gia: {formatDate(member.joinedAt)}</div>
                         </div>
@@ -2224,8 +2299,8 @@ const StudyGroupsTab = () => {
     return [];
   }, [localGroups, studyGroupsModel.results]);
 
-  // Get permission to create group from model
-  const canCreateGroup = studyGroupsModel.canCreateGroup !== false; // Default to true if not set (for backward compatibility)
+  // Tất cả học viên đều có quyền tạo nhóm học tập
+  const canCreateGroup = Boolean(currentUserId);
 
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
