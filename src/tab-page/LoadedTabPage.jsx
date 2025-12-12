@@ -70,7 +70,7 @@ const LoadedTabPage = ({
           slug: 'leaderboard',
           url: `/learning/course/${courseId}/leaderboard`,
         },
-        studyGroupsTab,
+        // studyGroupsTab, // Ẩn tab này khỏi navigation nhưng vẫn giữ route
         badgeTab,
       ];
     }
@@ -144,12 +144,13 @@ const LoadedTabPage = ({
     
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
     if (leaderboardIndex !== -1) {
-      // Chèn Nhóm học tập và Thành tích cạnh leaderboard
-      tabsCopy.splice(leaderboardIndex, 0, studyGroupsTab);
-      tabsCopy.splice(leaderboardIndex + 2, 0, badgeTab);
+      // Chèn Thành tích cạnh leaderboard (ẩn Nhóm học tập khỏi navigation nhưng vẫn giữ route)
+      // tabsCopy.splice(leaderboardIndex, 0, studyGroupsTab); // Ẩn tab này
+      tabsCopy.splice(leaderboardIndex + 1, 0, badgeTab);
     } else {
-      // Nếu không có leaderboard, thêm vào cuối
-      tabsCopy.push(studyGroupsTab, badgeTab);
+      // Nếu không có leaderboard, thêm vào cuối (ẩn Nhóm học tập)
+      // tabsCopy.push(studyGroupsTab, badgeTab); // Ẩn studyGroupsTab
+      tabsCopy.push(badgeTab);
     }
     
     // Thêm tab Chào mừng vào đầu danh sách

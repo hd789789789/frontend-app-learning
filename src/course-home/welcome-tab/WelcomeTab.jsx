@@ -267,19 +267,6 @@ const WelcomeTab = () => {
             </div>
           </div>
 
-          {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
-          <h3 className="section-title">📌 Ngày quan trọng</h3>
-          <div className="important-dates-card">
-            {courseDateBlocks && courseDateBlocks.length > 0 ? (
-              <Timeline />
-            ) : (
-              <div className="text-center py-4 text-muted">
-                <Spinner animation="border" size="sm" className="mr-2" />
-                <span>Đang tải ngày quan trọng...</span>
-              </div>
-            )}
-          </div>
-
           {/* Invite Friends Section */}
           <div className="invite-friends-section">
             <div className="invite-bg-emoji invite-bg-emoji-1">😊</div>
@@ -330,6 +317,19 @@ const WelcomeTab = () => {
 
         {/* Sidebar */}
         <Col lg={4} md={12} className="mt-3 mt-lg-0">
+          {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
+          <h3 className="section-title">📌 Ngày quan trọng</h3>
+          <div className="important-dates-card">
+            {courseDateBlocks && courseDateBlocks.length > 0 ? (
+              <Timeline />
+            ) : (
+              <div className="text-center py-4 text-muted">
+                <Spinner animation="border" size="sm" className="mr-2" />
+                <span>Đang tải ngày quan trọng...</span>
+              </div>
+            )}
+          </div>
+
           <StreakCalendar 
             streakDays={userStats.streakDays} 
             lastDayOfStreak={userStats.lastDayOfStreak}

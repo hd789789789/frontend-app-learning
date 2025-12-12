@@ -29,14 +29,18 @@ const UnitTitleSlot = ({
         <div className="mb-0">
           <h3 className="h3">{unit.title}</h3>
         </div>
-        {isEnabledOutlineSidebar && renderUnitNavigation(true)}
+        {isEnabledOutlineSidebar && (
+          <div className="d-flex align-items-center">
+            <BookmarkButton
+              unitId={unit.id}
+              isBookmarked={unit.bookmarked}
+              isProcessing={isProcessing}
+            />
+            {renderUnitNavigation(true)}
+          </div>
+        )}
       </div>
       <p className="sr-only">{formatMessage(messages.headerPlaceholder)}</p>
-      <BookmarkButton
-        unitId={unit.id}
-        isBookmarked={unit.bookmarked}
-        isProcessing={isProcessing}
-      />
     </PluginSlot>
   );
 };
