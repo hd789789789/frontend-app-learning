@@ -109,7 +109,8 @@ const Course = ({
             />
           </>
         )}
-        <div className="w-100 d-flex align-items-center">
+        <div className="w-100 d-flex align-items-center justify-content-end gap-2">
+          <CourseOutlineMobileSidebarTriggerSlot />
           {unitId && unit ? (
             <BookmarkButton
               unitId={unitId}
@@ -117,7 +118,6 @@ const Course = ({
               isProcessing={unit.bookmarkedUpdateState === 'loading'}
             />
           ) : null}
-          <CourseOutlineMobileSidebarTriggerSlot />
           <NotificationsDiscussionsSidebarTriggerSlot courseId={courseId} />
         </div>
       </div>
