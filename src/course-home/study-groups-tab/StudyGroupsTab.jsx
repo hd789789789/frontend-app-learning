@@ -2299,8 +2299,8 @@ const StudyGroupsTab = () => {
     return [];
   }, [localGroups, studyGroupsModel.results]);
 
-  // Tất cả học viên đều có quyền tạo nhóm học tập
-  const canCreateGroup = Boolean(currentUserId);
+  // Dựa trên cờ từ BE, mặc định cho phép (giữ tương thích), nhưng vẫn cần user đăng nhập
+  const canCreateGroup = (studyGroupsModel.canCreateGroup !== false) && Boolean(currentUserId);
 
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
