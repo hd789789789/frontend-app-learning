@@ -42,38 +42,48 @@ const GroupStreaks = ({ groups = [], disableFallback = false }) => {
       <Card.Body>
         <h3 className="group-streaks-title">👥 Chuỗi Nhóm của bạn</h3>
         
-        {displayGroups.map((group) => (
-          <div key={group.id} className="group-streak-item">
-            <div className="group-streak-header">
-              <div className="group-streak-name">{group.name}</div>
-              <div className="group-streak-badge">
-                <span className="streak-icon">🔥</span>
-                <span className="streak-days">{group.streakDays} ngày</span>
-              </div>
-            </div>
-            
-            <div className="group-members">
-              {group.members.map((member) => (
-                <div
-                  key={member.id}
-                  className="member-avatar"
-                  style={{ backgroundColor: member.color }}
-                >
-                  {member.initial}
+        {displayGroups && displayGroups.length > 0 ? (
+          displayGroups.map((group) => (
+            <div key={group.id} className="group-streak-item">
+              <div className="group-streak-header">
+                <div className="group-streak-name">{group.name}</div>
+                <div className="group-streak-badge">
+                  <span className="streak-icon">🔥</span>
+                  <span className="streak-days">{group.streakDays || 0} ngày</span>
                 </div>
-              ))}
-              {group.additionalMembers > 0 && (
-                <div className="member-avatar member-avatar-more">
-                  +{group.additionalMembers}
+              </div>
+              
+              {group.members && group.members.length > 0 && (
+                <div className="group-members">
+                  {group.members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="member-avatar"
+                      style={{ backgroundColor: member.color }}
+                    >
+                      {member.initial}
+                    </div>
+                  ))}
+                  {group.additionalMembers > 0 && (
+                    <div className="member-avatar member-avatar-more">
+                      +{group.additionalMembers}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {group.message && (
+                <div className={`group-streak-message ${group.status === 'all_completed' ? 'completed' : ''}`}>
+                  {group.message}
                 </div>
               )}
             </div>
-            
-            <div className={`group-streak-message ${group.status === 'all_completed' ? 'completed' : ''}`}>
-              {group.message}
-            </div>
+          ))
+        ) : (
+          <div className="group-streaks-empty">
+            <p className="text-muted">Bạn chưa tham gia nhóm học tập nào.</p>
           </div>
-        ))}
+        )}
       </Card.Body>
     </Card>
   );

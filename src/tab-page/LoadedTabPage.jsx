@@ -75,29 +75,35 @@ const LoadedTabPage = ({
       ];
     }
 
-    // Filter out progress tab
-    let tabsCopy = originalTabs.filter(tab => tab.slug !== 'progress');
+    // Filter out progress tab, dates tab, and discussion tab (tạm thời ẩn)
+    let tabsCopy = originalTabs.filter(tab => 
+      tab.slug !== 'progress' && 
+      tab.slug !== 'dates' && 
+      tab.slug !== 'discussion'
+    );
     
     // Cập nhật URL và title cho các tab
     tabsCopy = tabsCopy.map(tab => {
+      // Tạm thời ẩn tab Discussion
       // Đổi tên tab Discussion thành "Thảo luận" và redirect đến discussions MFE
-      if (tab.slug === 'discussion') {
-        // URL sẽ là /learning/course/:courseId/discussion để trigger DiscussionTab component
-        // DiscussionTab sẽ redirect đến discussions MFE
-        const discussionUrl = `/learning/course/${courseId}/discussion/posts`;
-        return {
-          ...tab,
-          url: discussionUrl,
-          title: 'Thảo luận',
-        };
-      }
+      // if (tab.slug === 'discussion') {
+      //   // URL sẽ là /learning/course/:courseId/discussion để trigger DiscussionTab component
+      //   // DiscussionTab sẽ redirect đến discussions MFE
+      //   const discussionUrl = `/learning/course/${courseId}/discussion/posts`;
+      //   return {
+      //     ...tab,
+      //     url: discussionUrl,
+      //     title: 'Thảo luận',
+      //   };
+      // }
+      // Tạm thời ẩn tab Dates
       // Đổi tên tab Dates thành "Ngày"
-      if (tab.slug === 'dates') {
-        return {
-          ...tab,
-          title: 'Ngày',
-        };
-      }
+      // if (tab.slug === 'dates') {
+      //   return {
+      //     ...tab,
+      //     title: 'Ngày',
+      //   };
+      // }
       // Đổi tên tab Teams thành "Nhóm" và cập nhật URL
       if (tab.slug === 'teams' || tab.type === 'teams') {
         // Cập nhật URL để sử dụng định dạng learning route
@@ -123,17 +129,18 @@ const LoadedTabPage = ({
       return tab;
     });
     
+    // Tạm thời ẩn tab discussion
     // Đảm bảo tab discussion có trong danh sách, nếu không có thì thêm vào
-    const hasDiscussionTab = tabsCopy.some(tab => tab.slug === 'discussion');
-    if (!hasDiscussionTab) {
-      const discussionTab = {
-        title: 'Thảo luận',
-        slug: 'discussion',
-        url: `/learning/course/${courseId}/discussion/forum/`,
-        type: 'discussion',
-      };
-      tabsCopy.push(discussionTab);
-    }
+    // const hasDiscussionTab = tabsCopy.some(tab => tab.slug === 'discussion');
+    // if (!hasDiscussionTab) {
+    //   const discussionTab = {
+    //     title: 'Thảo luận',
+    //     slug: 'discussion',
+    //     url: `/learning/course/${courseId}/discussion/forum/`,
+    //     type: 'discussion',
+    //   };
+    //   tabsCopy.push(discussionTab);
+    // }
     
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
     if (leaderboardIndex !== -1) {

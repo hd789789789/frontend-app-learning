@@ -623,8 +623,8 @@ const BadgeTab = memo(function BadgeTab() {
             </div>
           </div>
 
-          {/* Stats Banner */}
-          <div className="stats-banner">
+          {/* Tạm thời ẩn: Stats Banner - Thành tích của tôi */}
+          {/* <div className="stats-banner">
         <div className="stats-banner-bg-circle stats-banner-bg-circle-1" />
         <div className="stats-banner-bg-circle stats-banner-bg-circle-2" />
         
@@ -637,7 +637,7 @@ const BadgeTab = memo(function BadgeTab() {
           </div>
           
           {/* Main Stats Grid */}
-          <div className="stats-grid">
+          {/* <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon">🎯</div>
               <div className="stat-value">{stats.level}</div>
@@ -664,7 +664,7 @@ const BadgeTab = memo(function BadgeTab() {
           </div>
           
           {/* Additional Stats */}
-          <div className="additional-stats">
+          {/* <div className="additional-stats">
             <div className="additional-stat-item">
               <div className="additional-stat-icon">🔥</div>
               <div className="additional-stat-info">
@@ -699,7 +699,7 @@ const BadgeTab = memo(function BadgeTab() {
           </div>
           
           {/* Progress to Next Level */}
-          <div className="level-progress">
+          {/* <div className="level-progress">
             <div className="level-progress-header">
               <div className="level-progress-title">Tiến độ lên Level {stats.level + 1}</div>
               <div className="level-progress-xp">
@@ -718,7 +718,7 @@ const BadgeTab = memo(function BadgeTab() {
           </div>
           
           {/* Featured Badges */}
-          <div className="featured-badges">
+          {/* <div className="featured-badges">
             <div className="featured-badges-title">Huy hiệu nổi bật</div>
             <div className="featured-badges-list">
               {mockFeaturedBadges.map((badge, index) => (
@@ -731,7 +731,7 @@ const BadgeTab = memo(function BadgeTab() {
           </div>
           
           {/* Share Buttons */}
-          <div className="share-section">
+          {/* <div className="share-section">
             <div className="share-message">Chia sẻ thành tích của bạn! 🎉</div>
             <div className="share-buttons">
               <button className="btn btn-share btn-share-facebook">
@@ -753,17 +753,17 @@ const BadgeTab = memo(function BadgeTab() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
-          {/* Certificates Section */}
-      <div className="certificates-section">
+          {/* Tạm thời ẩn: Certificates Section - 🎓 Chứng nhận */}
+      {/* <div className="certificates-section">
         <h3 className="certificates-title">🎓 Chứng nhận</h3>
         <p className="certificates-description">
           Hoàn thành các mốc học tập để nhận chứng nhận và chia sẻ thành tích của bạn!
         </p>
 
         {/* Course Completion Certificate */}
-        <div className="certificate-subsection">
+        {/* <div className="certificate-subsection">
           <h4 className="certificate-subsection-title">
             <span>🏆</span> Chứng nhận khóa học
           </h4>
@@ -833,7 +833,7 @@ const BadgeTab = memo(function BadgeTab() {
         </div>
 
         {/* Chapter Certificates */}
-        <div className="certificate-subsection">
+        {/* <div className="certificate-subsection">
           <h4 className="certificate-subsection-title">
             <span>📚</span> Chứng nhận theo chương
           </h4>
@@ -912,10 +912,10 @@ const BadgeTab = memo(function BadgeTab() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
-      {/* Redeemed Rewards Section */}
-      <div className="rewards-section">
+      {/* Tạm thời ẩn: Redeemed Rewards Section - 🎁 Phần thưởng đã đổi */}
+      {/* <div className="rewards-section">
         <div className="rewards-header">
           <h3 className="rewards-title">🎁 Phần thưởng đã đổi</h3>
           <button className="btn btn-shop">
@@ -924,7 +924,7 @@ const BadgeTab = memo(function BadgeTab() {
         </div>
 
         {/* Filter Buttons */}
-        <div className="reward-filters">
+        {/* <div className="reward-filters">
           <button 
             className={`filter-btn ${rewardFilter === 'all' ? 'active' : ''}`}
             onClick={() => setRewardFilter('all')}
@@ -952,7 +952,7 @@ const BadgeTab = memo(function BadgeTab() {
                             </div>
 
         {/* Rewards Grid */}
-        {filteredRewards.length > 0 ? (
+        {/* {filteredRewards.length > 0 ? (
           <div className="rewards-grid">
             {filteredRewards.map((reward) => (
               <div key={reward.id} className="reward-item">
@@ -1001,7 +1001,7 @@ const BadgeTab = memo(function BadgeTab() {
             )}
 
         {/* Reward Stats */}
-        <div className="reward-stats">
+        {/* <div className="reward-stats">
           <h4>📊 Thống kê phần thưởng</h4>
           <div className="reward-stats-grid">
             <div className="reward-stat-item">
@@ -1022,7 +1022,7 @@ const BadgeTab = memo(function BadgeTab() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
           {/* Achievement Motivation Banner */}
           <div className="achievement-banner">
@@ -1054,7 +1054,8 @@ const BadgeTab = memo(function BadgeTab() {
           
           <StudyTip />
           
-          <ReferralWidget />
+          {/* Tạm thời ẩn: ReferralWidget - Giới thiệu & Nhận thưởng! */}
+          {/* <ReferralWidget /> */}
         </Col>
       </Row>
         </Container>

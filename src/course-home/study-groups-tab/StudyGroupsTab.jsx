@@ -2246,19 +2246,29 @@ const StudyGroupsTab = () => {
 
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);
+  const [loadingStreaks, setLoadingStreaks] = useState(true);
   
   useEffect(() => {
     const fetchGroupStreaks = async () => {
-      if (!courseId) return;
+      if (!courseId) {
+        setLoadingStreaks(false);
+        return;
+      }
       
+      setLoadingStreaks(true);
       try {
         const data = await getGroupStreaks(courseId);
-        if (data.success && data.groups) {
+        console.log('[StudyGroupsTab] Group streaks data:', data);
+        if (data && data.success && data.groups) {
           setGroupStreaks(data.groups);
+        } else {
+          setGroupStreaks([]);
         }
       } catch (error) {
-        console.error('Error fetching group streaks:', error);
+        console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
+      } finally {
+        setLoadingStreaks(false);
       }
     };
 
@@ -2465,7 +2475,14 @@ const StudyGroupsTab = () => {
               streakDays={userStats.streakDays}
               lastDayOfStreak={userStats.lastDayOfStreak}
             />
-            <GroupStreaks groups={groupStreaks} disableFallback />
+            {loadingStreaks ? (
+              <div className="group-streaks-loading text-center p-3">
+                <Spinner animation="border" size="sm" />
+                <span className="ms-2 text-muted">Đang tải chuỗi nhóm...</span>
+              </div>
+            ) : (
+              <GroupStreaks groups={groupStreaks} disableFallback={true} />
+            )}
             <StudyTip />
             <ReferralWidget />
           </div>
