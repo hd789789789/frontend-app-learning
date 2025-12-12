@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { Icon, IconButton } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -7,8 +7,8 @@ import { useModel } from '@src/generic/model-store';
 
 import { BookmarkButton } from '../bookmark';
 import NewSidebarContext from '../../new-sidebar/SidebarContext';
-import OldSidebarContext from '../../sidebar/SidebarContext.js';
-import { SIDEBARS as NewSidebars } from '../../new-sidebar/sidebars';
+import OldSidebarContext from '../../sidebar/SidebarContext';
+import { SIDEBARS as NewSidebars } from '../../new-sidebar/sidebars/index';
 import { WIDGETS } from '@src/constants';
 
 const UnitIconsColumn = ({ unitId, unit, isProcessing, courseId }) => {
