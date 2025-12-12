@@ -766,6 +766,24 @@ export async function getAvailableMembers(groupId, { search = '', page = 1, page
   }
 }
 
+export async function getGroupStreaks(courseId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/courses/${courseId}/study-groups/streaks/`;
+
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error getting group streaks:', {
+      courseId,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
 export async function getStudyGroupComments(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
   console.log('[Study Groups API] Getting group comments:', { groupId, url });

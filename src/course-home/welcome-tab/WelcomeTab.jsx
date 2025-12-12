@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
 import Timeline from '../dates-tab/timeline/Timeline';
 import { fetchDatesTab } from '../data';
+import { getGroupStreaks } from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
 import StudyTip from './StudyTip';
@@ -126,35 +127,31 @@ const WelcomeTab = () => {
         },
       ];
 
-  // Mock data for group streaks
-  const groupStreaks = [
-    {
-      id: 1,
-      name: 'Nhóm Toán 7/3 THCS Trường Chinh 💪',
-      streakDays: 5,
-      members: [
-        { id: 1, initial: 'A', color: '#E86C5D' },
-        { id: 2, initial: 'B', color: '#3498DB' },
-        { id: 3, initial: 'C', color: '#2ECC71' },
-      ],
-      additionalMembers: 5,
-      status: 'in_progress',
-      message: '💪 Tiếp tục học hôm nay để giữ chuỗi nhóm!',
-    },
-    {
-      id: 2,
-      name: 'Chinh phục Toán 7',
-      streakDays: 10,
-      members: [
-        { id: 4, initial: 'D', color: '#8B3A62' },
-        { id: 5, initial: 'E', color: '#E67E22' },
-        { id: 6, initial: 'F', color: '#16A085' },
-      ],
-      additionalMembers: 2,
-      status: 'all_completed',
-      message: '✓ Tất cả thành viên đã học hôm nay',
-    },
-  ];
+  // Fetch group streaks
+  const [groupStreaks, setGroupStreaks] = useState([]);
+  const [loadingStreaks, setLoadingStreaks] = useState(true);
+
+  useEffect(() => {
+    const fetchGroupStreaks = async () => {
+      if (!courseId) return;
+      
+      setLoadingStreaks(true);
+      try {
+        const data = await getGroupStreaks(courseId);
+        if (data.success && data.groups) {
+          setGroupStreaks(data.groups);
+        }
+      } catch (error) {
+        console.error('Error fetching group streaks:', error);
+        // On error, use empty array (GroupStreaks component will show fallback if needed)
+        setGroupStreaks([]);
+      } finally {
+        setLoadingStreaks(false);
+      }
+    };
+
+    fetchGroupStreaks();
+  }, [courseId]);
 
   // Dates data đã được fetch và lưu trong model store
 
@@ -327,7 +324,7 @@ const WelcomeTab = () => {
             lastDayOfStreak={userStats.lastDayOfStreak}
           />
           
-          <GroupStreaks groups={groupStreaks} />
+          <GroupStreaks groups={groupStreaks} disableFallback={!loadingStreaks} />
           
           <StudyTip />
           

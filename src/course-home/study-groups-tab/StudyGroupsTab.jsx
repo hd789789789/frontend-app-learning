@@ -43,6 +43,7 @@ import {
   addReaction,
   removeReaction,
   uploadCommentAttachment,
+  getGroupStreaks,
 } from '../data/api';
 
 import './StudyGroupsTab.scss';
@@ -2243,7 +2244,26 @@ const StudyGroupsTab = () => {
     setLocalGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
   }, []);
 
-  const groupStreaks = useMemo(() => (welcomeModel.groupStreaks || []), [welcomeModel.groupStreaks]);
+  // Fetch group streaks
+  const [groupStreaks, setGroupStreaks] = useState([]);
+  
+  useEffect(() => {
+    const fetchGroupStreaks = async () => {
+      if (!courseId) return;
+      
+      try {
+        const data = await getGroupStreaks(courseId);
+        if (data.success && data.groups) {
+          setGroupStreaks(data.groups);
+        }
+      } catch (error) {
+        console.error('Error fetching group streaks:', error);
+        setGroupStreaks([]);
+      }
+    };
+
+    fetchGroupStreaks();
+  }, [courseId]);
 
   // Fetch welcome tab data only once per course
   const welcomeFetchedRef = useRef(false);
