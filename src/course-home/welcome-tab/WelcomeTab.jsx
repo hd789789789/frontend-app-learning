@@ -318,8 +318,8 @@ const WelcomeTab = () => {
         {/* Sidebar */}
         <Col lg={4} md={12} className="mt-3 mt-lg-0">
           {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
-          <h3 className="section-title">📌 Ngày quan trọng</h3>
           <div className="important-dates-card">
+            <h3 className="important-dates-title">📌 Ngày quan trọng</h3>
             {courseDateBlocks && courseDateBlocks.length > 0 ? (
               <Timeline />
             ) : (
