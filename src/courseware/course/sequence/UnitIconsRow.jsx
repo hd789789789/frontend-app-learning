@@ -6,9 +6,9 @@ import { MessageOutline, WatchOutline } from '@openedx/paragon/icons';
 import { useModel } from '@src/generic/model-store';
 
 import { BookmarkButton } from '../bookmark';
-import NewSidebarContext from '../../new-sidebar/SidebarContext';
-import OldSidebarContext from '../../sidebar/SidebarContext';
-import { SIDEBARS as NewSidebars } from '../../new-sidebar/sidebars';
+import NewSidebarContext from '../new-sidebar/SidebarContext';
+import OldSidebarContext from '../sidebar/SidebarContext';
+import { SIDEBARS as NewSidebars } from '../new-sidebar/sidebars';
 import { WIDGETS } from '@src/constants';
 
 const UnitIconsRow = ({ unitId, unit, isProcessing, courseId }) => {
