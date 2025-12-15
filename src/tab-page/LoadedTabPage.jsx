@@ -84,8 +84,10 @@ const LoadedTabPage = ({
     
     // Cập nhật URL và title cho các tab
     tabsCopy = tabsCopy.map(tab => {
-      // Thêm emoji icon cho tab Khóa học (outline)
-      if (tab.slug === 'outline') {
+      // Thêm emoji icon cho tab Khóa học (outline hoặc courseware)
+      // Kiểm tra cả slug và title để đảm bảo bắt được tất cả các trường hợp
+      if (tab.slug === 'outline' || tab.slug === 'courseware' || tab.type === 'courseware' || 
+          (tab.title && (tab.title.includes('Khóa học') || tab.title.includes('Khoá học')) && !tab.title.includes('📚'))) {
         return {
           ...tab,
           title: '📚 Khóa học',
