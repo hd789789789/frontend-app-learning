@@ -34,7 +34,7 @@ const LoadedTabPage = ({
 
   // Thêm tab Chào mừng vào đầu danh sách tabs
   const welcomeTab = {
-    title: 'Chào mừng',
+    title: '👋 Chào mừng',
     slug: 'welcome',
     url: `/learning/course/${courseId}/welcome`,
   };
@@ -42,7 +42,7 @@ const LoadedTabPage = ({
   // Thêm tab Thành tích vào danh sách tabs
   // URL phải có prefix /learning giống như các tab khác
   const badgeTab = {
-    title: 'Thành tích',
+    title: '🏅 Thành tích',
     slug: 'badge',
     url: `/learning/course/${courseId}/badge`,
   };
@@ -53,7 +53,7 @@ const LoadedTabPage = ({
     url: `/learning/course/${courseId}/study-groups`,
   };
   
-  // Thêm tab Thành tích sau tab Leaderboard (Học đua) và ẩn tab Progress
+  // Thêm tab Thành tích sau tab Leaderboard (Xếp hạng) và ẩn tab Progress
   // Đảm bảo tab Discussions hiển thị với URL đúng định dạng
   const tabs = React.useMemo(() => {
     // Nếu metadata tabs không có (hoặc lỗi gọi API), tạo danh sách tabs mặc định
@@ -61,17 +61,17 @@ const LoadedTabPage = ({
       return [
         welcomeTab,
         {
-          title: 'Khóa học',
+          title: '📚 Khóa học',
           slug: 'outline',
           url: `/learning/course/${courseId}/home`,
         },
+        badgeTab,
         {
-          title: 'Học đua',
+          title: '🏆 Xếp hạng',
           slug: 'leaderboard',
           url: `/learning/course/${courseId}/leaderboard`,
         },
         // studyGroupsTab, // Ẩn tab này khỏi navigation nhưng vẫn giữ route
-        badgeTab,
       ];
     }
 
@@ -84,6 +84,22 @@ const LoadedTabPage = ({
     
     // Cập nhật URL và title cho các tab
     tabsCopy = tabsCopy.map(tab => {
+      // Thêm emoji icon cho tab Khóa học (outline)
+      if (tab.slug === 'outline') {
+        return {
+          ...tab,
+          title: '📚 Khóa học',
+        };
+      }
+      // Đổi tên tab Leaderboard thành "Xếp hạng" (giữ nguyên emoji nếu có)
+      if (tab.slug === 'leaderboard') {
+        // Giữ emoji nếu title từ backend có emoji, nếu không thì thêm emoji
+        const hasEmoji = /^[\u{1F300}-\u{1F9FF}]/u.test(tab.title || '');
+        return {
+          ...tab,
+          title: hasEmoji ? tab.title.replace(/Học đua/g, 'Xếp hạng') : '🏆 Xếp hạng',
+        };
+      }
       // Tạm thời ẩn tab Discussion
       // Đổi tên tab Discussion thành "Thảo luận" và redirect đến discussions MFE
       // if (tab.slug === 'discussion') {
@@ -143,13 +159,13 @@ const LoadedTabPage = ({
     // }
     
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
+    
+    // Thêm tab Thành tích trước tab Xếp hạng (leaderboard)
     if (leaderboardIndex !== -1) {
-      // Chèn Thành tích cạnh leaderboard (ẩn Nhóm học tập khỏi navigation nhưng vẫn giữ route)
-      // tabsCopy.splice(leaderboardIndex, 0, studyGroupsTab); // Ẩn tab này
-      tabsCopy.splice(leaderboardIndex + 1, 0, badgeTab);
+      // Chèn Thành tích trước leaderboard
+      tabsCopy.splice(leaderboardIndex, 0, badgeTab);
     } else {
-      // Nếu không có leaderboard, thêm vào cuối (ẩn Nhóm học tập)
-      // tabsCopy.push(studyGroupsTab, badgeTab); // Ẩn studyGroupsTab
+      // Nếu không có leaderboard, thêm vào cuối
       tabsCopy.push(badgeTab);
     }
     
