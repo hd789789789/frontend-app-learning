@@ -519,6 +519,10 @@ div#main-content {
     padding: 10px;
 }
 
+.window-wrap #content.content-wrapper {
+    min-height: 83vh !important;
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
 @import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
