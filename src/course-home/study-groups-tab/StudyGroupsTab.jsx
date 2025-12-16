@@ -606,6 +606,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   const [localComment, setLocalComment] = useState(comment);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [errorModal, setErrorModal] = useState(null);
+  const currentUsername = getAuthenticatedUser()?.username || getAuthenticatedUser()?.email || null;
 
   // Update local comment when prop changes
   useEffect(() => {
@@ -1993,7 +1994,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                                   title="Xem hồ sơ"
                                   style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 >
-                                  <span className="fa fa-eye" aria-hidden="true" style={{ color: '#7a8396' }} />
+                                  👁
                                 </button>
                                 <button
                                   className="post-action-btn"
@@ -2001,7 +2002,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                                   title="Xóa khỏi nhóm"
                                   style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 >
-                                  <span className="fa fa-trash" aria-hidden="true" style={{ color: '#d9534f' }} />
+                                  🗑
                                 </button>
                               </>
                             );
