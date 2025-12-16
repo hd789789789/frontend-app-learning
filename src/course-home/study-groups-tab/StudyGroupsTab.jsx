@@ -847,8 +847,9 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
                     variant="outline-danger"
                     onClick={() => handleRemoveAttachment(att.id || att.Id || att.ID)}
                     disabled={editUploadingFile}
+                    title="Xóa file đính kèm"
                   >
-                    <span className="fa fa-trash" aria-hidden="true" />
+                    🗑️
                   </Button>
                 </div>
               ))}
@@ -879,7 +880,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             {editUploadingFile && <Spinner animation="border" size="sm" />}
           </div>
 
-          <div className="d-flex gap-3 mt-2">
+          <div className="d-flex gap-4 mt-2">
             <Button size="sm" onClick={handleUpdate} disabled={loading}>
               {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
               Lưu
@@ -1944,7 +1945,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   onClick={() => setShowEditGroup(true)}
                   title="Sửa nhóm"
                 >
-                  <span className="fa fa-edit" aria-hidden="true" />
+                  ✏️
                 </Button>
                 <Button
                   size="sm"
@@ -1981,7 +1982,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   }}
                   title="Xóa nhóm"
                 >
-                  <span className="fa fa-trash" aria-hidden="true" />
+                  🗑️
                 </Button>
               </div>
             )}
@@ -2028,7 +2029,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                     onClick={() => setShowAddMember(true)}
                     title="Thêm thành viên"
                   >
-                    <span className="fa fa-plus" aria-hidden="true" />
+                    +
                   </Button>
                 )}
               </div>
