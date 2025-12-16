@@ -786,46 +786,11 @@ export async function getGroupStreaks(courseId) {
 
 export async function getStudyGroupComments(groupId) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/comments/`;
-  console.log('[Study Groups API] Getting group comments:', { groupId, url });
 
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Group comments retrieved successfully:', {
-      groupId,
-      count: data.results?.length || 0,
-      hasNext: !!data.next,
-      hasPrevious: !!data.previous,
-    });
-
-    // Log first comment to see structure
-    if (data.results && data.results.length > 0) {
-      console.log('[Study Groups API] First comment structure:', {
-        commentId: data.results[0].id,
-        hasAttachments: !!data.results[0].attachments,
-        attachmentsType: typeof data.results[0].attachments,
-        attachmentsIsArray: Array.isArray(data.results[0].attachments),
-        attachmentsCount: Array.isArray(data.results[0].attachments) ? data.results[0].attachments.length : 0,
-        firstAttachment: data.results[0].attachments?.[0],
-        allKeys: Object.keys(data.results[0]),
-        rawComment: JSON.stringify(data.results[0]).substring(0, 500),
-      });
-    }
 
     const camelCased = camelCaseObject(data);
-
-    // Log after camelCase conversion
-    if (camelCased.results && camelCased.results.length > 0) {
-      console.log('[Study Groups API] First comment after camelCase:', {
-        commentId: camelCased.results[0].id,
-        hasAttachments: !!camelCased.results[0].attachments,
-        attachmentsType: typeof camelCased.results[0].attachments,
-        attachmentsIsArray: Array.isArray(camelCased.results[0].attachments),
-        attachmentsCount: Array.isArray(camelCased.results[0].attachments) ? camelCased.results[0].attachments.length : 0,
-        firstAttachment: camelCased.results[0].attachments?.[0],
-        allKeys: Object.keys(camelCased.results[0]),
-      });
-    }
-
     return camelCased;
   } catch (error) {
     console.error('[Study Groups API] Error getting group comments:', {
@@ -863,12 +828,6 @@ export async function getCommentDetail(commentId) {
 
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Study Groups API] Comment detail retrieved:', {
-      commentId,
-      hasAttachments: !!data.attachments,
-      attachmentsCount: data.attachments?.length || 0,
-      attachments: data.attachments,
-    });
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error getting comment detail:', {
@@ -962,13 +921,6 @@ export async function uploadCommentAttachment(commentId, file) {
     const formData = new FormData();
     // Append with filename to help Django build correct name
     formData.append('file', file, file?.name || 'attachment');
-    console.log('[Study Groups API] Uploading attachment', {
-      commentId,
-      url,
-      fileName: file?.name,
-      fileSize: file?.size,
-      hasFile: !!file,
-    });
     const { data } = await getAuthenticatedHttpClient().post(
       url,
       formData,
@@ -983,12 +935,6 @@ export async function uploadCommentAttachment(commentId, file) {
         transformRequest: [(requestData) => requestData],
       },
     );
-    console.log('[Study Groups API] Attachment upload success', {
-      commentId,
-      url,
-      data,
-      keys: Object.keys(data || {}),
-    });
     return camelCaseObject(data);
   } catch (error) {
     console.error('[Study Groups API] Error uploading attachment:', {

@@ -614,12 +614,16 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
 
   // Chỉ người đăng mới có quyền sửa/xóa bài đăng của mình
   const commentOwnerId = localComment.user?.id || localComment.userId || localComment.user_id;
-  // Kiểm tra owner bằng nhiều cách để đảm bảo khớp
-  const isCommentOwner = currentUserId && commentOwnerId && (
-    currentUserId === commentOwnerId || 
-    currentUserId?.toString() === commentOwnerId?.toString() ||
-    String(currentUserId) === String(commentOwnerId) ||
-    Number(currentUserId) === Number(commentOwnerId)
+  const commentOwnerUsername = localComment.user?.username || localComment.user?.email;
+  // Kiểm tra owner bằng nhiều cách để đảm bảo khớp (id hoặc username)
+  const isCommentOwner = (
+    (currentUserId && commentOwnerId && (
+      currentUserId === commentOwnerId || 
+      currentUserId?.toString() === commentOwnerId?.toString() ||
+      String(currentUserId) === String(commentOwnerId) ||
+      Number(currentUserId) === Number(commentOwnerId)
+    )) ||
+    (commentOwnerUsername && currentUsername && commentOwnerUsername.toLowerCase() === currentUsername.toLowerCase())
   );
   
   
@@ -981,37 +985,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     setLocalGroup(group);
   }, [group]);
 
-  // Check if user is owner: either created_by.id matches, or user has admin role in the group
+  // Check if user is owner: match by id OR username to avoid type mismatches
   const ownerId = localGroup.createdBy?.id || localGroup.created_by?.id || localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
+  const ownerUsername = localGroup.createdBy?.username || localGroup.created_by?.username || localGroup.owner?.username;
   const currentUserKey = currentUserId;
-  // Kiểm tra owner bằng nhiều cách để đảm bảo khớp
-  const isOwner = ownerId && currentUserKey && (
-    ownerId === currentUserKey || 
-    ownerId?.toString() === currentUserKey?.toString() ||
-    String(ownerId) === String(currentUserKey) ||
-    Number(ownerId) === Number(currentUserKey)
+  const currentUsername = getAuthenticatedUser()?.username || null;
+  const isOwner = (
+    (ownerId !== undefined && ownerId !== null && currentUserKey !== undefined && currentUserKey !== null &&
+      (ownerId === currentUserKey ||
+        ownerId?.toString() === currentUserKey?.toString() ||
+        String(ownerId) === String(currentUserKey) ||
+        Number(ownerId) === Number(currentUserKey))) ||
+    (ownerUsername && currentUsername && ownerUsername.toLowerCase() === currentUsername.toLowerCase())
   );
-  
-  // Debug log để kiểm tra
-  useEffect(() => {
-    logInfo('GroupCard owner check', {
-      groupId: localGroup.id,
-      ownerId,
-      currentUserId: currentUserKey,
-      isOwner,
-      createdBy: localGroup.createdBy,
-      created_by: localGroup.created_by,
-      owner: localGroup.owner,
-      ownerIdType: typeof ownerId,
-      currentUserIdType: typeof currentUserKey,
-      comparison: {
-        strict: ownerId === currentUserKey,
-        toString: ownerId?.toString() === currentUserKey?.toString(),
-        string: String(ownerId) === String(currentUserKey),
-        number: Number(ownerId) === Number(currentUserKey),
-      }
-    });
-  }, [localGroup.id, ownerId, currentUserKey, isOwner]);
   const currentMember =
     (localGroup.members || []).find((m) => {
       const memberId = m.user?.id;
@@ -1033,11 +1019,52 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const apiCanEdit = localGroup.canEdit !== false ? (localGroup.canEdit ?? false) : false;
   const apiCanDelete = localGroup.canDelete !== false ? (localGroup.canDelete ?? false) : false;
 
-  // Chỉ owner mới có các quyền này
-  const canManageMembers = isOwner;
-  const canEdit = isOwner;
-  const canDelete = isOwner;
-  const showGroupMenu = canEdit || canDelete || canManageMembers;
+  // Chỉ owner mới có các quyền này, nhưng nếu BE trả về quyền thì vẫn ưu tiên owner
+  const canManageMembers = isOwner || (isOwner && apiCanManage);
+  const canEdit = isOwner || (isOwner && apiCanEdit);
+  const canDelete = isOwner || (isOwner && apiCanDelete);
+  const showGroupMenu = isOwner;
+
+  // Log quyền của tài khoản trong nhóm (một lần theo group/id)
+  useEffect(() => {
+    logInfo('StudyGroup permissions', {
+      groupId: localGroup.id,
+      currentUserId,
+      currentUsername,
+      ownerId,
+      ownerUsername,
+      currentRole,
+      isOwner,
+      isMember,
+      flagsFromApi: {
+        canManageMembers: localGroup.canManageMembers,
+        canEdit: localGroup.canEdit,
+        canDelete: localGroup.canDelete,
+      },
+      derived: {
+        canManageMembers,
+        canEdit,
+        canDelete,
+        showGroupMenu,
+      },
+    });
+  }, [
+    localGroup.id,
+    currentUserId,
+    currentUsername,
+    ownerId,
+    ownerUsername,
+    currentRole,
+    isOwner,
+    isMember,
+    canManageMembers,
+    canEdit,
+    canDelete,
+    showGroupMenu,
+    localGroup.canManageMembers,
+    localGroup.canEdit,
+    localGroup.canDelete,
+  ]);
 
   // Debug logs for permission issues
   useEffect(() => {
@@ -1800,13 +1827,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             data-debug-can-delete={canDelete ? 'true' : 'false'}
             data-debug-can-manage={canManageMembers ? 'true' : 'false'}
           >
-            {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div style={{ fontSize: '10px', color: 'red', marginBottom: '5px' }}>
-                Debug: isOwner={String(isOwner)}, canEdit={String(canEdit)}, canDelete={String(canDelete)}, showGroupMenu={String(showGroupMenu)}, isMember={String(isMember)}
-              </div>
-            )}
-            
             {/* Nút cho trưởng nhóm */}
             {isOwner && (
               <div className="group-menu-inline">
