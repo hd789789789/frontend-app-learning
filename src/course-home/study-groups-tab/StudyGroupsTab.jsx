@@ -613,11 +613,30 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   }, [comment]);
 
   // Chỉ người đăng mới có quyền sửa/xóa bài đăng của mình
-  const commentOwnerId = localComment.user?.id || localComment.userId;
-  const isCommentOwner = currentUserId && commentOwnerId && (currentUserId === commentOwnerId || currentUserId?.toString() === commentOwnerId?.toString());
+  const commentOwnerId = localComment.user?.id || localComment.userId || localComment.user_id;
+  const isCommentOwner = currentUserId && commentOwnerId && (
+    currentUserId === commentOwnerId || 
+    currentUserId?.toString() === commentOwnerId?.toString() ||
+    String(currentUserId) === String(commentOwnerId)
+  );
   
-  const canEdit = isCommentOwner && (localComment.canEdit !== false || isCommentOwner);
-  const canDelete = isCommentOwner && (localComment.canDelete !== false || isCommentOwner);
+  // Debug log để kiểm tra
+  useEffect(() => {
+    if (localComment.id) {
+      logInfo('CommentCard permission check', {
+        commentId: localComment.id,
+        commentOwnerId,
+        currentUserId,
+        isCommentOwner,
+        commentUser: localComment.user,
+        canEdit: isCommentOwner,
+        canDelete: isCommentOwner,
+      });
+    }
+  }, [localComment.id, commentOwnerId, currentUserId, isCommentOwner]);
+  
+  const canEdit = isCommentOwner;
+  const canDelete = isCommentOwner;
 
   // Local confirm dialog handler if not provided
   const handleOpenConfirmDialog = openConfirmDialog || (({ title, message, onConfirm, confirmText = 'Xác nhận', cancelText = 'Hủy' }) => {
@@ -1033,9 +1052,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const apiCanDelete = localGroup.canDelete !== false ? (localGroup.canDelete ?? false) : false;
 
   // Chỉ owner mới có các quyền này
-  const canManageMembers = isOwner || (apiCanManage && isOwner);
-  const canEdit = isOwner || (apiCanEdit && isOwner);
-  const canDelete = isOwner || (apiCanDelete && isOwner);
+  const canManageMembers = isOwner;
+  const canEdit = isOwner;
+  const canDelete = isOwner;
   const showGroupMenu = canEdit || canDelete || canManageMembers;
 
   // Debug logs for permission issues
@@ -1572,10 +1591,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           showErrorDialog('Tải file chưa hoàn tất', `${uploadErrors.length} file không tải lên được. Vui lòng thử lại sau.`);
         }
         
-        // Always reload comments after uploads complete to ensure sync with server
-        // Wait longer to ensure backend has processed all attachments
-        // Use a longer delay to ensure all files are processed and URLs are generated
-        // Reset to first page when new comment with attachments is added
+        // Reload comments once after uploads complete to ensure sync with server
+        // Wait a bit for backend to process all attachments - chỉ gọi 1 lần duy nhất
         setTimeout(async () => {
           logInfo('Reloading comments after file upload', { 
             commentId, 
@@ -1583,41 +1600,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             uploadedFiles: uploadedAttachments.map(a => ({ id: a.id, fileName: a.fileName, hasUrl: !!a.fileUrl }))
           });
           commentsLoadedRef.current = false;
-          await loadComments(true); // Reload all comments
-          
-          // Check if the comment now has attachments after reload
-          setTimeout(async () => {
-            // Get the updated comment detail from server to check attachments
-            // Comment detail endpoint should return full comment with attachments
-            try {
-              const updatedComment = await getCommentDetail(commentId);
-              
-              // Format attachments
-              if (updatedComment.attachments && Array.isArray(updatedComment.attachments) && updatedComment.attachments.length > 0) {
-                const formattedAttachments = updatedComment.attachments.map(att => ({
-                  id: att.id || att.Id || att.ID,
-                  fileName: att.fileName || att.file_name || 'Unknown',
-                  fileUrl: att.fileUrl || att.file_url || att.url,
-                  fileType: att.fileType || att.file_type || 'document',
-                  fileSize: att.fileSize || att.file_size || 0,
-                  uploadedAt: att.uploadedAt || att.uploaded_at,
-                }));
-                
-                // Update the comment in the list with attachments from server
-                updateCommentInList(commentId, { attachments: formattedAttachments });
-              } else {
-                // Keep optimistic attachments if server still empty
-              }
-            } catch (err) {
-              logError('Failed to get updated comment detail', { commentId, error: err });
-            }
-            
-            // Reload one more time to ensure attachments are included
-            commentsLoadedRef.current = false;
-            await loadComments(true); // Reload all comments
-            logInfo('Second reload completed to ensure attachments are loaded');
-          }, 1500);
-        }, 2000); // Increased delay to ensure backend processing and URL generation
+          await loadComments(true); // Reload all comments - chỉ gọi 1 lần duy nhất
+        }, 1500);
       }
       
       // Clear form
@@ -1728,10 +1712,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       addCommentToList(camelCasedResult);
       
       // Reload comments after a short delay to ensure sync with server
-      // This handles cases where response format might be different
+      // Chỉ reload 1 lần sau khi đăng thành công
       setTimeout(async () => {
         commentsLoadedRef.current = false;
-        await loadComments(true); // Reload all comments
+        await loadComments(true); // Reload all comments - chỉ gọi 1 lần
       }, 500);
       
       setCommentContent('');
