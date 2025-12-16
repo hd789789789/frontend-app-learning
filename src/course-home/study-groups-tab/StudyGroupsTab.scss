@@ -1055,7 +1055,7 @@ button.remove-file-btn {
   margin-top: 0.5rem;
   background: #ffffff;
   overflow: hidden;
-  z-index: 1050;
+  z-index: 200000 !important;
   
   .dropdown-item {
     padding: 0.625rem 1rem;
@@ -1111,5 +1111,16 @@ button.remove-file-btn {
       }
     }
   }
+}
+
+// Ensure dropdown is not clipped by parents
+.study-groups-tab,
+.group-card,
+.discussion-container,
+.discussion-feed,
+.feed-post {
+  position: relative;
+  overflow: visible;
+  z-index: 1;
 }
 

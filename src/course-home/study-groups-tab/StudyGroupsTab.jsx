@@ -1332,7 +1332,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             {editUploadingFile && <Spinner animation="border" size="sm" />}
           </div>
 
-          <div className="d-flex gap-4 mt-2" style="gap: 5px;">
+          <div className="d-flex gap-4 mt-2" style={{ gap: '5px' }}>
             <Button size="sm" onClick={handleUpdate} disabled={loading}>
               {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
               Lưu
