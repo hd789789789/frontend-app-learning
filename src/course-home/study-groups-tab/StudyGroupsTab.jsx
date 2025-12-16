@@ -1945,7 +1945,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   onClick={() => setShowEditGroup(true)}
                   title="Sửa nhóm"
                 >
-                  ✏️
+                  Sửa nhóm
                 </Button>
                 <Button
                   size="sm"
@@ -1982,7 +1982,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   }}
                   title="Xóa nhóm"
                 >
-                  🗑️
+                  Xoá nhóm
                 </Button>
               </div>
             )}
