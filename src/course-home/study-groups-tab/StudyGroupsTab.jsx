@@ -932,7 +932,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     setLocalGroup(group);
   }, [group]);
 
-  const ownerId = localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
+  // Check if user is owner: either created_by.id matches, or user has admin role in the group
+  const ownerId = localGroup.createdBy?.id || localGroup.created_by?.id || localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
   const currentUserKey = currentUserId;
   const isOwner = ownerId && currentUserKey && (ownerId === currentUserKey || ownerId?.toString() === currentUserKey?.toString());
   const currentMember =
@@ -1908,7 +1909,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             )}
             <div className="group-stats">
               <span>👥 {localGroup.memberCount || localGroup.members?.length || 0} thành viên</span>
-              <span>📅 Tạo: {formatDate(localGroup.createdAt)}</span>
+              {localGroup.streakLength !== undefined && localGroup.streakLength > 0 && (
+                <span>🔥 Chuỗi nhóm: {localGroup.streakLength} ngày</span>
+              )}
+              {localGroup.averageProgress !== undefined && (
+                <span>📊 Tiến độ TB: {Math.round(localGroup.averageProgress)}%</span>
+              )}
             </div>
           </div>
           <div
@@ -1949,6 +1955,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                           try {
                             await deleteStudyGroup(groupId);
                             logInfo('Group deleted successfully', { groupId });
+                            // Remove from list immediately (already done optimistically above)
+                            // Also trigger refresh to sync with server
                             if (onUpdate) onUpdate();
                           } catch (err) {
                             logError('Failed to delete group', {
@@ -1958,7 +1966,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                               message: err.message,
                             });
                             showErrorDialog('Không thể xóa nhóm', 'Vui lòng thử lại.');
-                            // Revert on error - reload groups
+                            // Revert on error - reload groups to restore deleted group
                             if (onUpdate) onUpdate();
                           }
                         },
@@ -2024,36 +2032,88 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                             {(() => {
                               const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
                               const isLeader = ownerId && memberId && (ownerId === memberId || ownerId?.toString() === memberId?.toString());
-                              if (isLeader) return ' (Trưởng nhóm)';
-                              return member.role ? ` (${member.role})` : '';
+                              if (isLeader) {
+                                return (
+                                  <>
+                                    {' '}
+                                    <span className="fa fa-crown" style={{ color: '#f59e0b', marginLeft: '4px' }} aria-hidden="true" />
+                                  </>
+                                );
+                              }
+                              return null;
+                            })()}
+                            {(() => {
+                              const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
+                              const isCurrentUser = currentUserId && memberId && (currentUserId === memberId || currentUserId?.toString() === memberId?.toString());
+                              if (isCurrentUser) return ' (Bạn)';
+                              return null;
                             })()}
                           </div>
-                          <div className="member-sub">Tham gia: {formatDate(member.joinedAt)}</div>
+                          <div className="member-sub">
+                            {member.streakDays !== undefined && member.streakDays > 0 && (
+                              <span>🔥 {member.streakDays} ngày</span>
+                            )}
+                            {member.progress !== undefined && (
+                              <span className="ms-2">{Math.round(member.progress)}%</span>
+                            )}
+                            {(!member.streakDays && !member.progress) && (
+                              <span>Tham gia: {formatDate(member.joinedAt)}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      {canManageMembers && member.user?.id !== currentUserId && (
-                        <button
-                          className="friend-action-btn"
-                          onClick={() => handleRemoveMember(null, member)}
-                          title="Xóa khỏi nhóm"
-                        >
-                          <svg
-                            aria-hidden="true"
-                            focusable="false"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 448 512"
-                            className="icon-trash"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M135.2 17.7c5.5-10.7 16.5-17.7 28.7-17.7h120.3c12.2 0 23.2 6.9 28.7 17.7L328 32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32H120l15.2-14.3zM32 128H416L397.6 467c-1.6 25.3-22.6 45-47.9 45H98.3C72.9 512 51.9 492.3 50.4 467L32 128z"
-                            />
-                          </svg>
-                        </button>
-                      )}
+                      <div className="member-actions">
+                        {(() => {
+                          const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
+                          const isLeader = ownerId && memberId && (ownerId === memberId || ownerId?.toString() === memberId?.toString());
+                          const isCurrentUser = currentUserId && memberId && (currentUserId === memberId || currentUserId?.toString() === memberId?.toString());
+                          
+                          if (isLeader) {
+                            return (
+                              <Button size="sm" variant="primary" disabled>
+                                Admin
+                              </Button>
+                            );
+                          }
+                          if (isCurrentUser && !isOwner) {
+                            return (
+                              <Button size="sm" variant="secondary" disabled>
+                                Thành viên
+                              </Button>
+                            );
+                          }
+                          if (canManageMembers && !isLeader && !isCurrentUser) {
+                            return (
+                              <>
+                                <button
+                                  className="post-action-btn"
+                                  onClick={() => {/* View profile - TODO */}}
+                                  title="Xem hồ sơ"
+                                >
+                                  <span className="fa fa-eye" aria-hidden="true" />
+                                </button>
+                                <button
+                                  className="post-action-btn"
+                                  onClick={() => handleRemoveMember(null, member)}
+                                  title="Xóa khỏi nhóm"
+                                >
+                                  <span className="fa fa-trash" aria-hidden="true" />
+                                </button>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                   ))}
+                  {localGroup.members && localGroup.members.length > 5 && (
+                    <div className="member-more">
+                      <a href="#" onClick={(e) => { e.preventDefault(); /* TODO: Show all members modal */ }}>
+                        ► Xem thêm {localGroup.members.length - 5} thành viên...
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center p-2">Chưa có thành viên</div>
@@ -2061,8 +2121,28 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             </div>
 
             {isMember && (
-              <div className="discussion-container">
-                <div className="create-post-box">
+              <>
+                <div className="discussion-actions">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                      if (!showComments) {
+                        setShowComments(true);
+                        loadComments(true);
+                      } else {
+                        setShowComments(false);
+                      }
+                    }}
+                    className="w-100"
+                  >
+                    <span className="fa fa-comments me-2" aria-hidden="true" />
+                    Thảo luận
+                  </Button>
+                </div>
+                {showComments && (
+                  <div className="discussion-container">
+                    <div className="create-post-box">
                   <div className="create-post-input">
                     <div className="user-avatar">
                       {getAuthenticatedUser()?.username?.substring(0, 2).toUpperCase() || 'U'}
@@ -2135,21 +2215,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       {uploadingFile ? <Spinner animation="border" size="sm" /> : 'Đăng'}
                     </Button>
                   </div>
-                </div>
+                    </div>
 
-                <div className="discussion-actions mt-3">
-                  <Button
-                    variant="outline-primary"
-                    onClick={() => {
-                      setShowComments(!showComments);
-                    }}
-                  >
-                    💬 {showComments ? 'Ẩn' : 'Xem'} thảo luận ({commentCount})
-                  </Button>
-                </div>
-
-                {showComments && (
-                  <div className="discussion-feed mt-3">
+                    <div className="discussion-feed mt-3">
                     {loadingComments ? (
                       <div className="text-center p-3">
                         <Spinner animation="border" />
@@ -2195,9 +2263,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                     ) : (
                       <div className="text-center p-3">Chưa có bình luận nào</div>
                     )}
+                    </div>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </>
         )}
