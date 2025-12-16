@@ -914,6 +914,57 @@ export async function removeReaction(commentId) {
   }
 }
 
+// Delete a comment attachment
+export async function deleteCommentAttachment(attachmentId) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/attachments/${attachmentId}/`;
+  try {
+    await getAuthenticatedHttpClient().delete(url);
+    return { success: true };
+  } catch (error) {
+    console.error('[Study Groups API] Error deleting attachment:', {
+      attachmentId,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
+// Replace a comment attachment with a new file
+export async function replaceCommentAttachment(attachmentId, file) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/attachments/${attachmentId}/`;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file, file?.name || 'attachment');
+
+    const { data } = await getAuthenticatedHttpClient().put(
+      url,
+      formData,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': undefined,
+        },
+        withCredentials: true,
+        transformRequest: [(requestData) => requestData],
+      },
+    );
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error replacing attachment:', {
+      attachmentId,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
 export async function uploadCommentAttachment(commentId, file) {
   const url = `${getConfig().LMS_BASE_URL}/api/study-groups/comments/${commentId}/attachments/`;
 

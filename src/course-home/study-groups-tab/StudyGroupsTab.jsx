@@ -43,6 +43,7 @@ import {
   addReaction,
   removeReaction,
   uploadCommentAttachment,
+  deleteCommentAttachment,
   getGroupStreaks,
 } from '../data/api';
 
@@ -607,6 +608,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [errorModal, setErrorModal] = useState(null);
   const currentUsername = getAuthenticatedUser()?.username || getAuthenticatedUser()?.email || null;
+  const [editUploadingFile, setEditUploadingFile] = useState(false);
 
   // Update local comment when prop changes
   useEffect(() => {
@@ -712,6 +714,46 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
     });
   };
 
+  const handleRemoveAttachment = async (attachmentId) => {
+    if (!attachmentId) return;
+    setEditUploadingFile(true);
+    try {
+      await deleteCommentAttachment(attachmentId);
+      const updatedAttachments = (localComment.attachments || []).filter(att => att.id !== attachmentId && att.Id !== attachmentId && att.ID !== attachmentId);
+      setLocalComment((prev) => ({ ...prev, attachments: updatedAttachments }));
+      onCommentUpdate(localComment.id, { attachments: updatedAttachments });
+    } catch (err) {
+      handleShowErrorDialog('Không thể xóa file đính kèm', err.response?.data?.error || err.message || 'Vui lòng thử lại.');
+    } finally {
+      setEditUploadingFile(false);
+    }
+  };
+
+  const handleAddAttachment = async (e, isImage = false) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setEditUploadingFile(true);
+    try {
+      const uploaded = await uploadCommentAttachment(localComment.id, file);
+      const newAttachment = {
+        id: uploaded.id || uploaded.Id || uploaded.ID,
+        fileName: uploaded.fileName || uploaded.file_name || file.name,
+        fileUrl: uploaded.fileUrl || uploaded.file_url || uploaded.url,
+        fileType: uploaded.fileType || uploaded.file_type || (isImage ? 'image' : 'document'),
+        fileSize: uploaded.fileSize || uploaded.file_size,
+        uploadedAt: uploaded.uploadedAt || uploaded.uploaded_at,
+      };
+      const updatedAttachments = [...(localComment.attachments || []), newAttachment];
+      setLocalComment((prev) => ({ ...prev, attachments: updatedAttachments }));
+      onCommentUpdate(localComment.id, { attachments: updatedAttachments });
+    } catch (err) {
+      handleShowErrorDialog('Không thể tải file đính kèm', err.response?.data?.error || err.message || 'Vui lòng thử lại.');
+    } finally {
+      setEditUploadingFile(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Vừa xong';
     const date = new Date(dateString);
@@ -788,15 +830,69 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             onChange={(e) => setEditContent(e.target.value)}
             disabled={loading}
           />
-          <div className="d-flex gap-2 mt-2">
+          {/* Existing attachments with remove */}
+          {(localComment.attachments && localComment.attachments.length > 0) && (
+            <div className="edit-attachments mt-2">
+              {localComment.attachments.map((att) => (
+                <div key={att.id || att.Id || att.ID} className="d-flex align-items-center justify-content-between mb-2">
+                  <a
+                    href={att.fileUrl || att.file_url || '#'}
+                    target={att.fileUrl ? '_blank' : undefined}
+                    rel={att.fileUrl ? 'noopener noreferrer' : undefined}
+                  >
+                    {att.fileName || att.file_name || 'File đính kèm'}
+                  </a>
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    onClick={() => handleRemoveAttachment(att.id || att.Id || att.ID)}
+                    disabled={editUploadingFile}
+                  >
+                    <span className="fa fa-trash" aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add new attachment while editing */}
+          <div className="d-flex align-items-center gap-2 mt-2 flex-wrap">
+            <label className="post-action-btn" title="Thêm ảnh mới">
+              📷
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => handleAddAttachment(e, true)}
+                disabled={editUploadingFile}
+              />
+            </label>
+            <label className="post-action-btn" title="Thêm file mới">
+              📎
+              <input
+                type="file"
+                style={{ display: 'none' }}
+                onChange={(e) => handleAddAttachment(e, false)}
+                disabled={editUploadingFile}
+              />
+            </label>
+            {editUploadingFile && <Spinner animation="border" size="sm" />}
+          </div>
+
+          <div className="d-flex gap-3 mt-2">
             <Button size="sm" onClick={handleUpdate} disabled={loading}>
               {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
               Lưu
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => {
-              setIsEditing(false);
-              setEditContent(localComment.content);
-            }} disabled={loading}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setIsEditing(false);
+                setEditContent(localComment.content);
+              }}
+              disabled={loading}
+            >
               Hủy
             </Button>
           </div>
@@ -1839,15 +1935,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             data-debug-can-delete={canDelete ? 'true' : 'false'}
             data-debug-can-manage={canManageMembers ? 'true' : 'false'}
           >
-            {/* Nút cho trưởng nhóm */}
+            {/* Nút cho trưởng nhóm - dùng icon FA cho gọn */}
             {isOwner && (
               <div className="group-menu-inline">
                 <Button
                   size="sm"
                   variant="outline-primary"
                   onClick={() => setShowEditGroup(true)}
+                  title="Sửa nhóm"
                 >
-                  <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa nhóm
+                  <span className="fa fa-edit" aria-hidden="true" />
                 </Button>
                 <Button
                   size="sm"
@@ -1868,8 +1965,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                         try {
                           await deleteStudyGroup(groupId);
                           logInfo('Group deleted successfully', { groupId });
-                          // Remove from list immediately (already done optimistically above)
-                          // Also trigger refresh to sync with server
                           if (onUpdate) onUpdate();
                         } catch (err) {
                           logError('Failed to delete group', {
@@ -1879,14 +1974,14 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                             message: err.message,
                           });
                           showErrorDialog('Không thể xóa nhóm', 'Vui lòng thử lại.');
-                          // Revert on error - reload groups to restore deleted group
                           if (onUpdate) onUpdate();
                         }
                       },
                     });
                   }}
+                  title="Xóa nhóm"
                 >
-                  <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa nhóm
+                  <span className="fa fa-trash" aria-hidden="true" />
                 </Button>
               </div>
             )}
@@ -1927,8 +2022,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
               <div className="members-head">
                 <span>Thành viên ({localGroup.memberCount || localGroup.members?.length || 0})</span>
                 {canManageMembers && (
-                  <Button size="sm" variant="primary" onClick={() => setShowAddMember(true)}>
-                    + Thêm
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => setShowAddMember(true)}
+                    title="Thêm thành viên"
+                  >
+                    <span className="fa fa-plus" aria-hidden="true" />
                   </Button>
                 )}
               </div>
