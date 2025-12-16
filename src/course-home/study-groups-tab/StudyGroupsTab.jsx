@@ -985,11 +985,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     setLocalGroup(group);
   }, [group]);
 
+  // Lấy username hiện tại (fallback null)
+  const currentUsername = getAuthenticatedUser()?.username || null;
+
   // Check if user is owner: match by id OR username to avoid type mismatches
   const ownerId = localGroup.createdBy?.id || localGroup.created_by?.id || localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
   const ownerUsername = localGroup.createdBy?.username || localGroup.created_by?.username || localGroup.owner?.username;
   const currentUserKey = currentUserId;
-  const currentUsername = getAuthenticatedUser()?.username || null;
   const isOwner = (
     (ownerId !== undefined && ownerId !== null && currentUserKey !== undefined && currentUserKey !== null &&
       (ownerId === currentUserKey ||
