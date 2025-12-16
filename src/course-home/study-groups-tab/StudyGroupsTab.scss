@@ -1001,15 +1001,18 @@ button.remove-file-btn {
   
   &:hover {
     background: #f0f2f5 !important;
+    text-decoration: none !important;
   }
   
   &:focus {
     box-shadow: none !important;
     background: #f0f2f5 !important;
+    text-decoration: none !important;
   }
   
   &:active {
     background: #e4e6eb !important;
+    text-decoration: none !important;
   }
   
   // Bỏ mũi tên dropdown - tất cả các cách
@@ -1033,6 +1036,7 @@ button.remove-file-btn {
     font-weight: 600;
     letter-spacing: -1px;
     display: block;
+    text-decoration: none !important;
   }
 }
 
@@ -1096,17 +1100,20 @@ button.remove-file-btn {
     font-weight: 400;
     
     &.comment-menu-item-danger {
-      color: #d9534f;
+      color: #d9534f !important;
+      a {
+        color: inherit !important;
+      }
       
       &:hover {
         background-color: #fff5f5;
-        color: #c9302c;
+        color: #c9302c !important;
       }
       
       &:active,
       &:focus {
         background-color: #ffe5e5;
-        color: #c9302c;
+        color: #c9302c !important;
       }
       
       .fa {
