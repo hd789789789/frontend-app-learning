@@ -1015,6 +1015,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     }) || null;
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
+  const isMember = localGroup.isMember !== undefined
+    ? localGroup.isMember
+    : Boolean(currentMember || isOwner);
 
   // Chỉ trưởng nhóm mới có quyền quản lý, sửa và xóa nhóm
   const apiCanManage = localGroup.canManageMembers !== false ? (localGroup.canManageMembers ?? false) : false;
@@ -1068,27 +1071,21 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     localGroup.canDelete,
   ]);
 
-  // Debug logs for permission issues
+  // Debug logs for permission issues (giữ tối thiểu)
   useEffect(() => {
-    const payload = {
+    logInfo('GroupCard permission check', {
       groupId: localGroup.id,
       currentUserId,
       ownerId,
       currentRole,
       isOwner,
       isGroupAdmin,
-      flags: {
-        canManageMembersFromApi: localGroup.canManageMembers,
-        canEditFromApi: localGroup.canEdit,
-        canDeleteFromApi: localGroup.canDelete,
-      },
-      derived: { canManageMembers, canEdit, canDelete, showGroupMenu },
-    };
-    logInfo('GroupCard permission check', payload);
-  }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu, localGroup.canManageMembers, localGroup.canEdit, localGroup.canDelete]);
-  const isMember = localGroup.isMember !== undefined
-    ? localGroup.isMember
-    : Boolean(currentMember || isOwner);
+      canManageMembers,
+      canEdit,
+      canDelete,
+      showGroupMenu,
+    });
+  }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu]);
   const commentsLoadedRef = useRef(false);
   const commentCountLoadedRef = useRef(false);
 
