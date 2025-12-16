@@ -614,26 +614,14 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
 
   // Chỉ người đăng mới có quyền sửa/xóa bài đăng của mình
   const commentOwnerId = localComment.user?.id || localComment.userId || localComment.user_id;
+  // Kiểm tra owner bằng nhiều cách để đảm bảo khớp
   const isCommentOwner = currentUserId && commentOwnerId && (
     currentUserId === commentOwnerId || 
     currentUserId?.toString() === commentOwnerId?.toString() ||
-    String(currentUserId) === String(commentOwnerId)
+    String(currentUserId) === String(commentOwnerId) ||
+    Number(currentUserId) === Number(commentOwnerId)
   );
   
-  // Debug log để kiểm tra
-  useEffect(() => {
-    if (localComment.id) {
-      logInfo('CommentCard permission check', {
-        commentId: localComment.id,
-        commentOwnerId,
-        currentUserId,
-        isCommentOwner,
-        commentUser: localComment.user,
-        canEdit: isCommentOwner,
-        canDelete: isCommentOwner,
-      });
-    }
-  }, [localComment.id, commentOwnerId, currentUserId, isCommentOwner]);
   
   const canEdit = isCommentOwner;
   const canDelete = isCommentOwner;
@@ -649,8 +637,6 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
 
   const handleUpdate = async () => {
     setLoading(true);
-    logInfo('Updating comment', { commentId: localComment.id, content: editContent });
-    
     // Optimistic update
     const oldContent = localComment.content;
     setLocalComment((prev) => ({ ...prev, content: editContent }));
@@ -658,7 +644,6 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
     
     try {
       const result = await updateComment(localComment.id, editContent);
-      logInfo('Comment updated successfully', { commentId: localComment.id, result });
       
       // Update with server response
       const updatedData = {
@@ -699,14 +684,11 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           return;
         }
         
-        logInfo('Deleting comment', { commentId });
-        
         // Optimistic update: remove from UI immediately
         onCommentDelete(commentId);
         
         try {
           await deleteComment(commentId);
-          logInfo('Comment deleted successfully', { commentId });
         } catch (err) {
           logError('Failed to delete comment', {
             commentId,
@@ -759,6 +741,13 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           </div>
           <div className="post-time">{formatDate(localComment.createdAt)} • 👥 Nhóm</div>
         </div>
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ fontSize: '10px', color: 'red', marginBottom: '5px' }}>
+            Debug Comment: isCommentOwner={String(isCommentOwner)}, canEdit={String(canEdit)}, canDelete={String(canDelete)}, commentOwnerId={String(commentOwnerId)}, currentUserId={String(currentUserId)}
+          </div>
+        )}
+        
         {(canEdit || canDelete) && (
           <div className="comment-menu-inline">
             {canEdit && (
@@ -812,28 +801,8 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
       )}
 
       {(() => {
-        // Debug logging - check all possible attachment fields
         const attachments = localComment.attachments || localComment.Attachments || [];
         const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
-        
-        if (hasAttachments) {
-          console.log('[CommentCard] Rendering attachments for comment', {
-            commentId: localComment.id,
-            attachmentsCount: attachments.length,
-            attachments: attachments,
-            firstAttachment: attachments[0],
-          });
-        } else {
-          console.log('[CommentCard] Comment has no attachments to render', {
-            commentId: localComment.id,
-            content: localComment.content,
-            attachments: localComment.attachments,
-            Attachments: localComment.Attachments,
-            attachmentsType: typeof localComment.attachments,
-            isArray: Array.isArray(localComment.attachments),
-            allKeys: Object.keys(localComment),
-          });
-        }
         
         if (!hasAttachments) {
           return null;
@@ -850,15 +819,6 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
                 fileType: attachment.fileType || attachment.file_type || (attachment.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'document'),
               };
               
-              console.log('[CommentCard] Rendering attachment', {
-                index,
-                original: attachment,
-                formatted: att,
-                hasFileUrl: !!att.fileUrl,
-                hasFileName: !!att.fileName,
-                fileUrl: att.fileUrl,
-              });
-              
               // Only show image if we have a valid URL and file type is image
               if (att.fileType === 'image' && att.fileUrl) {
                 return (
@@ -869,12 +829,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
                       className="attachment-image"
                       onClick={() => window.open(att.fileUrl, '_blank')}
                       onError={(e) => {
-                        // If image fails to load, show as regular file link
-                        console.error('[CommentCard] Image failed to load', { attachment: att, error: e });
                         e.target.style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log('[CommentCard] Image loaded successfully', { attachment: att });
                       }}
                     />
                     <a
@@ -1029,7 +984,34 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   // Check if user is owner: either created_by.id matches, or user has admin role in the group
   const ownerId = localGroup.createdBy?.id || localGroup.created_by?.id || localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
   const currentUserKey = currentUserId;
-  const isOwner = ownerId && currentUserKey && (ownerId === currentUserKey || ownerId?.toString() === currentUserKey?.toString());
+  // Kiểm tra owner bằng nhiều cách để đảm bảo khớp
+  const isOwner = ownerId && currentUserKey && (
+    ownerId === currentUserKey || 
+    ownerId?.toString() === currentUserKey?.toString() ||
+    String(ownerId) === String(currentUserKey) ||
+    Number(ownerId) === Number(currentUserKey)
+  );
+  
+  // Debug log để kiểm tra
+  useEffect(() => {
+    logInfo('GroupCard owner check', {
+      groupId: localGroup.id,
+      ownerId,
+      currentUserId: currentUserKey,
+      isOwner,
+      createdBy: localGroup.createdBy,
+      created_by: localGroup.created_by,
+      owner: localGroup.owner,
+      ownerIdType: typeof ownerId,
+      currentUserIdType: typeof currentUserKey,
+      comparison: {
+        strict: ownerId === currentUserKey,
+        toString: ownerId?.toString() === currentUserKey?.toString(),
+        string: String(ownerId) === String(currentUserKey),
+        number: Number(ownerId) === Number(currentUserKey),
+      }
+    });
+  }, [localGroup.id, ownerId, currentUserKey, isOwner]);
   const currentMember =
     (localGroup.members || []).find((m) => {
       const memberId = m.user?.id;
@@ -1097,52 +1079,23 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     commentsLoadedRef.current = 'loading';
     setLoadingComments(true);
     
-    logInfo('Loading comments', { groupId: localGroup.id, reset });
-    
     try {
       // Load all comments from server (no pagination parameters)
       const data = await getStudyGroupComments(localGroup.id);
-      logInfo('Comments loaded successfully', { 
-        groupId: localGroup.id, 
-        count: data.results?.length || 0,
-        totalCount: data.count,
-      });
       
       const fetchedComments = (data.results || []).map(comment => {
-        // Log raw comment data to see what we're getting
-        logInfo('Processing comment', {
-          commentId: comment.id,
-          hasAttachments: !!comment.attachments,
-          attachmentsType: typeof comment.attachments,
-          attachmentsIsArray: Array.isArray(comment.attachments),
-          attachmentsValue: comment.attachments,
-          allCommentKeys: Object.keys(comment),
-        });
         
         // Ensure attachments are properly formatted
         // Check multiple possible field names
         let attachments = comment.attachments || comment.Attachments || comment.ATTACHMENTS || [];
         
         if (!Array.isArray(attachments)) {
-          logInfo('Attachments is not an array, trying to convert', {
-            commentId: comment.id,
-            attachments,
-            attachmentsType: typeof attachments,
-          });
           attachments = [];
         }
         
         if (attachments.length > 0) {
-          logInfo('Formatting attachments for comment', {
-            commentId: comment.id,
-            attachmentsCount: attachments.length,
-            firstAttachment: attachments[0],
-            attachmentKeys: attachments[0] ? Object.keys(attachments[0]) : [],
-            rawFirstAttachment: JSON.stringify(attachments[0]),
-          });
-          
           comment.attachments = attachments.map((att, idx) => {
-            const formatted = {
+            return {
               id: att.id || att.Id || att.ID || `att-${comment.id}-${idx}`,
               fileName: att.fileName || att.file_name || att.fileName || 'Unknown',
               fileUrl: att.fileUrl || att.file_url || att.url || att.fileUrl,
@@ -1150,37 +1103,11 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
               fileSize: att.fileSize || att.file_size || 0,
               uploadedAt: att.uploadedAt || att.uploaded_at,
             };
-            
-            logInfo('Formatted attachment', {
-              index: idx,
-              original: att,
-              formatted,
-              hasFileUrl: !!formatted.fileUrl,
-              hasFileName: !!formatted.fileName,
-              fileUrlValue: formatted.fileUrl,
-            });
-            
-            return formatted;
           });
         } else {
-          logInfo('Comment has no attachments', {
-            commentId: comment.id,
-            content: comment.content,
-            attachments: comment.attachments,
-            attachmentsType: typeof comment.attachments,
-          });
           comment.attachments = [];
         }
         return comment;
-      });
-      
-      logInfo('Comments with attachments summary', {
-        totalComments: fetchedComments.length,
-        commentsWithAttachments: fetchedComments.filter(c => c.attachments?.length > 0).map(c => ({
-          id: c.id,
-          attachmentsCount: c.attachments.length,
-          attachments: c.attachments,
-        })),
       });
       
       // Store all comments
@@ -1406,28 +1333,24 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         : 'Đã đính kèm file');
       
       const comment = await createComment(localGroup.id, { content });
-      logInfo('Comment created for attachment', { comment, commentId: comment.id, commentType: typeof comment, commentKeys: Object.keys(comment || {}) });
       
       // Ensure we have a valid ID - check multiple possible formats
       commentId = comment?.id || comment?.Id || comment?.ID || comment?.data?.id || comment?.data?.Id;
       
       // Backend comment create serializer currently does not return id; fallback: fetch latest comment
       if (!commentId) {
-        logError('Comment created but no ID returned, fetching latest comment to recover id', { comment, status: comment?.status });
         try {
           const latestComments = await getStudyGroupComments(localGroup.id);
           const newest = latestComments?.results?.[0];
           if (newest?.id) {
             commentId = newest.id;
-            logInfo('Recovered commentId from latest comments', { commentId, newest });
           }
         } catch (fetchErr) {
-          logError('Failed to recover commentId by fetching comments', { error: fetchErr });
+          // Ignore error
         }
       }
       
       if (!commentId) {
-        logError('Comment created but still no ID after recovery', { comment, status: comment?.status });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
         await loadComments(true); // Reload all comments
@@ -1448,24 +1371,13 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       
       for (const fileItem of selectedFiles) {
         if (!fileItem?.file) {
-          console.error('[File Upload] Missing file object in selectedFiles item', { fileItem });
           uploadErrors.push({ fileName: '(missing)', error: new Error('Missing file object') });
           continue;
         }
         try {
           const attachment = await uploadCommentAttachment(commentId, fileItem.file);
-          logInfo('File uploaded successfully', { 
-            commentId, 
-            fileName: fileItem.file.name,
-            attachment,
-            attachmentKeys: Object.keys(attachment || {}),
-            hasFileUrl: !!attachment?.fileUrl,
-            hasFileType: !!attachment?.fileType,
-          });
           
           // Ensure attachment has all required fields
-          // Backend returns: id, file_name, file_url, file_type, file_size, uploaded_at
-          // camelCaseObject should convert to: id, fileName, fileUrl, fileType, fileSize, uploadedAt
           const formattedAttachment = {
             id: attachment.id || attachment.Id || attachment.ID,
             fileName: attachment.fileName || attachment.file_name || fileItem.file.name,
@@ -1475,17 +1387,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             uploadedAt: attachment.uploadedAt || attachment.uploaded_at || new Date().toISOString(),
           };
           
-          logInfo('Formatted attachment', { 
-            original: attachment, 
-            formatted: formattedAttachment,
-            hasFileUrl: !!formattedAttachment.fileUrl 
-          });
-          
           if (formattedAttachment.id) {
-            // Even without fileUrl, add it - fileUrl might be generated later
             uploadedAttachments.push(formattedAttachment);
-          } else {
-            logError('Attachment missing ID', { attachment, formattedAttachment });
           }
         } catch (err) {
           logError('Failed to upload file', {
@@ -1549,58 +1452,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           canDelete: comment.canDelete !== false,
         };
         
-        logInfo('Adding comment with attachments', { 
-          camelCasedResult, 
-          attachmentsCount: camelCasedResult.attachments.length,
-          uploadedAttachmentsCount: uploadedAttachments.length,
-        });
         addCommentToList(camelCasedResult);
         
-        // Fetch comment detail immediately to get attachments from server
-        // This ensures we have the correct attachments with URLs
-        (async () => {
-          try {
-            // Wait a bit for backend to process attachments
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const commentWithAttachments = await getCommentDetail(commentId);
-            
-            // Format attachments from server
-            if (commentWithAttachments.attachments && Array.isArray(commentWithAttachments.attachments) && commentWithAttachments.attachments.length > 0) {
-              const serverAttachments = commentWithAttachments.attachments.map(att => ({
-                id: att.id || att.Id || att.ID,
-                fileName: att.fileName || att.file_name || 'Unknown',
-                fileUrl: att.fileUrl || att.file_url || att.url,
-                fileType: att.fileType || att.file_type || 'document',
-                fileSize: att.fileSize || att.file_size || 0,
-                uploadedAt: att.uploadedAt || att.uploaded_at,
-              }));
-              
-              // Update the comment in the list with attachments from server
-              updateCommentInList(commentId, { attachments: serverAttachments });
-            } else {
-              // No attachments returned; keep optimistic ones
-            }
-          } catch (err) {
-            logError('Failed to fetch comment detail after upload', { commentId, error: err });
-          }
-        })();
-        
-        // If some files failed to upload, show warning but don't block
-        if (uploadErrors.length > 0 && uploadErrors.length < selectedFiles.length) {
-          showErrorDialog('Tải file chưa hoàn tất', `${uploadErrors.length} file không tải lên được. Vui lòng thử lại sau.`);
-        }
-        
         // Reload comments once after uploads complete to ensure sync with server
-        // Wait a bit for backend to process all attachments - chỉ gọi 1 lần duy nhất
         setTimeout(async () => {
-          logInfo('Reloading comments after file upload', { 
-            commentId, 
-            uploadedAttachmentsCount: uploadedAttachments.length,
-            uploadedFiles: uploadedAttachments.map(a => ({ id: a.id, fileName: a.fileName, hasUrl: !!a.fileUrl }))
-          });
           commentsLoadedRef.current = false;
-          await loadComments(true); // Reload all comments - chỉ gọi 1 lần duy nhất
+          await loadComments(true);
         }, 1500);
       }
       
@@ -1653,41 +1510,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
     // Otherwise, create comment normally
     if (!commentContent.trim()) {
-      logInfo('Comment content is empty, skipping');
       return;
     }
 
-    logInfo('Adding comment', { groupId: localGroup.id, contentLength: commentContent.length });
-    
-    let commentCreatedSuccessfully = false;
-    
     try {
       const result = await createComment(localGroup.id, { content: commentContent });
-      commentCreatedSuccessfully = true;
-      
-      logInfo('Comment API response', { 
-        groupId: localGroup.id, 
-        result, 
-        resultType: typeof result, 
-        resultKeys: Object.keys(result || {}),
-        hasId: !!result?.id,
-        hasData: !!result?.data,
-        stringified: JSON.stringify(result).substring(0, 200)
-      });
       
       // Ensure we have a valid ID - check multiple possible formats
       const commentId = result?.id || result?.Id || result?.ID || result?.data?.id || result?.data?.Id;
       
       if (!commentId) {
-        logError('Comment created but no ID returned - reloading comments', { 
-          result, 
-          status: result?.status, 
-          response: result,
-          stringified: JSON.stringify(result)
-        });
         // Even if no ID, try to reload comments to get the new comment from server
         commentsLoadedRef.current = false;
-        await loadComments(true); // Reload all comments
+        await loadComments(true);
         setCommentContent('');
         setShowComments(true);
         return;
@@ -1708,14 +1543,12 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         canDelete: result.canDelete !== false,
       };
       
-      logInfo('Adding comment to list', { camelCasedResult });
       addCommentToList(camelCasedResult);
       
       // Reload comments after a short delay to ensure sync with server
-      // Chỉ reload 1 lần sau khi đăng thành công
       setTimeout(async () => {
         commentsLoadedRef.current = false;
-        await loadComments(true); // Reload all comments - chỉ gọi 1 lần
+        await loadComments(true);
       }, 500);
       
       setCommentContent('');
@@ -1724,44 +1557,26 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       const httpStatus = err.response?.status;
       const errorData = err.response?.data;
       
-      logError('Error adding comment', {
-        groupId: localGroup.id,
-        error: errorData,
-        status: httpStatus,
-        message: err.message,
-        commentCreatedSuccessfully,
-        fullError: err,
-        errorString: JSON.stringify(err).substring(0, 300),
-      });
-      
-      // If we got here, the API call completed (either success or error)
-      // Check if comment was actually created (status 201 or 200)
-      // Sometimes API returns error but comment is still created
-      if (httpStatus === 201 || httpStatus === 200 || commentCreatedSuccessfully) {
-        // Comment was created, just reload to get it
-        logInfo('Comment was created (status 201/200 or flag set) despite error, reloading comments');
+      // If comment was created (status 201 or 200), reload to get it
+      if (httpStatus === 201 || httpStatus === 200) {
         commentsLoadedRef.current = false;
-        await loadComments(true); // Reload all comments
+        await loadComments(true);
         setCommentContent('');
         setShowComments(true);
       } else {
-        // Check if error response contains comment data (some APIs return error with data)
+        // Check if error response contains comment data
         const commentInError = errorData?.id || errorData?.Id || errorData?.ID;
         if (commentInError) {
-          logInfo('Comment data found in error response, reloading comments');
           commentsLoadedRef.current = false;
           await loadComments(true);
           setCommentContent('');
           setShowComments(true);
         } else {
-          // Only show error if we're sure comment wasn't created
-          // But still try to reload in case it was created
-          logInfo('Uncertain if comment was created, reloading comments to check');
+          // Try to reload in case it was created
           commentsLoadedRef.current = false;
           await loadComments(true);
           setCommentContent('');
           setShowComments(true);
-          // Don't show alert - let user see if comment appears after reload
         }
       }
     }
@@ -1985,60 +1800,66 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
             data-debug-can-delete={canDelete ? 'true' : 'false'}
             data-debug-can-manage={canManageMembers ? 'true' : 'false'}
           >
-            {showGroupMenu && (
-              <div className="group-menu-inline">
-                {canEdit && (
-                  <Button
-                    size="sm"
-                    variant="outline-primary"
-                    onClick={() => setShowEditGroup(true)}
-                  >
-                    <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa nhóm
-                  </Button>
-                )}
-                {canDelete && (
-                  <Button
-                    size="sm"
-                    variant="outline-danger"
-                    onClick={() => {
-                      openConfirmDialog({
-                        title: 'Xóa nhóm học tập',
-                        message: 'Bạn có chắc muốn xóa nhóm này?',
-                        confirmText: 'Xóa nhóm',
-                        onConfirm: async () => {
-                          const groupId = localGroup.id;
-                          
-                          // Optimistic update: remove from UI immediately
-                          if (onGroupDeleted) {
-                            onGroupDeleted(groupId);
-                          }
-                          
-                          try {
-                            await deleteStudyGroup(groupId);
-                            logInfo('Group deleted successfully', { groupId });
-                            // Remove from list immediately (already done optimistically above)
-                            // Also trigger refresh to sync with server
-                            if (onUpdate) onUpdate();
-                          } catch (err) {
-                            logError('Failed to delete group', {
-                              groupId,
-                              error: err.response?.data,
-                              status: err.response?.status,
-                              message: err.message,
-                            });
-                            showErrorDialog('Không thể xóa nhóm', 'Vui lòng thử lại.');
-                            // Revert on error - reload groups to restore deleted group
-                            if (onUpdate) onUpdate();
-                          }
-                        },
-                      });
-                    }}
-                  >
-                    <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa nhóm
-                  </Button>
-                )}
+            {/* Debug info */}
+            {process.env.NODE_ENV === 'development' && (
+              <div style={{ fontSize: '10px', color: 'red', marginBottom: '5px' }}>
+                Debug: isOwner={String(isOwner)}, canEdit={String(canEdit)}, canDelete={String(canDelete)}, showGroupMenu={String(showGroupMenu)}, isMember={String(isMember)}
               </div>
             )}
+            
+            {/* Nút cho trưởng nhóm */}
+            {isOwner && (
+              <div className="group-menu-inline">
+                <Button
+                  size="sm"
+                  variant="outline-primary"
+                  onClick={() => setShowEditGroup(true)}
+                >
+                  <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa nhóm
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline-danger"
+                  onClick={() => {
+                    openConfirmDialog({
+                      title: 'Xóa nhóm học tập',
+                      message: 'Bạn có chắc muốn xóa nhóm này?',
+                      confirmText: 'Xóa nhóm',
+                      onConfirm: async () => {
+                        const groupId = localGroup.id;
+                        
+                        // Optimistic update: remove from UI immediately
+                        if (onGroupDeleted) {
+                          onGroupDeleted(groupId);
+                        }
+                        
+                        try {
+                          await deleteStudyGroup(groupId);
+                          logInfo('Group deleted successfully', { groupId });
+                          // Remove from list immediately (already done optimistically above)
+                          // Also trigger refresh to sync with server
+                          if (onUpdate) onUpdate();
+                        } catch (err) {
+                          logError('Failed to delete group', {
+                            groupId,
+                            error: err.response?.data,
+                            status: err.response?.status,
+                            message: err.message,
+                          });
+                          showErrorDialog('Không thể xóa nhóm', 'Vui lòng thử lại.');
+                          // Revert on error - reload groups to restore deleted group
+                          if (onUpdate) onUpdate();
+                        }
+                      },
+                    });
+                  }}
+                >
+                  <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa nhóm
+                </Button>
+              </div>
+            )}
+            
+            {/* Nút cho thành viên (không phải trưởng nhóm) */}
             {isMember && !isOwner && (
               <Button
                 size="sm"
