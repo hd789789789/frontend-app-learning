@@ -850,17 +850,16 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
     setEditContent(comment.content);
   }, [comment.content]);
 
-  const commentOwnerId = comment.user?.id || comment.userId || comment.user_id;
   const currentUser = getAuthenticatedUser();
-  const currentUserKey = currentUserId || currentUser?.id;
+  const currentUserKey = currentUserId || currentUser?.id || currentUser?.username;
+  const commentOwnerId = comment.user?.id || comment.userId || comment.user_id || comment.user?.username || comment.user?.email;
   
-  // Check if user can edit/delete - check both canEdit/canDelete flags and ownership
-  const isOwner = (
+  // Check if user can edit/delete - allow match by id OR username/email to avoid type mismatch
+  const isOwner = Boolean(
     commentOwnerId && currentUserKey && (
       commentOwnerId === currentUserKey ||
-      commentOwnerId?.toString() === currentUserKey?.toString() ||
-      String(commentOwnerId) === String(currentUserKey) ||
-      Number(commentOwnerId) === Number(currentUserKey)
+      commentOwnerId?.toString?.() === currentUserKey?.toString?.() ||
+      String(commentOwnerId) === String(currentUserKey)
     )
   );
   
@@ -955,47 +954,44 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
           </span>
           {showMenu && (
             <div style={{ marginLeft: 'auto', position: 'relative' }}>
-              <Dropdown id={`comment-menu-${comment.id}`}>
-                <Dropdown.Toggle
-                  variant="link"
-                  size="sm"
-                  className="comment-menu-toggle"
-                  disabled={loading}
-                  style={{
-                    padding: '0.25rem',
-                    minWidth: 'auto',
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#65676b',
-                    boxShadow: 'none',
-                  }}
-                  title="Tùy chọn"
-                >
-                  <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
-                </Dropdown.Toggle>
-                <Dropdown.Menu className="comment-dropdown-menu">
-                  {Boolean(canEdit) && (
-                    <Dropdown.Item
-                      onClick={() => setIsEditing(true)}
-                      disabled={loading}
-                      className="comment-menu-item"
-                    >
-                      <span className="fa fa-edit me-2" aria-hidden="true" />
-                      Sửa bình luận
-                    </Dropdown.Item>
-                  )}
-                  {Boolean(canDelete) && (
-                    <Dropdown.Item
-                      onClick={handleDelete}
-                      disabled={loading}
-                      className="comment-menu-item comment-menu-item-danger"
-                    >
-                      <span className="fa fa-trash me-2" aria-hidden="true" />
-                      Xóa bình luận
-                    </Dropdown.Item>
-                  )}
-                </Dropdown.Menu>
-              </Dropdown>
+              <DropdownButton
+                id={`comment-menu-${comment.id}`}
+                variant="link"
+                size="sm"
+                align="end"
+                className="comment-menu-toggle"
+                disabled={loading}
+                style={{
+                  padding: '0.25rem',
+                  minWidth: 'auto',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#65676b',
+                  boxShadow: 'none',
+                }}
+                title={<span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>}
+              >
+                {Boolean(canEdit) && (
+                  <Dropdown.Item
+                    onClick={() => setIsEditing(true)}
+                    disabled={loading}
+                    className="comment-menu-item"
+                  >
+                    <span className="fa fa-edit me-2" aria-hidden="true" />
+                    Sửa bình luận
+                  </Dropdown.Item>
+                )}
+                {Boolean(canDelete) && (
+                  <Dropdown.Item
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="comment-menu-item comment-menu-item-danger"
+                  >
+                    <span className="fa fa-trash me-2" aria-hidden="true" />
+                    Xóa bình luận
+                  </Dropdown.Item>
+                )}
+              </DropdownButton>
             </div>
           )}
         </div>
@@ -1235,47 +1231,44 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
         
         {(Boolean(canEdit) || Boolean(canDelete)) && (
           <div style={{ marginLeft: 'auto', position: 'relative' }}>
-            <Dropdown id={`post-menu-${localComment.id}`}>
-              <Dropdown.Toggle
-                variant="link"
-                size="sm"
-                className="comment-menu-toggle"
-                disabled={loading}
-                style={{
-                  padding: '0.25rem',
-                  minWidth: 'auto',
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#65676b',
-                  boxShadow: 'none',
-                }}
-                title="Tùy chọn"
-              >
-                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
-              </Dropdown.Toggle>
-              <Dropdown.Menu className="comment-dropdown-menu">
-                {Boolean(canEdit) && (
-                  <Dropdown.Item
-                    onClick={() => setIsEditing(true)}
-                    disabled={loading}
-                    className="comment-menu-item"
-                  >
-                    <span className="fa fa-edit me-2" aria-hidden="true" />
-                    Sửa bài đăng
-                  </Dropdown.Item>
-                )}
-                {Boolean(canDelete) && (
-                  <Dropdown.Item
-                    onClick={handleDelete}
-                    disabled={loading}
-                    className="comment-menu-item comment-menu-item-danger"
-                  >
-                    <span className="fa fa-trash me-2" aria-hidden="true" />
-                    Xóa bài đăng
-                  </Dropdown.Item>
-                )}
-              </Dropdown.Menu>
-            </Dropdown>
+            <DropdownButton
+              id={`post-menu-${localComment.id}`}
+              variant="link"
+              size="sm"
+              align="end"
+              className="comment-menu-toggle"
+              disabled={loading}
+              style={{
+                padding: '0.25rem',
+                minWidth: 'auto',
+                border: 'none',
+                background: 'transparent',
+                color: '#65676b',
+                boxShadow: 'none',
+              }}
+              title={<span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>}
+            >
+              {Boolean(canEdit) && (
+                <Dropdown.Item
+                  onClick={() => setIsEditing(true)}
+                  disabled={loading}
+                  className="comment-menu-item"
+                >
+                  <span className="fa fa-edit me-2" aria-hidden="true" />
+                  Sửa bài đăng
+                </Dropdown.Item>
+              )}
+              {Boolean(canDelete) && (
+                <Dropdown.Item
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="comment-menu-item comment-menu-item-danger"
+                >
+                  <span className="fa fa-trash me-2" aria-hidden="true" />
+                  Xóa bài đăng
+                </Dropdown.Item>
+              )}
+            </DropdownButton>
           </div>
         )}
       </div>

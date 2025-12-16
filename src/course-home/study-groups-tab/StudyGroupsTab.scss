@@ -71,6 +71,8 @@
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   transition: box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+  overflow: visible;
 
   &:hover {
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
@@ -391,6 +393,7 @@
   border-radius: 0;
   background: transparent;
   padding: 0;
+  position: relative;
 }
 
 .create-post-box {
@@ -1052,6 +1055,7 @@ button.remove-file-btn {
   margin-top: 0.5rem;
   background: #ffffff;
   overflow: hidden;
+  z-index: 1050;
   
   .dropdown-item {
     padding: 0.625rem 1rem;
