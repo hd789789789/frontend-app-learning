@@ -667,18 +667,31 @@ const PostCommentsSection = ({ post, group, currentUserId, onCommentUpdate, onCo
         userData.id = currentUser.id;
       }
 
+      // Determine if current user is the owner
+      const commentUserId = userData.id || userData.Id || userData.ID || currentUser?.id;
+      const isCommentOwner = commentUserId && currentUser?.id && (
+        commentUserId === currentUser.id ||
+        commentUserId?.toString() === currentUser.id?.toString() ||
+        String(commentUserId) === String(currentUser.id)
+      );
+
       const newComment = {
         id: camelCasedResult.id || camelCasedResult.Id || camelCasedResult.ID,
         content: camelCasedResult.content || commentText,
         user: {
-          id: userData.id || userData.Id || userData.ID || currentUser?.id,
+          id: commentUserId,
           username: userData.username || userData.email || currentUser?.username || currentUser?.email || 'Người dùng',
           email: userData.email || currentUser?.email,
         },
         createdAt: camelCasedResult.createdAt || camelCasedResult.created_at || new Date().toISOString(),
         updatedAt: camelCasedResult.updatedAt || camelCasedResult.updated_at,
-        canEdit: camelCasedResult.canEdit !== undefined ? camelCasedResult.canEdit : true,
-        canDelete: camelCasedResult.canDelete !== undefined ? camelCasedResult.canDelete : true,
+        // Set canEdit/canDelete based on backend response or ownership
+        canEdit: camelCasedResult.canEdit !== undefined 
+          ? camelCasedResult.canEdit 
+          : (isCommentOwner || true), // Default to true for new comments by current user
+        canDelete: camelCasedResult.canDelete !== undefined
+          ? camelCasedResult.canDelete
+          : (isCommentOwner || true), // Default to true for new comments by current user
         attachments: camelCasedResult.attachments || [],
         reactions: camelCasedResult.reactions || [],
         reactionCounts: camelCasedResult.reactionCounts || camelCasedResult.reaction_counts || {},
@@ -913,6 +926,9 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
   const userColor = userId ? getAvatarColor(userId) : '#6c5ce7';
   const userInitials = getInitials(username);
 
+  // Ensure canEdit and canDelete are boolean
+  const showMenu = Boolean(canEdit || canDelete);
+
   return (
     <div className="comment-item" style={{ 
       display: 'flex', 
@@ -937,9 +953,9 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
           <span style={{ color: '#7a8396', fontSize: '0.85rem' }}>
             {formatDate(comment.createdAt || comment.created_at)}
           </span>
-          {(canEdit || canDelete) && (
+          {showMenu && (
             <div style={{ marginLeft: 'auto', position: 'relative' }}>
-              <Dropdown>
+              <Dropdown id={`comment-menu-${comment.id}`}>
                 <Dropdown.Toggle
                   variant="link"
                   size="sm"
@@ -953,29 +969,30 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
                     color: '#65676b',
                     boxShadow: 'none',
                   }}
+                  title="Tùy chọn"
                 >
                   <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="comment-dropdown-menu">
-                  {canEdit && (
-                    <DropdownItem
+                  {Boolean(canEdit) && (
+                    <Dropdown.Item
                       onClick={() => setIsEditing(true)}
                       disabled={loading}
                       className="comment-menu-item"
                     >
                       <span className="fa fa-edit me-2" aria-hidden="true" />
                       Sửa bình luận
-                    </DropdownItem>
+                    </Dropdown.Item>
                   )}
-                  {canDelete && (
-                    <DropdownItem
+                  {Boolean(canDelete) && (
+                    <Dropdown.Item
                       onClick={handleDelete}
                       disabled={loading}
                       className="comment-menu-item comment-menu-item-danger"
                     >
                       <span className="fa fa-trash me-2" aria-hidden="true" />
                       Xóa bình luận
-                    </DropdownItem>
+                    </Dropdown.Item>
                   )}
                 </Dropdown.Menu>
               </Dropdown>
@@ -1216,9 +1233,9 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           </div>
         )}
         
-        {(canEdit || canDelete) && (
+        {(Boolean(canEdit) || Boolean(canDelete)) && (
           <div style={{ marginLeft: 'auto', position: 'relative' }}>
-            <Dropdown>
+            <Dropdown id={`post-menu-${localComment.id}`}>
               <Dropdown.Toggle
                 variant="link"
                 size="sm"
@@ -1232,29 +1249,30 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
                   color: '#65676b',
                   boxShadow: 'none',
                 }}
+                title="Tùy chọn"
               >
                 <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
               </Dropdown.Toggle>
               <Dropdown.Menu className="comment-dropdown-menu">
-                {canEdit && (
-                  <DropdownItem
+                {Boolean(canEdit) && (
+                  <Dropdown.Item
                     onClick={() => setIsEditing(true)}
                     disabled={loading}
                     className="comment-menu-item"
                   >
                     <span className="fa fa-edit me-2" aria-hidden="true" />
                     Sửa bài đăng
-                  </DropdownItem>
+                  </Dropdown.Item>
                 )}
-                {canDelete && (
-                  <DropdownItem
+                {Boolean(canDelete) && (
+                  <Dropdown.Item
                     onClick={handleDelete}
                     disabled={loading}
                     className="comment-menu-item comment-menu-item-danger"
                   >
                     <span className="fa fa-trash me-2" aria-hidden="true" />
                     Xóa bài đăng
-                  </DropdownItem>
+                  </Dropdown.Item>
                 )}
               </Dropdown.Menu>
             </Dropdown>

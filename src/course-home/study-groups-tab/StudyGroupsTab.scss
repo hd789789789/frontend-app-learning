@@ -1,9 +1,9 @@
 .study-groups-tab {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 1.5rem 0 2rem;
+  padding: 1.75rem 0 2.25rem;
   color: #1f2430;
-  background: #f0f2f5;
+  background: #f5f6fa;
   min-height: 100vh;
 }
 
@@ -43,7 +43,7 @@
 }
 
 .panel {
-  margin-top: 0;
+  margin-top: 0.75rem;
   background: transparent;
   border-radius: 0;
   padding: 0 1rem;
@@ -61,19 +61,20 @@
 
 .group-list {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.35rem;
 }
 
 .group-card {
-  border: none;
+  border: 1px solid #e9ecf3;
   border-radius: 12px;
   padding: 1.25rem;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
   }
 
   &.collapsed .group-subtitle,
@@ -993,6 +994,7 @@ button.remove-file-btn {
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.2s;
+  position: relative;
   
   &:hover {
     background: #f0f2f5 !important;
@@ -1007,14 +1009,38 @@ button.remove-file-btn {
     background: #e4e6eb !important;
   }
   
-  &::after {
-    display: none;
+  // Bỏ mũi tên dropdown - tất cả các cách
+  &::after,
+  &::before {
+    display: none !important;
+    content: none !important;
+  }
+  
+  // Bỏ mũi tên từ Bootstrap/Paragon
+  &.dropdown-toggle::after,
+  &.dropdown-toggle::before {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
   span {
     font-weight: 600;
     letter-spacing: -1px;
+    display: block;
   }
+}
+
+// Global override để bỏ mũi tên cho tất cả dropdown toggle trong comment section
+.comment-item .dropdown-toggle::after,
+.post-header .dropdown-toggle::after {
+  display: none !important;
+  content: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .comment-dropdown-menu {
