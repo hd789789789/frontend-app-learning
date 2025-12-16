@@ -640,37 +640,63 @@ const PostCommentsSection = ({ post, group, currentUserId, onCommentUpdate, onCo
     if (!commentContent.trim()) return;
 
     setLoading(true);
-    const tempId = `temp-${Date.now()}`;
-    const tempComment = {
-      id: tempId,
-      content: commentContent,
-      user: currentUser,
-      createdAt: new Date().toISOString(),
-      canEdit: true,
-      canDelete: true,
-      attachments: [],
-      reactions: [],
-      reactionCounts: {},
-    };
-
-    // Optimistic update
-    setReplies((prev) => [...prev, tempComment]);
-    setCommentContent('');
+    const commentText = commentContent.trim();
+    setCommentContent(''); // Clear input immediately
 
     try {
       const result = await createComment(group.id, {
-        content: commentContent,
+        content: commentText,
         parent_comment: post.id,
       });
 
-      // Replace temp comment with real one
-      setReplies((prev) => prev.map((c) => (c.id === tempId ? result : c)));
+      logInfo('Comment created successfully', {
+        postId: post.id,
+        result,
+        resultUser: result.user,
+      });
+
+      // Ensure result has proper format - use camelCaseObject if needed
+      const camelCasedResult = result;
+      const userData = camelCasedResult.user || {};
+      
+      // Ensure user object has username
+      if (!userData.username && currentUser?.username) {
+        userData.username = currentUser.username;
+      }
+      if (!userData.id && currentUser?.id) {
+        userData.id = currentUser.id;
+      }
+
+      const newComment = {
+        id: camelCasedResult.id || camelCasedResult.Id || camelCasedResult.ID,
+        content: camelCasedResult.content || commentText,
+        user: {
+          id: userData.id || userData.Id || userData.ID || currentUser?.id,
+          username: userData.username || userData.email || currentUser?.username || currentUser?.email || 'Người dùng',
+          email: userData.email || currentUser?.email,
+        },
+        createdAt: camelCasedResult.createdAt || camelCasedResult.created_at || new Date().toISOString(),
+        updatedAt: camelCasedResult.updatedAt || camelCasedResult.updated_at,
+        canEdit: camelCasedResult.canEdit !== undefined ? camelCasedResult.canEdit : true,
+        canDelete: camelCasedResult.canDelete !== undefined ? camelCasedResult.canDelete : true,
+        attachments: camelCasedResult.attachments || [],
+        reactions: camelCasedResult.reactions || [],
+        reactionCounts: camelCasedResult.reactionCounts || camelCasedResult.reaction_counts || {},
+        replies: [],
+        repliesCount: 0,
+      };
+
+      logInfo('Formatted new comment', { newComment, user: newComment.user });
+
+      // Add new comment to replies
+      setReplies((prev) => [...prev, newComment]);
       
       // Update post's replies count
       if (onCommentUpdate) {
+        const updatedReplies = [...replies, newComment];
         onCommentUpdate(post.id, {
-          replies: [...replies, result],
-          repliesCount: (post.repliesCount || 0) + 1,
+          replies: updatedReplies,
+          repliesCount: updatedReplies.length,
         });
       }
     } catch (err) {
@@ -681,8 +707,8 @@ const PostCommentsSection = ({ post, group, currentUserId, onCommentUpdate, onCo
         message: err.message,
       });
       
-      // Remove temp comment on error
-      setReplies((prev) => prev.filter((c) => c.id !== tempId));
+      // Restore comment content on error
+      setCommentContent(commentText);
       showErrorDialog('Không thể thêm bình luận', err.response?.data?.error || 'Vui lòng thử lại.');
     } finally {
       setLoading(false);
@@ -812,8 +838,26 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
   }, [comment.content]);
 
   const commentOwnerId = comment.user?.id || comment.userId || comment.user_id;
-  const canEdit = comment.canEdit !== false && commentOwnerId === currentUserId;
-  const canDelete = comment.canDelete !== false && commentOwnerId === currentUserId;
+  const currentUser = getAuthenticatedUser();
+  const currentUserKey = currentUserId || currentUser?.id;
+  
+  // Check if user can edit/delete - check both canEdit/canDelete flags and ownership
+  const isOwner = (
+    commentOwnerId && currentUserKey && (
+      commentOwnerId === currentUserKey ||
+      commentOwnerId?.toString() === currentUserKey?.toString() ||
+      String(commentOwnerId) === String(currentUserKey) ||
+      Number(commentOwnerId) === Number(currentUserKey)
+    )
+  );
+  
+  // Use canEdit/canDelete from backend if available, otherwise check ownership
+  const canEdit = comment.canEdit !== undefined 
+    ? (comment.canEdit && isOwner)
+    : isOwner;
+  const canDelete = comment.canDelete !== undefined
+    ? (comment.canDelete && isOwner)
+    : isOwner;
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -862,8 +906,12 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
     });
   };
 
-  const userColor = comment.user?.id ? getAvatarColor(comment.user.id) : '#6c5ce7';
-  const userInitials = getInitials(comment.user?.username || comment.user?.email || 'U');
+  // Get user info with fallbacks
+  const userInfo = comment.user || {};
+  const username = userInfo.username || userInfo.email || 'Người dùng đã xóa';
+  const userId = userInfo.id || comment.userId || comment.user_id;
+  const userColor = userId ? getAvatarColor(userId) : '#6c5ce7';
+  const userInitials = getInitials(username);
 
   return (
     <div className="comment-item" style={{ 
@@ -882,37 +930,55 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
         {userInitials}
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
-            {comment.user?.username || 'Người dùng đã xóa'}
+            {username}
           </span>
           <span style={{ color: '#7a8396', fontSize: '0.85rem' }}>
-            {formatDate(comment.createdAt)}
+            {formatDate(comment.createdAt || comment.created_at)}
           </span>
           {(canEdit || canDelete) && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-              {canEdit && (
-                <Button
-                  size="sm"
+            <div style={{ marginLeft: 'auto', position: 'relative' }}>
+              <Dropdown>
+                <Dropdown.Toggle
                   variant="link"
-                  onClick={() => setIsEditing(true)}
-                  disabled={loading}
-                  style={{ padding: 0, fontSize: '0.85rem' }}
-                >
-                  Sửa
-                </Button>
-              )}
-              {canDelete && (
-                <Button
                   size="sm"
-                  variant="link"
-                  onClick={handleDelete}
+                  className="comment-menu-toggle"
                   disabled={loading}
-                  style={{ padding: 0, fontSize: '0.85rem', color: '#d9534f' }}
+                  style={{
+                    padding: '0.25rem',
+                    minWidth: 'auto',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#65676b',
+                    boxShadow: 'none',
+                  }}
                 >
-                  Xóa
-                </Button>
-              )}
+                  <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="comment-dropdown-menu">
+                  {canEdit && (
+                    <DropdownItem
+                      onClick={() => setIsEditing(true)}
+                      disabled={loading}
+                      className="comment-menu-item"
+                    >
+                      <span className="fa fa-edit me-2" aria-hidden="true" />
+                      Sửa bình luận
+                    </DropdownItem>
+                  )}
+                  {canDelete && (
+                    <DropdownItem
+                      onClick={handleDelete}
+                      disabled={loading}
+                      className="comment-menu-item comment-menu-item-danger"
+                    >
+                      <span className="fa fa-trash me-2" aria-hidden="true" />
+                      Xóa bình luận
+                    </DropdownItem>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
             </div>
           )}
         </div>
@@ -1151,27 +1217,47 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
         )}
         
         {(canEdit || canDelete) && (
-          <div className="comment-menu-inline">
-            {canEdit && (
-              <Button
+          <div style={{ marginLeft: 'auto', position: 'relative' }}>
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="link"
                 size="sm"
-                variant="outline-primary"
-                onClick={() => setIsEditing(true)}
+                className="comment-menu-toggle"
                 disabled={loading}
+                style={{
+                  padding: '0.25rem',
+                  minWidth: 'auto',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#65676b',
+                  boxShadow: 'none',
+                }}
               >
-                <span className="fa fa-edit me-1" aria-hidden="true" /> Sửa
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                size="sm"
-                variant="outline-danger"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                <span className="fa fa-trash me-1" aria-hidden="true" /> Xóa
-              </Button>
-            )}
+                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⋯</span>
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="comment-dropdown-menu">
+                {canEdit && (
+                  <DropdownItem
+                    onClick={() => setIsEditing(true)}
+                    disabled={loading}
+                    className="comment-menu-item"
+                  >
+                    <span className="fa fa-edit me-2" aria-hidden="true" />
+                    Sửa bài đăng
+                  </DropdownItem>
+                )}
+                {canDelete && (
+                  <DropdownItem
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="comment-menu-item comment-menu-item-danger"
+                  >
+                    <span className="fa fa-trash me-2" aria-hidden="true" />
+                    Xóa bài đăng
+                  </DropdownItem>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
           </div>
         )}
       </div>
@@ -2535,9 +2621,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       border: 'none',
                       color: '#ffffff',
                       fontWeight: '600',
-                      padding: '0.75rem 1.5rem',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 12px rgba(108, 92, 231, 0.3)',
                     }}
                   >
                     <span className="fa fa-comments me-2" aria-hidden="true" />
@@ -2551,7 +2634,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                     <div className="user-avatar">
                       {getAuthenticatedUser()?.username?.substring(0, 2).toUpperCase() || 'U'}
                     </div>
-                    <textarea
+                    <FormControl
+                      as="textarea"
                       className="create-post-textarea"
                       placeholder="Chia sẻ suy nghĩ của bạn với nhóm..."
                       rows="2"
