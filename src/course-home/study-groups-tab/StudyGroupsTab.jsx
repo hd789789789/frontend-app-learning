@@ -1216,33 +1216,38 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
   // Helper functions to update comments state without reloading
   const updateCommentInList = useCallback((commentId, updatedData) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) => {
+    setAllComments((prevComments) => {
+      const updated = prevComments.map((comment) => {
         if (comment.id === commentId) {
-          // Deep merge to handle nested objects like reactionCounts
+          // Deep merge để giữ lại các field lồng như reactionCounts
           return {
             ...comment,
             ...updatedData,
-            // Preserve nested objects if not explicitly updated
-            reactionCounts: updatedData.reactionCounts !== undefined 
-              ? updatedData.reactionCounts 
+            reactionCounts: updatedData.reactionCounts !== undefined
+              ? updatedData.reactionCounts
               : comment.reactionCounts,
-            attachments: updatedData.attachments !== undefined 
-              ? updatedData.attachments 
+            attachments: updatedData.attachments !== undefined
+              ? updatedData.attachments
               : comment.attachments,
-            reactions: updatedData.reactions !== undefined 
-              ? updatedData.reactions 
+            reactions: updatedData.reactions !== undefined
+              ? updatedData.reactions
               : comment.reactions,
           };
         }
         return comment;
-      })
-    );
-  }, []);
+      });
+
+      const currentLimit = displayLimit || 5;
+      setDisplayedComments(updated.slice(0, currentLimit));
+      setHasMoreComments(updated.length > currentLimit);
+
+      return updated;
+    });
+  }, [displayLimit]);
 
   const updateCommentReaction = useCallback((commentId, reactionType, reactionCounts) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) => {
+    setAllComments((prevComments) => {
+      const updated = prevComments.map((comment) => {
         if (comment.id === commentId) {
           const currentUser = getAuthenticatedUser();
           const newUserReaction = reactionType || null;
@@ -1275,9 +1280,15 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           };
         }
         return comment;
-      })
-    );
-  }, []);
+      });
+
+      const currentLimit = displayLimit || 5;
+      setDisplayedComments(updated.slice(0, currentLimit));
+      setHasMoreComments(updated.length > currentLimit);
+
+      return updated;
+    });
+  }, [displayLimit]);
 
   const removeCommentFromList = useCallback((commentId) => {
     setAllComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
@@ -1692,7 +1703,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       return;
     }
 
-    const targetId = currentUserId;
+    // Prefer numeric user id from membership to call API
+    const targetId = currentMember?.user_id || currentMember?.user?.id || currentUserId;
     if (!targetId) {
       alert('Không thể xác định người dùng hiện tại.');
       return;
