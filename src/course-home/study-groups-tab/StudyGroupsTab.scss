@@ -851,7 +851,7 @@
 
 .attachment-image {
   max-width: 100%;
-  max-height: 400px;
+  max-height: 800px;
   border-radius: 8px;
   border: 1px solid #e5e7f0;
   cursor: pointer;
@@ -1047,7 +1047,9 @@ button.remove-file-btn {
 }
 
 .comment-dropdown-menu {
-  min-width: 200px;
+  min-width: auto;
+  width: max-content;
+  max-width: 260px;
   padding: 0.5rem 0;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
@@ -1056,6 +1058,7 @@ button.remove-file-btn {
   background: #ffffff;
   overflow: hidden;
   z-index: 200000 !important;
+  white-space: nowrap;
   
   .dropdown-item {
     padding: 0.625rem 1rem;
@@ -1122,5 +1125,90 @@ button.remove-file-btn {
   position: relative;
   overflow: visible;
   z-index: 1;
+}
+
+// Mobile tweaks
+@media (max-width: 768px) {
+  .study-groups-tab {
+    padding: 1.1rem 0 2rem;
+  }
+
+  .panel {
+    padding: 0 0.5rem;
+  }
+
+  .groups-header {
+    padding: 0 0.5rem;
+    h2 {
+      font-size: 1.4rem;
+    }
+    .btn {
+      padding: 0.55rem 1rem;
+      font-size: 0.95rem;
+    }
+  }
+
+  .group-list {
+    gap: 1rem;
+  }
+
+  .group-card {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .group-header {
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .group-collapse-toggle {
+    width: 26px;
+    height: 26px;
+    font-size: 0.8rem;
+  }
+
+  .group-stats {
+    font-size: 0.82rem;
+    gap: 0.7rem;
+  }
+
+  .group-menu-inline .btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .members-block {
+    margin: 0.8rem 0;
+  }
+
+  .member-row {
+    padding: 0.55rem;
+  }
+
+  .member-name {
+    font-size: 0.9rem;
+  }
+
+  .member-sub {
+    font-size: 0.8rem;
+  }
+
+  .discussion-actions .btn-primary {
+    font-size: 0.9rem;
+  }
+
+  .create-post-box {
+    padding: 0.85rem;
+  }
+
+  .create-post-textarea {
+    font-size: 0.92rem;
+    min-height: 38px;
+  }
+
+  .comment-dropdown-menu {
+    max-width: 220px;
+  }
 }
 

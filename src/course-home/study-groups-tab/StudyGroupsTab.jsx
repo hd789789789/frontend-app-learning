@@ -1309,7 +1309,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           )}
 
           {/* Add new attachment while editing */}
-          <div className="d-flex align-items-center gap-2 mt-2 flex-wrap">
+          <div className="d-flex align-items-center gap-2 mt-2 flex-wrap" style="gap: 5px;">
             <label className="post-action-btn" title="Thêm ảnh mới">
               📷
               <input
@@ -3110,7 +3110,7 @@ const StudyGroupsTab = () => {
   }, [courseId]);
 
   return (
-    <Container className="study-groups-tab px-0">
+    <Container className="study-groups-tab px-0" style="padding-right: 15px !important;">
       <Row>
         <Col lg={8} md={12}>
           <div className="groups-header">
