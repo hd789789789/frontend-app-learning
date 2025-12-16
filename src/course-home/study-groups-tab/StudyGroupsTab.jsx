@@ -598,6 +598,361 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
   );
 };
 
+// Post Comments Section Component - Displays comments under a post
+const PostCommentsSection = ({ post, group, currentUserId, onCommentUpdate, onCommentDelete, openConfirmDialog, showErrorDialog }) => {
+  const repliesCount = post.repliesCount || post.replies_count || (post.replies ? post.replies.length : 0);
+  const initialReplies = post.replies || [];
+  const [showComments, setShowComments] = useState(repliesCount > 0);
+  const [replies, setReplies] = useState(initialReplies);
+  const [commentContent, setCommentContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const currentUser = getAuthenticatedUser();
+
+  useEffect(() => {
+    // Update replies when post changes
+    const newReplies = post.replies || [];
+    setReplies(newReplies);
+    // Auto-show comments if there are replies
+    if (newReplies.length > 0) {
+      setShowComments(true);
+    }
+  }, [post.replies, post.repliesCount]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Vừa xong';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Vừa xong';
+
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'Vừa xong';
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days < 7) return `${days} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  const handleAddComment = async () => {
+    if (!commentContent.trim()) return;
+
+    setLoading(true);
+    const tempId = `temp-${Date.now()}`;
+    const tempComment = {
+      id: tempId,
+      content: commentContent,
+      user: currentUser,
+      createdAt: new Date().toISOString(),
+      canEdit: true,
+      canDelete: true,
+      attachments: [],
+      reactions: [],
+      reactionCounts: {},
+    };
+
+    // Optimistic update
+    setReplies((prev) => [...prev, tempComment]);
+    setCommentContent('');
+
+    try {
+      const result = await createComment(group.id, {
+        content: commentContent,
+        parent_comment: post.id,
+      });
+
+      // Replace temp comment with real one
+      setReplies((prev) => prev.map((c) => (c.id === tempId ? result : c)));
+      
+      // Update post's replies count
+      if (onCommentUpdate) {
+        onCommentUpdate(post.id, {
+          replies: [...replies, result],
+          repliesCount: (post.repliesCount || 0) + 1,
+        });
+      }
+    } catch (err) {
+      logError('Failed to add comment', {
+        postId: post.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      
+      // Remove temp comment on error
+      setReplies((prev) => prev.filter((c) => c.id !== tempId));
+      showErrorDialog('Không thể thêm bình luận', err.response?.data?.error || 'Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateReply = (commentId, updatedData) => {
+    setReplies((prev) => prev.map((c) => (c.id === commentId ? { ...c, ...updatedData } : c)));
+    if (onCommentUpdate) {
+      onCommentUpdate(commentId, updatedData);
+    }
+  };
+
+  const handleDeleteReply = (commentId) => {
+    setReplies((prev) => prev.filter((c) => c.id !== commentId));
+    if (onCommentDelete) {
+      onCommentDelete(commentId);
+    }
+    // Update post's replies count
+    if (onCommentUpdate) {
+      onCommentUpdate(post.id, {
+        replies: replies.filter((c) => c.id !== commentId),
+        repliesCount: Math.max(0, (post.repliesCount || 0) - 1),
+      });
+    }
+  };
+
+  const currentRepliesCount = replies.length || 0;
+  const hasReplies = currentRepliesCount > 0 || repliesCount > 0;
+
+  return (
+    <div className="post-comments-section" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7f0' }}>
+      {/* Show/Hide Comments Button */}
+      {hasReplies && (
+        <div style={{ marginBottom: '0.75rem' }}>
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => setShowComments(!showComments)}
+            style={{ padding: 0, color: '#6c5ce7', textDecoration: 'none' }}
+          >
+            {showComments ? (
+              <>
+                <span style={{ marginRight: '0.5rem' }}>▲</span>
+                Ẩn {repliesCount} bình luận
+              </>
+            ) : (
+              <>
+                <span style={{ marginRight: '0.5rem' }}>▼</span>
+                Xem {repliesCount} bình luận
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Comments List */}
+      {showComments && replies.length > 0 && (
+        <div className="comments-list" style={{ marginBottom: '1rem' }}>
+          {replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onUpdate={handleUpdateReply}
+              onDelete={handleDeleteReply}
+              openConfirmDialog={openConfirmDialog}
+              showErrorDialog={showErrorDialog}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Comment Input */}
+      <div className="comment-input-wrapper">
+        <div className="user-avatar" style={{ 
+          background: currentUser?.id ? getAvatarColor(currentUser.id) : '#6c5ce7',
+          width: '32px',
+          height: '32px',
+          fontSize: '0.85rem'
+        }}>
+          {getInitials(currentUser?.username || currentUser?.email || 'U')}
+        </div>
+        <div style={{ flex: 1, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <FormControl
+            type="text"
+            placeholder="Viết bình luận..."
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleAddComment();
+              }
+            }}
+            style={{ flex: 1, borderRadius: '20px', padding: '0.5rem 1rem' }}
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleAddComment}
+            disabled={!commentContent.trim() || loading}
+            style={{ 
+              borderRadius: '20px',
+              padding: '0.5rem 1.5rem',
+              backgroundColor: '#6c5ce7',
+              border: 'none'
+            }}
+          >
+            {loading ? <Spinner animation="border" size="sm" /> : 'Gửi'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Comment Item Component - Individual comment/reply
+const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDialog, showErrorDialog, formatDate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setEditContent(comment.content);
+  }, [comment.content]);
+
+  const commentOwnerId = comment.user?.id || comment.userId || comment.user_id;
+  const canEdit = comment.canEdit !== false && commentOwnerId === currentUserId;
+  const canDelete = comment.canDelete !== false && commentOwnerId === currentUserId;
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    try {
+      const result = await updateComment(comment.id, editContent);
+      onUpdate(comment.id, {
+        content: result.content || editContent,
+        updatedAt: result.updatedAt || new Date().toISOString(),
+      });
+      setIsEditing(false);
+    } catch (err) {
+      logError('Failed to update comment', {
+        commentId: comment.id,
+        error: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      showErrorDialog('Không thể cập nhật bình luận', err.response?.data?.error || 'Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    openConfirmDialog({
+      title: 'Xóa bình luận',
+      message: 'Bạn có chắc muốn xóa bình luận này?',
+      confirmText: 'Xóa',
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await deleteComment(comment.id);
+          onDelete(comment.id);
+        } catch (err) {
+          logError('Failed to delete comment', {
+            commentId: comment.id,
+            error: err.response?.data,
+            status: err.response?.status,
+            message: err.message,
+          });
+          showErrorDialog('Không thể xóa bình luận', 'Vui lòng thử lại.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
+  const userColor = comment.user?.id ? getAvatarColor(comment.user.id) : '#6c5ce7';
+  const userInitials = getInitials(comment.user?.username || comment.user?.email || 'U');
+
+  return (
+    <div className="comment-item" style={{ 
+      display: 'flex', 
+      gap: '0.75rem', 
+      marginBottom: '0.75rem',
+      padding: '0.5rem 0'
+    }}>
+      <div className="user-avatar" style={{ 
+        background: userColor,
+        width: '32px',
+        height: '32px',
+        fontSize: '0.85rem',
+        flexShrink: 0
+      }}>
+        {userInitials}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+            {comment.user?.username || 'Người dùng đã xóa'}
+          </span>
+          <span style={{ color: '#7a8396', fontSize: '0.85rem' }}>
+            {formatDate(comment.createdAt)}
+          </span>
+          {(canEdit || canDelete) && (
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+              {canEdit && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={() => setIsEditing(true)}
+                  disabled={loading}
+                  style={{ padding: 0, fontSize: '0.85rem' }}
+                >
+                  Sửa
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  style={{ padding: 0, fontSize: '0.85rem', color: '#d9534f' }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        {isEditing ? (
+          <div>
+            <FormControl
+              as="textarea"
+              rows={2}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              disabled={loading}
+              style={{ marginBottom: '0.5rem' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Button size="sm" onClick={handleUpdate} disabled={loading}>
+                {loading ? <Spinner animation="border" size="sm" /> : 'Lưu'}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditContent(comment.content);
+                }}
+                disabled={loading}
+              >
+                Hủy
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ color: '#2f3641', fontSize: '0.9rem' }}>
+            {comment.content}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Comment Card Component
 const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onCommentDelete, currentUserId, openConfirmDialog, showErrorDialog }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -880,7 +1235,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             {editUploadingFile && <Spinner animation="border" size="sm" />}
           </div>
 
-          <div className="d-flex gap-4 mt-2">
+          <div className="d-flex gap-4 mt-2" style="gap: 5px;">
             <Button size="sm" onClick={handleUpdate} disabled={loading}>
               {loading ? <Spinner animation="border" size="sm" className="me-2" /> : null}
               Lưu
@@ -966,22 +1321,31 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
         );
       })()}
 
-      <div className="post-reactions">
-        <ReactionPicker comment={localComment} onReactionChange={onReactionChange} />
-        {/* Display all reaction types with counts */}
-        {localComment.reactionCounts && Object.keys(localComment.reactionCounts).length > 0 && (
-          <div className="reaction-counts">
-            {REACTION_TYPES.map((reaction) => {
-              const count = localComment.reactionCounts[reaction.type] || 0;
-              if (count > 0) {
-                return (
-                  <span key={reaction.type} className="reaction-count-badge" title={reaction.label}>
-                    {reaction.emoji} {count}
-                  </span>
-                );
-              }
-              return null;
-            })}
+      <div className="post-actions" style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e5e7f0' }}>
+        <div className="post-reactions">
+          <ReactionPicker comment={localComment} onReactionChange={onReactionChange} />
+          {/* Display all reaction types with counts */}
+          {localComment.reactionCounts && Object.keys(localComment.reactionCounts).length > 0 && (
+            <div className="reaction-counts">
+              {REACTION_TYPES.map((reaction) => {
+                const count = localComment.reactionCounts[reaction.type] || 0;
+                if (count > 0) {
+                  return (
+                    <span key={reaction.type} className="reaction-count-badge" title={reaction.label}>
+                      {reaction.emoji} {count}
+                    </span>
+                  );
+                }
+                return null;
+              })}
+            </div>
+          )}
+        </div>
+        {/* Comment count - only show for top-level posts */}
+        {!localComment.parentComment && !localComment.parent_comment && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#5b6477', fontSize: '0.9rem' }}>
+            <span>💬</span>
+            <span>{localComment.repliesCount || localComment.replies_count || (localComment.replies ? localComment.replies.length : 0)} bình luận</span>
           </div>
         )}
       </div>
@@ -1044,6 +1408,19 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             </ActionRow>
           </ModalDialog.Footer>
         </ModalDialog>
+      )}
+
+      {/* Comments Section - Only show for top-level posts (no parent_comment) */}
+      {!localComment.parentComment && !localComment.parent_comment && (
+        <PostCommentsSection
+          post={localComment}
+          group={group}
+          currentUserId={currentUserId}
+          onCommentUpdate={onCommentUpdate}
+          onCommentDelete={onCommentDelete}
+          openConfirmDialog={handleOpenConfirmDialog}
+          showErrorDialog={handleShowErrorDialog}
+        />
       )}
     </div>
   );

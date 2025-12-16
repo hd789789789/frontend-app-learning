@@ -23,10 +23,10 @@
 .panel {
   margin-top: 1.75rem;
   background: #ffffff;
-  border: 1px solid #e7e8ef;
+  // border: 1px solid #e7e8ef;
   border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: 0 16px 32px rgba(31, 36, 48, 0.05);
+  // padding: 1.25rem;
+  // box-shadow: 0 16px 32px rgba(31, 36, 48, 0.05);
 }
 
 .panel-head {
@@ -503,6 +503,23 @@
   color: #fff;
   border-radius: 10px;
   padding: 0.45rem 0.9rem;
+}
+
+.post-comments-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7f0;
+}
+
+.comments-list {
+  margin-bottom: 1rem;
+}
+
+.comment-item {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
 }
 
 .suggestions-grid {
