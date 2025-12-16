@@ -598,20 +598,35 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
 };
 
 // Comment Card Component
-const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onCommentDelete, currentUserId }) => {
+const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onCommentDelete, currentUserId, openConfirmDialog, showErrorDialog }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [loading, setLoading] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [localComment, setLocalComment] = useState(comment);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [errorModal, setErrorModal] = useState(null);
 
   // Update local comment when prop changes
   useEffect(() => {
     setLocalComment(comment);
   }, [comment]);
 
-  const canEdit = localComment.canEdit !== false || localComment.user?.id === currentUserId;
-  const canDelete = localComment.canDelete !== false || localComment.user?.id === currentUserId;
+  // Chỉ người đăng mới có quyền sửa/xóa bài đăng của mình
+  const commentOwnerId = localComment.user?.id || localComment.userId;
+  const isCommentOwner = currentUserId && commentOwnerId && (currentUserId === commentOwnerId || currentUserId?.toString() === commentOwnerId?.toString());
+  
+  const canEdit = isCommentOwner && (localComment.canEdit !== false || isCommentOwner);
+  const canDelete = isCommentOwner && (localComment.canDelete !== false || isCommentOwner);
+
+  // Local confirm dialog handler if not provided
+  const handleOpenConfirmDialog = openConfirmDialog || (({ title, message, onConfirm, confirmText = 'Xác nhận', cancelText = 'Hủy' }) => {
+    setConfirmDialog({ title, message, onConfirm, confirmText, cancelText });
+  });
+
+  const handleShowErrorDialog = showErrorDialog || ((title, message) => {
+    setErrorModal({ title, message });
+  });
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -649,7 +664,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   };
 
   const handleDelete = async () => {
-    openConfirmDialog({
+    handleOpenConfirmDialog({
       title: 'Xóa bình luận',
       message: 'Bạn có chắc muốn xóa bình luận này?',
       confirmText: 'Xóa',
@@ -660,7 +675,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
         const commentId = localComment.id || localComment.Id || localComment.ID;
         if (!commentId) {
           logError('Cannot delete comment: no ID found', { localComment });
-          showErrorDialog('Không thể xóa bình luận', 'Không tìm thấy ID. Vui lòng refresh trang.');
+          handleShowErrorDialog('Không thể xóa bình luận', 'Không tìm thấy ID. Vui lòng refresh trang.');
           setLoading(false);
           return;
         }
@@ -681,7 +696,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
             message: err.message,
           });
           
-          showErrorDialog('Không thể xóa bình luận', 'Vui lòng thử lại.');
+          handleShowErrorDialog('Không thể xóa bình luận', 'Vui lòng thử lại.');
           // Note: Comment is already removed from UI optimistically
           // In a production app, you might want to reload comments here
         } finally {
@@ -894,6 +909,66 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           </div>
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ModalDialog
+          isOpen={!!confirmDialog}
+          onClose={() => setConfirmDialog(null)}
+          size="sm"
+          hasCloseButton
+        >
+          <ModalDialog.Header>
+            <ModalDialog.Title>{confirmDialog?.title || 'Xác nhận'}</ModalDialog.Title>
+          </ModalDialog.Header>
+          <ModalDialog.Body>
+            {confirmDialog?.message || 'Bạn chắc chắn muốn tiếp tục?'}
+          </ModalDialog.Body>
+          <ModalDialog.Footer>
+            <ActionRow>
+              <ModalDialog.CloseButton variant="tertiary" onClick={() => setConfirmDialog(null)}>
+                {confirmDialog?.cancelText || 'Hủy'}
+              </ModalDialog.CloseButton>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  const onConfirm = confirmDialog?.onConfirm;
+                  setConfirmDialog(null);
+                  if (onConfirm) {
+                    await onConfirm();
+                  }
+                }}
+              >
+                {confirmDialog?.confirmText || 'Xác nhận'}
+              </Button>
+            </ActionRow>
+          </ModalDialog.Footer>
+        </ModalDialog>
+      )}
+
+      {/* Error Dialog */}
+      {errorModal && (
+        <ModalDialog
+          isOpen={!!errorModal}
+          onClose={() => setErrorModal(null)}
+          size="sm"
+          hasCloseButton={false}
+        >
+          <ModalDialog.Header>
+            <ModalDialog.Title>{errorModal?.title || 'Thông báo'}</ModalDialog.Title>
+          </ModalDialog.Header>
+          <ModalDialog.Body>
+            {errorModal?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'}
+          </ModalDialog.Body>
+          <ModalDialog.Footer>
+            <ActionRow>
+              <ModalDialog.CloseButton variant="primary" onClick={() => setErrorModal(null)}>
+                Đóng
+              </ModalDialog.CloseButton>
+            </ActionRow>
+          </ModalDialog.Footer>
+        </ModalDialog>
+      )}
     </div>
   );
 };
@@ -952,13 +1027,15 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const currentRole = currentMember?.role || group.currentUserRole;
   const isGroupAdmin = ['admin', 'owner', 'creator', 'manager'].includes((currentRole || '').toLowerCase());
 
+  // Chỉ trưởng nhóm mới có quyền quản lý, sửa và xóa nhóm
   const apiCanManage = localGroup.canManageMembers !== false ? (localGroup.canManageMembers ?? false) : false;
   const apiCanEdit = localGroup.canEdit !== false ? (localGroup.canEdit ?? false) : false;
   const apiCanDelete = localGroup.canDelete !== false ? (localGroup.canDelete ?? false) : false;
 
-  const canManageMembers = apiCanManage || apiCanEdit || apiCanDelete || isOwner || isGroupAdmin;
-  const canEdit = apiCanEdit || canManageMembers || isOwner || isGroupAdmin;
-  const canDelete = apiCanDelete || canManageMembers || isOwner || isGroupAdmin;
+  // Chỉ owner mới có các quyền này
+  const canManageMembers = isOwner || (apiCanManage && isOwner);
+  const canEdit = isOwner || (apiCanEdit && isOwner);
+  const canDelete = isOwner || (apiCanDelete && isOwner);
   const showGroupMenu = canEdit || canDelete || canManageMembers;
 
   // Debug logs for permission issues
@@ -2082,22 +2159,25 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                               </Button>
                             );
                           }
-                          if (canManageMembers && !isLeader && !isCurrentUser) {
+                          // Chỉ trưởng nhóm mới có quyền xóa thành viên khác
+                          if (isOwner && canManageMembers && !isLeader && !isCurrentUser) {
                             return (
                               <>
                                 <button
                                   className="post-action-btn"
                                   onClick={() => {/* View profile - TODO */}}
                                   title="Xem hồ sơ"
+                                  style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 >
-                                  <span className="fa fa-eye" aria-hidden="true" />
+                                  <span className="fa fa-eye" aria-hidden="true" style={{ color: '#7a8396' }} />
                                 </button>
                                 <button
                                   className="post-action-btn"
                                   onClick={() => handleRemoveMember(null, member)}
                                   title="Xóa khỏi nhóm"
+                                  style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 >
-                                  <span className="fa fa-trash" aria-hidden="true" />
+                                  <span className="fa fa-trash" aria-hidden="true" style={{ color: '#d9534f' }} />
                                 </button>
                               </>
                             );
@@ -2134,7 +2214,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                         setShowComments(false);
                       }
                     }}
-                    className="w-100"
+                    className="w-100 discussion-btn"
+                    style={{
+                      background: '#6c5ce7',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(108, 92, 231, 0.3)',
+                    }}
                   >
                     <span className="fa fa-comments me-2" aria-hidden="true" />
                     Thảo luận
@@ -2239,6 +2328,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                               removeCommentFromList(commentId);
                             }}
                             currentUserId={currentUserId}
+                            openConfirmDialog={openConfirmDialog}
+                            showErrorDialog={showErrorDialog}
                           />
                         ))}
                         {hasMoreComments && (

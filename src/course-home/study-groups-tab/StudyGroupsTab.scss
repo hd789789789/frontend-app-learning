@@ -220,6 +220,33 @@
 
 .discussion-actions {
   margin-top: 1rem;
+  
+  .discussion-btn,
+  .btn-primary {
+    background: #6c5ce7 !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #5a4fcf !important;
+      box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    }
+
+    .fa-comments {
+      margin-right: 0.5rem;
+    }
+  }
 }
 
 .discussion-container {
@@ -274,6 +301,16 @@
   padding: 0;
   font-size: 1.1rem;
   cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f0f2ff;
+    border-color: #3f51b5;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .post-submit {
