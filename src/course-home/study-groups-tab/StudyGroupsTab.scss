@@ -1053,8 +1053,8 @@ button.remove-file-btn {
 .comment-dropdown-menu {
   min-width: auto;
   width: max-content;
-  max-width: 260px;
-  padding: 0.5rem 0;
+  max-width: 220px;
+  padding: 0.35rem 0;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid #e4e6eb;
@@ -1065,7 +1065,7 @@ button.remove-file-btn {
   white-space: nowrap;
   
   .dropdown-item {
-    padding: 0.625rem 1rem;
+    padding: 0.5rem 0.85rem;
     font-size: 0.9375rem;
     color: #050505;
     display: flex;
@@ -1102,18 +1102,24 @@ button.remove-file-btn {
     &.comment-menu-item-danger {
       color: #d9534f !important;
       a {
-        color: inherit !important;
+        color: #d9534f !important;
       }
       
       &:hover {
         background-color: #fff5f5;
         color: #c9302c !important;
+        a {
+          color: #c9302c !important;
+        }
       }
       
       &:active,
       &:focus {
         background-color: #ffe5e5;
         color: #c9302c !important;
+        a {
+          color: #c9302c !important;
+        }
       }
       
       .fa {
@@ -1219,3 +1225,14 @@ button.remove-file-btn {
   }
 }
 
+.comment-menu-toggle button {
+  text-decoration: none !important;
+}
+
+.dropdown-menu.show {
+  min-width: fit-content;
+}
+
+a.comment-menu-item.comment-menu-item-danger.pgn__dropdown-item.dropdown-item {
+  color: red;
+}

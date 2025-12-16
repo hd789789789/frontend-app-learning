@@ -2554,13 +2554,17 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       <div className="member-actions">
                         {(() => {
                           const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
-                          const isLeader = ownerId && memberId && (ownerId === memberId || ownerId?.toString() === memberId?.toString());
-                          const isCurrentUser = currentUserId && memberId && (currentUserId === memberId || currentUserId?.toString() === memberId?.toString());
+                          const memberIdStr = memberId !== undefined && memberId !== null ? String(memberId) : null;
+                          const ownerIdStr = ownerId !== undefined && ownerId !== null ? String(ownerId) : null;
+                          const currentUserKeyStr = currentUserId !== undefined && currentUserId !== null ? String(currentUserId) : null;
+
+                          const isLeader = Boolean(ownerIdStr && memberIdStr && ownerIdStr === memberIdStr);
+                          const isCurrentUser = Boolean(currentUserKeyStr && memberIdStr && currentUserKeyStr === memberIdStr);
                           
                           if (isLeader) {
                             return (
                               <Button size="sm" variant="primary" disabled>
-                                Admin
+                                Trưởng nhóm
                               </Button>
                             );
                           }
