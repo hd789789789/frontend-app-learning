@@ -3004,26 +3004,32 @@ const StudyGroupsTab = () => {
   const groups = useMemo(() => {
     const result = localGroups !== null ? localGroups : (studyGroupsModel.results || []);
     
-    // Only log if groups actually changed
-    const prevGroupsStr = JSON.stringify(prevGroupsRef.current);
+    // Only log if groups actually changed (skip initial null → data transition if data is already available)
+    const prevGroups = prevGroupsRef.current;
+    const prevGroupsStr = prevGroups ? JSON.stringify(prevGroups) : null;
     const currentGroupsStr = JSON.stringify(result);
     const hasChanged = prevGroupsStr !== currentGroupsStr;
     
-    if (hasChanged) {
+    // Skip logging initial render if data is already available (to reduce noise)
+    const isInitialRender = prevGroups === null;
+    const hasData = result.length > 0;
+    
+    if (hasChanged && (!isInitialRender || !hasData)) {
       console.log('[StudyGroupsTab] groups useMemo calculated (CHANGED)', {
         usingLocalGroups: localGroups !== null,
         groupsCount: result.length,
         localGroupsCount: localGroups?.length || 0,
         modelResultsCount: studyGroupsModel.results?.length || 0,
-        prevCount: prevGroupsRef.current?.length || 0,
+        prevCount: prevGroups?.length || 0,
+        isInitialRender,
       });
-      prevGroupsRef.current = result;
-    } else {
+    } else if (!hasChanged) {
       console.log('[StudyGroupsTab] groups useMemo calculated (NO CHANGE)', {
         groupsCount: result.length,
       });
     }
     
+    prevGroupsRef.current = result;
     return result;
   }, [localGroups, studyGroupsModel.results]);
   
@@ -3065,38 +3071,45 @@ const StudyGroupsTab = () => {
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
-  const groupStreaksFetchedRef = useRef(false);
-  const lastGroupStreaksCourseIdRef = useRef(null);
+  
+  // Use a Map to track fetched courseIds - persists across remounts in StrictMode
+  const groupStreaksFetchedMapRef = useRef(new Map());
+  const isFetchingStreaksRef = useRef(false);
   
   useEffect(() => {
-    console.log('[StudyGroupsTab] fetchGroupStreaks useEffect triggered', {
-      courseId,
-      alreadyFetched: groupStreaksFetchedRef.current,
-      lastCourseId: lastGroupStreaksCourseIdRef.current,
-    });
-
-    // Reset when courseId changes
-    if (lastGroupStreaksCourseIdRef.current !== courseId) {
-      console.log('[StudyGroupsTab] CourseId changed, resetting groupStreaksFetchedRef');
-      groupStreaksFetchedRef.current = false;
-      lastGroupStreaksCourseIdRef.current = courseId;
+    if (!courseId) {
+      setLoadingStreaks(false);
+      return;
     }
 
-    // Skip if already fetched for this course (prevent double fetch in StrictMode)
-    if (groupStreaksFetchedRef.current || !courseId) {
-      if (!courseId) {
-        setLoadingStreaks(false);
+    const fetchKey = `groupStreaks::${courseId}`;
+    const isAlreadyFetched = groupStreaksFetchedMapRef.current.has(fetchKey);
+    const isCurrentlyFetching = isFetchingStreaksRef.current;
+
+    console.log('[StudyGroupsTab] fetchGroupStreaks useEffect triggered', {
+      courseId,
+      fetchKey,
+      alreadyFetched: isAlreadyFetched,
+      isCurrentlyFetching,
+    });
+
+    // Skip if already fetched or currently fetching (prevent double fetch in StrictMode)
+    if (isAlreadyFetched || isCurrentlyFetching) {
+      if (isAlreadyFetched) {
+        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched for this course');
       } else {
-        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched');
+        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - currently fetching');
       }
       return;
     }
 
+    // Set flags immediately to prevent double fetch
+    isFetchingStreaksRef.current = true;
+    groupStreaksFetchedMapRef.current.set(fetchKey, true);
+    setLoadingStreaks(true);
+
     const fetchGroupStreaks = async () => {
       console.log('[StudyGroupsTab] Fetching group streaks', { courseId });
-      // Set flag immediately to prevent double fetch
-      groupStreaksFetchedRef.current = true;
-      setLoadingStreaks(true);
       
       try {
         const data = await getGroupStreaks(courseId);
@@ -3124,10 +3137,11 @@ const StudyGroupsTab = () => {
       } catch (error) {
         console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
-        // Reset flag on error to allow retry
-        groupStreaksFetchedRef.current = false;
+        // Remove from map on error to allow retry
+        groupStreaksFetchedMapRef.current.delete(fetchKey);
       } finally {
         setLoadingStreaks(false);
+        isFetchingStreaksRef.current = false;
       }
     };
 
