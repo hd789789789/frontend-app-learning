@@ -25,7 +25,9 @@ const WelcomeTab = () => {
   // Data structure: welcomeModel contains the API response directly
   const welcomeData = welcomeModel;
   const { courseStatus } = useSelector((state) => state.courseHome);
-  const loading = courseStatus === 'loading';
+  const hasWelcomeData = Boolean(welcomeData && welcomeData.success);
+  // Nếu chưa có dữ liệu welcome hoặc course đang loading, luôn hiển thị trạng thái đang tải
+  const loading = courseStatus === 'loading' || !hasWelcomeData;
   const error = courseStatus === 'failed' ? 'Không thể tải dữ liệu Chào mừng' : null;
   
   // Fetch dates data để dùng Timeline component
@@ -84,27 +86,6 @@ const WelcomeTab = () => {
         <Alert variant="danger">
           <Alert.Heading>Lỗi</Alert.Heading>
           <p>{error}</p>
-        </Alert>
-      </Container>
-    );
-  }
-
-  if (!welcomeData || !welcomeData.success) {
-    // Fallback to mock data if API fails
-    const userStats = {
-      streakDays: 0,
-      completionPercent: 0,
-      todayLessons: 0,
-      classRank: 0,
-    };
-    const importantDates = [];
-    const dailyQuests = [];
-    
-    return (
-      <Container className="welcome-tab py-4 px-2 px-md-4">
-        <Alert variant="warning">
-          <Alert.Heading>Không có dữ liệu</Alert.Heading>
-          <p>Không thể tải dữ liệu Chào mừng cho khóa học này.</p>
         </Alert>
       </Container>
     );
