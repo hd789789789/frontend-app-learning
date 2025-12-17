@@ -3018,7 +3018,10 @@ const StudyGroupsTab = () => {
         results: currentResults,
         prevCount: prevResults?.length || 0,
       });
-      window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
+      // Cache the results for restoration on remount
+      if (currentResults !== undefined) {
+        window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
+      }
     } else {
       console.log('[StudyGroupsTab] studyGroupsModel.results (NO CHANGE)', {
         resultsCount: currentResults?.length || 0,
@@ -3061,10 +3064,37 @@ const StudyGroupsTab = () => {
   const groupsCacheKey = `groups::${courseId}`;
   
   const groups = useMemo(() => {
-    const result = localGroups !== null ? localGroups : (studyGroupsModel.results || []);
+    // Calculate cache keys inside useMemo to ensure consistency
+    const modelResultsCacheKey = `modelResults::${courseId}`;
+    const groupsCacheKeyLocal = `groups::${courseId}`;
+    
+    // Prefer localGroups if set (for optimistic updates)
+    if (localGroups !== null) {
+      const result = localGroups;
+      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
+      return result;
+    }
+    
+    // Use model results if available
+    if (studyGroupsModel.results !== undefined) {
+      const result = studyGroupsModel.results;
+      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
+      return result;
+    }
+    
+    // Fallback to cached results if model is not ready yet (prevents flicker on remount)
+    const cachedResults = window.__studyGroupsModelResultsCache.get(modelResultsCacheKey);
+    if (cachedResults !== undefined) {
+      const result = cachedResults;
+      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
+      return result;
+    }
+    
+    // Default to empty array
+    const result = [];
     
     // Only log if groups actually changed
-    const prevGroups = window.__studyGroupsGroupsCache.get(groupsCacheKey);
+    const prevGroups = window.__studyGroupsGroupsCache.get(groupsCacheKeyLocal);
     const prevGroupsStr = prevGroups ? JSON.stringify(prevGroups) : null;
     const currentGroupsStr = JSON.stringify(result);
     const hasChanged = prevGroupsStr !== currentGroupsStr;
@@ -3081,6 +3111,7 @@ const StudyGroupsTab = () => {
         modelResultsCount: studyGroupsModel.results?.length || 0,
         prevCount: prevGroups?.length || 0,
         isInitialRender,
+        usingCachedResults: cachedResults !== undefined,
       });
     } else if (!hasChanged) {
       console.log('[StudyGroupsTab] groups useMemo calculated (NO CHANGE)', {
@@ -3088,7 +3119,7 @@ const StudyGroupsTab = () => {
       });
     }
     
-    window.__studyGroupsGroupsCache.set(groupsCacheKey, result);
+    window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
     return result;
   }, [localGroups, studyGroupsModel.results, courseId]);
   
