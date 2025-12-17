@@ -2938,14 +2938,24 @@ const StudyGroupsTab = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Debug: Log component render
+  // Debug: Log component render - only log when meaningful data changes
+  const prevRenderDataRef = useRef(null);
   useEffect(() => {
-    console.log('[StudyGroupsTab] Component rendered', {
+    const currentData = {
       courseId,
       hasResults: studyGroupsModel.results !== undefined,
       resultsCount: studyGroupsModel.results?.length || 0,
       refreshKey,
-    });
+    };
+    
+    const prevDataStr = JSON.stringify(prevRenderDataRef.current);
+    const currentDataStr = JSON.stringify(currentData);
+    const hasChanged = prevDataStr !== currentDataStr;
+    
+    if (hasChanged || prevRenderDataRef.current === null) {
+      console.log('[StudyGroupsTab] Component rendered', currentData);
+      prevRenderDataRef.current = currentData;
+    }
   });
 
   const currentUser = getAuthenticatedUser();
@@ -2962,13 +2972,23 @@ const StudyGroupsTab = () => {
   // Only used for optimistic updates, not for initial render or refresh
   const [localGroups, setLocalGroups] = useState(null); // null = use model, array = use local
 
-  // Debug: Log when model changes
+  // Debug: Log when model changes - only log actual changes
+  const prevModelResultsRef = useRef(null);
   useEffect(() => {
-    console.log('[StudyGroupsTab] studyGroupsModel.results changed', {
-      hasResults: studyGroupsModel.results !== undefined,
-      resultsCount: studyGroupsModel.results?.length || 0,
-      results: studyGroupsModel.results,
-    });
+    const currentResults = studyGroupsModel.results;
+    const prevResultsStr = JSON.stringify(prevModelResultsRef.current);
+    const currentResultsStr = JSON.stringify(currentResults);
+    const hasChanged = prevResultsStr !== currentResultsStr;
+    
+    if (hasChanged) {
+      console.log('[StudyGroupsTab] studyGroupsModel.results changed', {
+        hasResults: currentResults !== undefined,
+        resultsCount: currentResults?.length || 0,
+        results: currentResults,
+        prevCount: prevModelResultsRef.current?.length || 0,
+      });
+      prevModelResultsRef.current = currentResults;
+    }
   }, [studyGroupsModel.results]);
 
   // Debug: Log when localGroups changes
@@ -2979,14 +2999,31 @@ const StudyGroupsTab = () => {
     });
   }, [localGroups]);
 
+  // Track previous groups to detect actual changes
+  const prevGroupsRef = useRef(null);
   const groups = useMemo(() => {
     const result = localGroups !== null ? localGroups : (studyGroupsModel.results || []);
-    console.log('[StudyGroupsTab] groups useMemo calculated', {
-      usingLocalGroups: localGroups !== null,
-      groupsCount: result.length,
-      localGroupsCount: localGroups?.length || 0,
-      modelResultsCount: studyGroupsModel.results?.length || 0,
-    });
+    
+    // Only log if groups actually changed
+    const prevGroupsStr = JSON.stringify(prevGroupsRef.current);
+    const currentGroupsStr = JSON.stringify(result);
+    const hasChanged = prevGroupsStr !== currentGroupsStr;
+    
+    if (hasChanged) {
+      console.log('[StudyGroupsTab] groups useMemo calculated (CHANGED)', {
+        usingLocalGroups: localGroups !== null,
+        groupsCount: result.length,
+        localGroupsCount: localGroups?.length || 0,
+        modelResultsCount: studyGroupsModel.results?.length || 0,
+        prevCount: prevGroupsRef.current?.length || 0,
+      });
+      prevGroupsRef.current = result;
+    } else {
+      console.log('[StudyGroupsTab] groups useMemo calculated (NO CHANGE)', {
+        groupsCount: result.length,
+      });
+    }
+    
     return result;
   }, [localGroups, studyGroupsModel.results]);
   
@@ -3067,11 +3104,23 @@ const StudyGroupsTab = () => {
           success: data?.success,
           groupsCount: data?.groups?.length || 0,
         });
-        if (data && data.success && data.groups) {
-          setGroupStreaks(data.groups);
-        } else {
-          setGroupStreaks([]);
-        }
+        
+        // Only update state if data actually changed (prevent unnecessary re-renders)
+        const newGroups = (data && data.success && data.groups) ? data.groups : [];
+        setGroupStreaks(prevGroups => {
+          // Compare to avoid unnecessary updates
+          const prevGroupsStr = JSON.stringify(prevGroups);
+          const newGroupsStr = JSON.stringify(newGroups);
+          if (prevGroupsStr !== newGroupsStr) {
+            console.log('[StudyGroupsTab] Updating groupStreaks state', {
+              prevCount: prevGroups.length,
+              newCount: newGroups.length,
+            });
+            return newGroups;
+          }
+          console.log('[StudyGroupsTab] Skipping groupStreaks update - no change');
+          return prevGroups;
+        });
       } catch (error) {
         console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
