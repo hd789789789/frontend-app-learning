@@ -2933,8 +2933,22 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 const StudyGroupsTab = () => {
   const { courseId } = useParams();
   const dispatch = useDispatch();
-  const welcomeModel = useModel('welcome', courseId) || {};
-  const studyGroupsModel = useModel('study-groups', courseId) || {};
+  const welcomeModelRaw = useModel('welcome', courseId) || {};
+  const studyGroupsModelRaw = useModel('study-groups', courseId) || {};
+  
+  // Memoize models to prevent unnecessary re-renders when reference changes but data doesn't
+  const welcomeModel = useMemo(() => welcomeModelRaw, [
+    welcomeModelRaw.userStats,
+    welcomeModelRaw.success,
+    courseId,
+  ]);
+  
+  const studyGroupsModel = useMemo(() => studyGroupsModelRaw, [
+    studyGroupsModelRaw.results,
+    studyGroupsModelRaw.canCreateGroup,
+    courseId,
+  ]);
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
