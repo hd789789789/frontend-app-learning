@@ -48,7 +48,7 @@ const LoadedTabPage = ({
   };
 
   const studyGroupsTab = {
-    title: 'Nhóm học tập',
+    title: '👥 Nhóm học tập',
     slug: 'study-groups',
     url: `/learning/course/${courseId}/study-groups`,
   };
@@ -65,13 +65,13 @@ const LoadedTabPage = ({
           slug: 'outline',
           url: `/learning/course/${courseId}/home`,
         },
+        studyGroupsTab,
         badgeTab,
         {
           title: '🏆 Xếp hạng',
           slug: 'leaderboard',
           url: `/learning/course/${courseId}/leaderboard`,
         },
-        // studyGroupsTab, // Ẩn tab này khỏi navigation nhưng vẫn giữ route
       ];
     }
 
@@ -161,6 +161,11 @@ const LoadedTabPage = ({
     // }
     
     const leaderboardIndex = tabsCopy.findIndex(tab => tab.slug === 'leaderboard');
+    const outlineIndex = tabsCopy.findIndex(tab =>
+      tab.slug === 'outline' ||
+      tab.slug === 'courseware' ||
+      tab.type === 'courseware',
+    );
     
     // Thêm tab Thành tích trước tab Xếp hạng (leaderboard)
     if (leaderboardIndex !== -1) {
@@ -169,6 +174,14 @@ const LoadedTabPage = ({
     } else {
       // Nếu không có leaderboard, thêm vào cuối
       tabsCopy.push(badgeTab);
+    }
+
+    // Thêm tab Nhóm học tập sau tab Khóa học (outline / courseware)
+    if (outlineIndex !== -1) {
+      tabsCopy.splice(outlineIndex + 1, 0, studyGroupsTab);
+    } else {
+      // Nếu không tìm được tab Khóa học, thêm Nhóm học tập vào đầu (sẽ đẩy xuống sau Chào mừng)
+      tabsCopy.unshift(studyGroupsTab);
     }
     
     // Thêm tab Chào mừng vào đầu danh sách

@@ -141,14 +141,13 @@ const WelcomeTab = () => {
       setLoadingStreaks(true);
       try {
         const data = await getGroupStreaks(courseId);
-        console.log('[WelcomeTab] Group streaks data:', data);
         if (data && data.success && data.groups) {
           setGroupStreaks(data.groups);
         } else {
           setGroupStreaks([]);
         }
       } catch (error) {
-        console.error('[WelcomeTab] Error fetching group streaks:', error);
+        // Giữ xử lý lỗi nhưng không log ra console để tránh spam
         setGroupStreaks([]);
       } finally {
         setLoadingStreaks(false);

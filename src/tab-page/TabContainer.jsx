@@ -37,39 +37,23 @@ const TabContainer = (props) => {
   useEffect(() => {
     const fetchKey = `${tab || ''}::${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
 
-    console.log('[TabContainer] useEffect triggered', {
-      tab,
-      courseIdFromUrl,
-      targetUserId,
-      isProgressTab,
-      fetchKey,
-      lastFetchKey: lastFetchKeyRef.current,
-      isFetching: isFetchingRef.current,
-      courseStatus,
-      courseId,
-    });
-
     // Skip if already fetched for this key
     if (lastFetchKeyRef.current === fetchKey) {
-      console.log('[TabContainer] Skipping fetch - already fetched for this key');
       return;
     }
 
     // Skip if currently fetching (prevent double fetch in StrictMode)
     if (isFetchingRef.current) {
-      console.log('[TabContainer] Skipping fetch - already fetching');
       return;
     }
 
     // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
     if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
-      console.log('[TabContainer] Skipping fetch - course already loaded');
       lastFetchKeyRef.current = fetchKey;
       return;
     }
 
     // Set flags before dispatch to prevent double fetch
-    console.log('[TabContainer] Dispatching fetch', { tab, courseIdFromUrl });
     lastFetchKeyRef.current = fetchKey;
     isFetchingRef.current = true;
 
@@ -84,7 +68,6 @@ const TabContainer = (props) => {
     // This prevents double fetch in StrictMode while allowing legitimate refetches
     const timeoutId = setTimeout(() => {
       isFetchingRef.current = false;
-      console.log('[TabContainer] Reset isFetchingRef flag');
     }, 1000);
 
     return () => {
@@ -93,9 +76,9 @@ const TabContainer = (props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 
-  // Avoid flashing loader for some tabs (e.g., badge, study-groups)
+  // Avoid flashing loader for some tabs (e.g., badge, welcome, study-groups)
   // when the course is already the active one and we're just fetching extra tab data.
-  const shouldHideGlobalLoaderForTab = ['badge', 'study-groups'].includes(tab);
+  const shouldHideGlobalLoaderForTab = ['badge', 'welcome', 'study-groups'].includes(tab);
   const effectiveCourseStatus = (
     shouldHideGlobalLoaderForTab
     && courseStatus === 'loading'

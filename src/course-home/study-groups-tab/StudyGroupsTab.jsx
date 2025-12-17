@@ -2973,13 +2973,7 @@ const StudyGroupsTab = () => {
     const hasChanged = prevDataStr !== currentDataStr;
     
     if (hasChanged) {
-      console.log('[StudyGroupsTab] Component rendered (CHANGED)', {
-        ...currentData,
-        prevResultsCount: prevData?.resultsCount || 0,
-      });
       window.__studyGroupsRenderCache.set(renderCacheKey, currentData);
-    } else {
-      console.log('[StudyGroupsTab] Component rendered (NO CHANGE)', currentData);
     }
   });
 
@@ -3011,21 +3005,9 @@ const StudyGroupsTab = () => {
     const currentResultsStr = currentResults ? JSON.stringify(currentResults) : null;
     const hasChanged = prevResultsStr !== currentResultsStr;
     
-    if (hasChanged) {
-      console.log('[StudyGroupsTab] studyGroupsModel.results changed', {
-        hasResults: currentResults !== undefined,
-        resultsCount: currentResults?.length || 0,
-        results: currentResults,
-        prevCount: prevResults?.length || 0,
-      });
+    if (hasChanged && currentResults !== undefined) {
       // Cache the results for restoration on remount
-      if (currentResults !== undefined) {
-        window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
-      }
-    } else {
-      console.log('[StudyGroupsTab] studyGroupsModel.results (NO CHANGE)', {
-        resultsCount: currentResults?.length || 0,
-      });
+      window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
     }
   }, [studyGroupsModel.results, courseId]);
 
@@ -3042,18 +3024,7 @@ const StudyGroupsTab = () => {
     const hasChanged = prevLocalGroupsStr !== currentLocalGroupsStr;
     
     if (hasChanged) {
-      console.log('[StudyGroupsTab] localGroups changed', {
-        isNull: localGroups === null,
-        count: localGroups?.length || 0,
-        prevIsNull: prevLocalGroups === null,
-        prevCount: prevLocalGroups?.length || 0,
-      });
       window.__studyGroupsLocalGroupsCache.set(localGroupsCacheKey, localGroups);
-    } else {
-      console.log('[StudyGroupsTab] localGroups (NO CHANGE)', {
-        isNull: localGroups === null,
-        count: localGroups?.length || 0,
-      });
     }
   }, [localGroups, courseId]);
 
@@ -3093,31 +3064,11 @@ const StudyGroupsTab = () => {
     // Default to empty array
     const result = [];
     
-    // Only log if groups actually changed
+    // Track last groups in cache
     const prevGroups = window.__studyGroupsGroupsCache.get(groupsCacheKeyLocal);
     const prevGroupsStr = prevGroups ? JSON.stringify(prevGroups) : null;
     const currentGroupsStr = JSON.stringify(result);
     const hasChanged = prevGroupsStr !== currentGroupsStr;
-    
-    // Skip logging initial render if data is already available (to reduce noise)
-    const isInitialRender = prevGroups === undefined;
-    const hasData = result.length > 0;
-    
-    if (hasChanged && (!isInitialRender || !hasData)) {
-      console.log('[StudyGroupsTab] groups useMemo calculated (CHANGED)', {
-        usingLocalGroups: localGroups !== null,
-        groupsCount: result.length,
-        localGroupsCount: localGroups?.length || 0,
-        modelResultsCount: studyGroupsModel.results?.length || 0,
-        prevCount: prevGroups?.length || 0,
-        isInitialRender,
-        usingCachedResults: cachedResults !== undefined,
-      });
-    } else if (!hasChanged) {
-      console.log('[StudyGroupsTab] groups useMemo calculated (NO CHANGE)', {
-        groupsCount: result.length,
-      });
-    }
     
     window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
     return result;
@@ -3128,10 +3079,6 @@ const StudyGroupsTab = () => {
   const lastRefreshKeyRefForSync = useRef(0);
   useEffect(() => {
     if (refreshKey > 0 && refreshKey !== lastRefreshKeyRefForSync.current) {
-      console.log('[StudyGroupsTab] Refresh detected, resetting localGroups', {
-        refreshKey,
-        lastRefreshKey: lastRefreshKeyRefForSync.current,
-      });
       // Reset to use model directly on refresh
       setLocalGroups(null);
       lastRefreshKeyRefForSync.current = refreshKey;
@@ -3210,25 +3157,15 @@ const StudyGroupsTab = () => {
     const isAlreadyFetched = window.__studyGroupsStreaksFetchedMap.has(fetchKey);
     const isCurrentlyFetching = window.__studyGroupsStreaksFetching.has(fetchKey);
 
-    console.log('[StudyGroupsTab] fetchGroupStreaks useEffect triggered', {
-      courseId,
-      fetchKey,
-      alreadyFetched: isAlreadyFetched,
-      isCurrentlyFetching,
-    });
-
     // Skip if already fetched or currently fetching (prevent double fetch)
     if (isAlreadyFetched || isCurrentlyFetching) {
       if (isAlreadyFetched) {
-        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched for this course');
         // If already fetched, restore cached data and set loading to false
         const cachedData = window.__studyGroupsStreaksDataCache.get(fetchKey);
         if (cachedData) {
           setGroupStreaks(cachedData);
         }
         setLoadingStreaks(false);
-      } else {
-        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - currently fetching');
       }
       return;
     }
@@ -3238,14 +3175,8 @@ const StudyGroupsTab = () => {
     setLoadingStreaks(true);
 
     const fetchGroupStreaks = async () => {
-      console.log('[StudyGroupsTab] Fetching group streaks', { courseId });
-      
       try {
         const data = await getGroupStreaks(courseId);
-        console.log('[StudyGroupsTab] Group streaks data received', {
-          success: data?.success,
-          groupsCount: data?.groups?.length || 0,
-        });
         
         // Mark as fetched AFTER successful fetch
         window.__studyGroupsStreaksFetchedMap.set(fetchKey, true);
@@ -3261,17 +3192,13 @@ const StudyGroupsTab = () => {
           const prevGroupsStr = JSON.stringify(prevGroups);
           const newGroupsStr = JSON.stringify(newGroups);
           if (prevGroupsStr !== newGroupsStr) {
-            console.log('[StudyGroupsTab] Updating groupStreaks state', {
-              prevCount: prevGroups.length,
-              newCount: newGroups.length,
-            });
             return newGroups;
           }
-          console.log('[StudyGroupsTab] Skipping groupStreaks update - no change');
           return prevGroups;
         });
       } catch (error) {
-        console.error('[StudyGroupsTab] Error fetching group streaks:', error);
+        // Keep an error log for debugging/monitoring
+        logError('Error fetching group streaks', error);
         setGroupStreaks([]);
         // Remove from map and cache on error to allow retry
         window.__studyGroupsStreaksFetchedMap.delete(fetchKey);
@@ -3319,40 +3246,18 @@ const StudyGroupsTab = () => {
 
   // Refresh fetch - only when refreshKey explicitly changes (manual refresh)
   useEffect(() => {
-    console.log('[StudyGroupsTab] Refresh useEffect triggered', {
-      courseId,
-      refreshKey,
-      lastRefreshKey: lastRefreshKeyRef.current,
-      isFetching: isFetchingRef.current,
-    });
-
     if (!courseId) {
-      console.log('[StudyGroupsTab] Skipping refresh - no courseId');
       return;
     }
     if (refreshKey === 0) {
-      console.log('[StudyGroupsTab] Skipping refresh - initial state');
       return; // Initial state, skip
     }
     if (refreshKey === lastRefreshKeyRef.current) {
-      console.log('[StudyGroupsTab] Skipping refresh - no change');
       return; // No change, skip
     }
     if (isFetchingRef.current) {
-      console.log('[StudyGroupsTab] Skipping refresh - already fetching');
       return; // Already fetching, skip
     }
-    
-    console.log('[StudyGroupsTab] Dispatching refresh fetch', { 
-      courseId, 
-      refreshKey,
-      lastRefreshKey: lastRefreshKeyRef.current
-    });
-    logInfo('Refreshing study groups (refreshKey changed)', { 
-      courseId, 
-      refreshKey,
-      lastRefreshKey: lastRefreshKeyRef.current
-    });
     
     // Update tracking immediately
     lastRefreshKeyRef.current = refreshKey;
@@ -3364,7 +3269,6 @@ const StudyGroupsTab = () => {
     // Reset fetching flag after a delay
     const timeoutId = setTimeout(() => {
       isFetchingRef.current = false;
-      console.log('[StudyGroupsTab] Reset isFetchingRef flag after refresh');
     }, 3000);
     
     return () => {
@@ -3374,13 +3278,8 @@ const StudyGroupsTab = () => {
   }, [courseId, refreshKey]); // Only courseId and refreshKey
 
   const handleRefresh = useCallback(() => {
-    logInfo('Refreshing study groups (handleRefresh called)', { courseId });
     // Only increment refreshKey if it hasn't been incremented recently
-    setRefreshKey(prev => {
-      const newKey = prev + 1;
-      logInfo('Incrementing refreshKey', { oldKey: prev, newKey });
-      return newKey;
-    });
+    setRefreshKey(prev => prev + 1);
   }, [courseId]);
 
   return (
