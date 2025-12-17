@@ -1561,7 +1561,16 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const currentUsername = getAuthenticatedUser()?.username || null;
 
   // Check if user is owner: match by id OR username to avoid type mismatches
-  const ownerId = localGroup.createdBy?.id || localGroup.created_by?.id || localGroup.ownerId || localGroup.owner?.id || localGroup.createdById;
+  // Also handle case where createdBy/created_by is a direct ID (number/string) not an object
+  const rawCreatedBy = localGroup.createdBy;
+  const rawCreatedBy2 = localGroup.created_by;
+  const ownerId = localGroup.createdBy?.id 
+    || localGroup.created_by?.id 
+    || localGroup.ownerId 
+    || localGroup.owner?.id 
+    || localGroup.createdById
+    || (typeof rawCreatedBy === 'number' || typeof rawCreatedBy === 'string' ? rawCreatedBy : null)
+    || (typeof rawCreatedBy2 === 'number' || typeof rawCreatedBy2 === 'string' ? rawCreatedBy2 : null);
   const ownerUsername = localGroup.createdBy?.username || localGroup.created_by?.username || localGroup.owner?.username;
   const currentUserKey = currentUserId;
   const isOwner = (
@@ -2563,9 +2572,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                           
                           if (isLeader) {
                             return (
-                              <Button size="sm" variant="primary" disabled>
+                              <Badge 
+                                variant="primary" 
+                                style={{ 
+                                  padding: '6px 12px', 
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  borderRadius: '6px',
+                                  backgroundColor: '#6366f1',
+                                  color: '#ffffff'
+                                }}
+                              >
                                 Trưởng nhóm
-                              </Button>
+                              </Badge>
                             );
                           }
                           if (isCurrentUser && !isOwner) {
@@ -2894,7 +2913,6 @@ const StudyGroupsTab = () => {
   const studyGroupsModel = useModel('study-groups', courseId) || {};
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const hasInitialFetchedRef = useRef(false);
 
   const currentUser = getAuthenticatedUser();
   // Fallback to username when id is missing to keep permission checks working
@@ -3006,73 +3024,12 @@ const StudyGroupsTab = () => {
     }
   }, [courseId, dispatch, welcomeModel.userStats, welcomeModel.success]);
 
-  // Track fetch state - use refs to persist across renders
-  const lastCourseIdRef = useRef(null);
-  const isFetchingRef = useRef(false);
+  // Track refresh state - use ref to persist across renders
+  // NOTE: Initial fetch is handled by TabContainer, we only handle manual refresh here
   const lastRefreshKeyRef = useRef(0);
-  
-  // Reset state when courseId changes (separate effect to avoid interference)
-  useEffect(() => {
-    if (courseId && lastCourseIdRef.current !== courseId) {
-      logInfo('Course ID changed, resetting fetch state', { 
-        oldCourseId: lastCourseIdRef.current, 
-        newCourseId: courseId 
-      });
-      hasInitialFetchedRef.current = false;
-      isFetchingRef.current = false;
-      lastRefreshKeyRef.current = 0;
-      lastCourseIdRef.current = courseId;
-    }
-  }, [courseId]);
-  
-  // Initial fetch - ONLY ONCE when component mounts with a courseId
-  useEffect(() => {
-    if (!courseId) return;
-    
-    // Only fetch if we haven't fetched for this course yet
-    if (hasInitialFetchedRef.current) {
-      return;
-    }
-    
-    // Double-check we're not already fetching
-    if (isFetchingRef.current) {
-      return;
-    }
-    
-    // Check if model already has data (from previous load or cache)
-    // If it has results array (even if empty), consider it loaded
-    const hasModelData = studyGroupsModel.results !== undefined;
-    if (hasModelData) {
-      logInfo('Study groups model already has data, skipping initial fetch', { 
-        courseId, 
-        hasResults: Array.isArray(studyGroupsModel.results),
-        resultsCount: studyGroupsModel.results?.length || 0
-      });
-      hasInitialFetchedRef.current = true;
-      return;
-    }
-    
-    logInfo('Fetching study groups data (initial - mount)', { courseId });
-    
-    // Set flags IMMEDIATELY before any async operation
-    hasInitialFetchedRef.current = true;
-    isFetchingRef.current = true;
-    
-    // Dispatch fetch
-    dispatch(fetchStudyGroupsTab(courseId));
-    
-    // Reset fetching flag after a reasonable delay
-    const timeoutId = setTimeout(() => {
-      isFetchingRef.current = false;
-    }, 3000);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, studyGroupsModel.results]); // Include studyGroupsModel.results to check if data exists
+  const isFetchingRef = useRef(false);
 
-  // Refresh fetch - only when refreshKey explicitly changes
+  // Refresh fetch - only when refreshKey explicitly changes (manual refresh)
   useEffect(() => {
     if (!courseId) return;
     if (refreshKey === 0) return; // Initial state, skip
