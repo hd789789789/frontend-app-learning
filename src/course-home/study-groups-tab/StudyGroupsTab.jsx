@@ -2937,6 +2937,16 @@ const StudyGroupsTab = () => {
   const studyGroupsModel = useModel('study-groups', courseId) || {};
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Debug: Log component render
+  useEffect(() => {
+    console.log('[StudyGroupsTab] Component rendered', {
+      courseId,
+      hasResults: studyGroupsModel.results !== undefined,
+      resultsCount: studyGroupsModel.results?.length || 0,
+      refreshKey,
+    });
+  });
 
   const currentUser = getAuthenticatedUser();
   // Fallback to username when id is missing to keep permission checks working
@@ -2952,13 +2962,32 @@ const StudyGroupsTab = () => {
   // Only used for optimistic updates, not for initial render or refresh
   const [localGroups, setLocalGroups] = useState(null); // null = use model, array = use local
 
+  // Debug: Log when model changes
+  useEffect(() => {
+    console.log('[StudyGroupsTab] studyGroupsModel.results changed', {
+      hasResults: studyGroupsModel.results !== undefined,
+      resultsCount: studyGroupsModel.results?.length || 0,
+      results: studyGroupsModel.results,
+    });
+  }, [studyGroupsModel.results]);
+
+  // Debug: Log when localGroups changes
+  useEffect(() => {
+    console.log('[StudyGroupsTab] localGroups changed', {
+      isNull: localGroups === null,
+      count: localGroups?.length || 0,
+    });
+  }, [localGroups]);
+
   const groups = useMemo(() => {
-    // Use local groups only if set (for optimistic updates)
-    // Otherwise use model directly to avoid unnecessary re-renders
-    if (localGroups !== null) {
-      return localGroups;
-    }
-    return studyGroupsModel.results || [];
+    const result = localGroups !== null ? localGroups : (studyGroupsModel.results || []);
+    console.log('[StudyGroupsTab] groups useMemo calculated', {
+      usingLocalGroups: localGroups !== null,
+      groupsCount: result.length,
+      localGroupsCount: localGroups?.length || 0,
+      modelResultsCount: studyGroupsModel.results?.length || 0,
+    });
+    return result;
   }, [localGroups, studyGroupsModel.results]);
   
   // Reset localGroups to null on manual refresh to use model directly
@@ -2966,6 +2995,10 @@ const StudyGroupsTab = () => {
   const lastRefreshKeyRefForSync = useRef(0);
   useEffect(() => {
     if (refreshKey > 0 && refreshKey !== lastRefreshKeyRefForSync.current) {
+      console.log('[StudyGroupsTab] Refresh detected, resetting localGroups', {
+        refreshKey,
+        lastRefreshKey: lastRefreshKeyRefForSync.current,
+      });
       // Reset to use model directly on refresh
       setLocalGroups(null);
       lastRefreshKeyRefForSync.current = refreshKey;
@@ -2999,8 +3032,15 @@ const StudyGroupsTab = () => {
   const lastGroupStreaksCourseIdRef = useRef(null);
   
   useEffect(() => {
+    console.log('[StudyGroupsTab] fetchGroupStreaks useEffect triggered', {
+      courseId,
+      alreadyFetched: groupStreaksFetchedRef.current,
+      lastCourseId: lastGroupStreaksCourseIdRef.current,
+    });
+
     // Reset when courseId changes
     if (lastGroupStreaksCourseIdRef.current !== courseId) {
+      console.log('[StudyGroupsTab] CourseId changed, resetting groupStreaksFetchedRef');
       groupStreaksFetchedRef.current = false;
       lastGroupStreaksCourseIdRef.current = courseId;
     }
@@ -3009,17 +3049,24 @@ const StudyGroupsTab = () => {
     if (groupStreaksFetchedRef.current || !courseId) {
       if (!courseId) {
         setLoadingStreaks(false);
+      } else {
+        console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched');
       }
       return;
     }
 
     const fetchGroupStreaks = async () => {
+      console.log('[StudyGroupsTab] Fetching group streaks', { courseId });
       // Set flag immediately to prevent double fetch
       groupStreaksFetchedRef.current = true;
       setLoadingStreaks(true);
       
       try {
         const data = await getGroupStreaks(courseId);
+        console.log('[StudyGroupsTab] Group streaks data received', {
+          success: data?.success,
+          groupsCount: data?.groups?.length || 0,
+        });
         if (data && data.success && data.groups) {
           setGroupStreaks(data.groups);
         } else {
@@ -3071,11 +3118,35 @@ const StudyGroupsTab = () => {
 
   // Refresh fetch - only when refreshKey explicitly changes (manual refresh)
   useEffect(() => {
-    if (!courseId) return;
-    if (refreshKey === 0) return; // Initial state, skip
-    if (refreshKey === lastRefreshKeyRef.current) return; // No change, skip
-    if (isFetchingRef.current) return; // Already fetching, skip
+    console.log('[StudyGroupsTab] Refresh useEffect triggered', {
+      courseId,
+      refreshKey,
+      lastRefreshKey: lastRefreshKeyRef.current,
+      isFetching: isFetchingRef.current,
+    });
+
+    if (!courseId) {
+      console.log('[StudyGroupsTab] Skipping refresh - no courseId');
+      return;
+    }
+    if (refreshKey === 0) {
+      console.log('[StudyGroupsTab] Skipping refresh - initial state');
+      return; // Initial state, skip
+    }
+    if (refreshKey === lastRefreshKeyRef.current) {
+      console.log('[StudyGroupsTab] Skipping refresh - no change');
+      return; // No change, skip
+    }
+    if (isFetchingRef.current) {
+      console.log('[StudyGroupsTab] Skipping refresh - already fetching');
+      return; // Already fetching, skip
+    }
     
+    console.log('[StudyGroupsTab] Dispatching refresh fetch', { 
+      courseId, 
+      refreshKey,
+      lastRefreshKey: lastRefreshKeyRef.current
+    });
     logInfo('Refreshing study groups (refreshKey changed)', { 
       courseId, 
       refreshKey,
@@ -3092,6 +3163,7 @@ const StudyGroupsTab = () => {
     // Reset fetching flag after a delay
     const timeoutId = setTimeout(() => {
       isFetchingRef.current = false;
+      console.log('[StudyGroupsTab] Reset isFetchingRef flag after refresh');
     }, 3000);
     
     return () => {

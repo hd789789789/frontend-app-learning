@@ -37,23 +37,39 @@ const TabContainer = (props) => {
   useEffect(() => {
     const fetchKey = `${tab || ''}::${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
 
+    console.log('[TabContainer] useEffect triggered', {
+      tab,
+      courseIdFromUrl,
+      targetUserId,
+      isProgressTab,
+      fetchKey,
+      lastFetchKey: lastFetchKeyRef.current,
+      isFetching: isFetchingRef.current,
+      courseStatus,
+      courseId,
+    });
+
     // Skip if already fetched for this key
     if (lastFetchKeyRef.current === fetchKey) {
+      console.log('[TabContainer] Skipping fetch - already fetched for this key');
       return;
     }
 
     // Skip if currently fetching (prevent double fetch in StrictMode)
     if (isFetchingRef.current) {
+      console.log('[TabContainer] Skipping fetch - already fetching');
       return;
     }
 
     // If we've already loaded this course and status is loaded, skip refetch to avoid flicker/unmounts
     if (courseStatus === 'loaded' && courseId === courseIdFromUrl) {
+      console.log('[TabContainer] Skipping fetch - course already loaded');
       lastFetchKeyRef.current = fetchKey;
       return;
     }
 
     // Set flags before dispatch to prevent double fetch
+    console.log('[TabContainer] Dispatching fetch', { tab, courseIdFromUrl });
     lastFetchKeyRef.current = fetchKey;
     isFetchingRef.current = true;
 
@@ -68,6 +84,7 @@ const TabContainer = (props) => {
     // This prevents double fetch in StrictMode while allowing legitimate refetches
     const timeoutId = setTimeout(() => {
       isFetchingRef.current = false;
+      console.log('[TabContainer] Reset isFetchingRef flag');
     }, 1000);
 
     return () => {
