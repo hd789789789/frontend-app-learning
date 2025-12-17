@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef, memo } from 'react';
 import { 
   Badge, 
   Container, 
@@ -3127,10 +3127,6 @@ const StudyGroupsTab = () => {
     setLocalGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
   }, []);
 
-  // Fetch group streaks
-  const [groupStreaks, setGroupStreaks] = useState([]);
-  const [loadingStreaks, setLoadingStreaks] = useState(true);
-  
   // Use module-level storage to persist across component remounts
   // This ensures the fetch guard works even when component unmounts/remounts
   if (!window.__studyGroupsStreaksFetchedMap) {
@@ -3139,6 +3135,35 @@ const StudyGroupsTab = () => {
   if (!window.__studyGroupsStreaksFetching) {
     window.__studyGroupsStreaksFetching = new Set();
   }
+  if (!window.__studyGroupsStreaksDataCache) {
+    window.__studyGroupsStreaksDataCache = new Map();
+  }
+  
+  // Initialize state based on whether data was already fetched
+  // This prevents flicker when component remounts with cached data
+  const getInitialStreaksState = () => {
+    if (!courseId) return { groups: [], loading: false };
+    const fetchKey = `groupStreaks::${courseId}`;
+    const isAlreadyFetched = window.__studyGroupsStreaksFetchedMap.has(fetchKey);
+    const isCurrentlyFetching = window.__studyGroupsStreaksFetching.has(fetchKey);
+    const cachedData = window.__studyGroupsStreaksDataCache.get(fetchKey);
+    
+    // If already fetched, restore cached data and don't show loading spinner
+    if (isAlreadyFetched && cachedData) {
+      return { groups: cachedData, loading: false };
+    }
+    // If currently fetching, show loading but don't restore data
+    if (isCurrentlyFetching) {
+      return { groups: [], loading: true };
+    }
+    // Otherwise, show loading and empty data
+    return { groups: [], loading: true };
+  };
+  
+  const initialState = getInitialStreaksState();
+  // Fetch group streaks
+  const [groupStreaks, setGroupStreaks] = useState(initialState.groups);
+  const [loadingStreaks, setLoadingStreaks] = useState(initialState.loading);
   
   useEffect(() => {
     if (!courseId) {
@@ -3161,7 +3186,11 @@ const StudyGroupsTab = () => {
     if (isAlreadyFetched || isCurrentlyFetching) {
       if (isAlreadyFetched) {
         console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched for this course');
-        // If already fetched, we should still set loading to false
+        // If already fetched, restore cached data and set loading to false
+        const cachedData = window.__studyGroupsStreaksDataCache.get(fetchKey);
+        if (cachedData) {
+          setGroupStreaks(cachedData);
+        }
         setLoadingStreaks(false);
       } else {
         console.log('[StudyGroupsTab] Skipping groupStreaks fetch - currently fetching');
@@ -3188,6 +3217,10 @@ const StudyGroupsTab = () => {
         
         // Only update state if data actually changed (prevent unnecessary re-renders)
         const newGroups = (data && data.success && data.groups) ? data.groups : [];
+        
+        // Cache the data for restoration on remount
+        window.__studyGroupsStreaksDataCache.set(fetchKey, newGroups);
+        
         setGroupStreaks(prevGroups => {
           // Compare to avoid unnecessary updates
           const prevGroupsStr = JSON.stringify(prevGroups);
@@ -3205,8 +3238,9 @@ const StudyGroupsTab = () => {
       } catch (error) {
         console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
-        // Remove from map on error to allow retry
+        // Remove from map and cache on error to allow retry
         window.__studyGroupsStreaksFetchedMap.delete(fetchKey);
+        window.__studyGroupsStreaksDataCache.delete(fetchKey);
       } finally {
         setLoadingStreaks(false);
         // Remove from fetching set
@@ -3406,4 +3440,6 @@ const StudyGroupsTab = () => {
   );
 };
 
-export default StudyGroupsTab;
+// Memoize component to prevent re-renders when parent re-renders but props don't change
+// Since StudyGroupsTab doesn't receive props, this prevents re-renders caused by parent component updates
+export default memo(StudyGroupsTab);
