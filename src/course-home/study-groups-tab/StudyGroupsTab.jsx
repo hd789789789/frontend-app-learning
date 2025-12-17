@@ -3072,9 +3072,14 @@ const StudyGroupsTab = () => {
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
   
-  // Use a Map to track fetched courseIds - persists across remounts in StrictMode
-  const groupStreaksFetchedMapRef = useRef(new Map());
-  const isFetchingStreaksRef = useRef(false);
+  // Use module-level storage to persist across component remounts
+  // This ensures the fetch guard works even when component unmounts/remounts
+  if (!window.__studyGroupsStreaksFetchedMap) {
+    window.__studyGroupsStreaksFetchedMap = new Map();
+  }
+  if (!window.__studyGroupsStreaksFetching) {
+    window.__studyGroupsStreaksFetching = new Set();
+  }
   
   useEffect(() => {
     if (!courseId) {
@@ -3083,8 +3088,8 @@ const StudyGroupsTab = () => {
     }
 
     const fetchKey = `groupStreaks::${courseId}`;
-    const isAlreadyFetched = groupStreaksFetchedMapRef.current.has(fetchKey);
-    const isCurrentlyFetching = isFetchingStreaksRef.current;
+    const isAlreadyFetched = window.__studyGroupsStreaksFetchedMap.has(fetchKey);
+    const isCurrentlyFetching = window.__studyGroupsStreaksFetching.has(fetchKey);
 
     console.log('[StudyGroupsTab] fetchGroupStreaks useEffect triggered', {
       courseId,
@@ -3093,19 +3098,20 @@ const StudyGroupsTab = () => {
       isCurrentlyFetching,
     });
 
-    // Skip if already fetched or currently fetching (prevent double fetch in StrictMode)
+    // Skip if already fetched or currently fetching (prevent double fetch)
     if (isAlreadyFetched || isCurrentlyFetching) {
       if (isAlreadyFetched) {
         console.log('[StudyGroupsTab] Skipping groupStreaks fetch - already fetched for this course');
+        // If already fetched, we should still set loading to false
+        setLoadingStreaks(false);
       } else {
         console.log('[StudyGroupsTab] Skipping groupStreaks fetch - currently fetching');
       }
       return;
     }
 
-    // Set flags immediately to prevent double fetch
-    isFetchingStreaksRef.current = true;
-    groupStreaksFetchedMapRef.current.set(fetchKey, true);
+    // Set flags immediately to prevent double fetch (BEFORE async operation)
+    window.__studyGroupsStreaksFetching.add(fetchKey);
     setLoadingStreaks(true);
 
     const fetchGroupStreaks = async () => {
@@ -3117,6 +3123,9 @@ const StudyGroupsTab = () => {
           success: data?.success,
           groupsCount: data?.groups?.length || 0,
         });
+        
+        // Mark as fetched AFTER successful fetch
+        window.__studyGroupsStreaksFetchedMap.set(fetchKey, true);
         
         // Only update state if data actually changed (prevent unnecessary re-renders)
         const newGroups = (data && data.success && data.groups) ? data.groups : [];
@@ -3138,10 +3147,11 @@ const StudyGroupsTab = () => {
         console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
         // Remove from map on error to allow retry
-        groupStreaksFetchedMapRef.current.delete(fetchKey);
+        window.__studyGroupsStreaksFetchedMap.delete(fetchKey);
       } finally {
         setLoadingStreaks(false);
-        isFetchingStreaksRef.current = false;
+        // Remove from fetching set
+        window.__studyGroupsStreaksFetching.delete(fetchKey);
       }
     };
 
