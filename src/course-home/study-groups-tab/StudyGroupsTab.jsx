@@ -2563,12 +2563,44 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       <div className="member-actions">
                         {(() => {
                           const memberId = member.user_id || member.user?.id || member.userId || member.user?.userId;
+                          const memberUsername = member.user?.username || member.username;
                           const memberIdStr = memberId !== undefined && memberId !== null ? String(memberId) : null;
                           const ownerIdStr = ownerId !== undefined && ownerId !== null ? String(ownerId) : null;
                           const currentUserKeyStr = currentUserId !== undefined && currentUserId !== null ? String(currentUserId) : null;
 
-                          const isLeader = Boolean(ownerIdStr && memberIdStr && ownerIdStr === memberIdStr);
+                          // Check if member is leader by comparing both ID and username
+                          // Try multiple comparison methods to handle different data types
+                          const isLeaderById = Boolean(
+                            ownerIdStr && 
+                            memberIdStr && 
+                            (ownerIdStr === memberIdStr || 
+                             Number(ownerIdStr) === Number(memberIdStr) ||
+                             (ownerId !== null && ownerId !== undefined && memberId !== null && memberId !== undefined && ownerId === memberId))
+                          );
+                          const isLeaderByUsername = Boolean(
+                            ownerUsername && 
+                            memberUsername && 
+                            ownerUsername.toLowerCase() === memberUsername.toLowerCase()
+                          );
+                          const isLeader = isLeaderById || isLeaderByUsername;
                           const isCurrentUser = Boolean(currentUserKeyStr && memberIdStr && currentUserKeyStr === memberIdStr);
+                          
+                          // Debug log (remove after testing)
+                          if (memberUsername === 'duy_le' || memberUsername === 'hd789789789') {
+                            console.log('Member debug:', {
+                              memberUsername,
+                              memberId,
+                              memberIdStr,
+                              ownerId,
+                              ownerIdStr,
+                              ownerUsername,
+                              isLeaderById,
+                              isLeaderByUsername,
+                              isLeader,
+                              localGroupCreatedBy: localGroup.createdBy,
+                              localGroupCreated_by: localGroup.created_by
+                            });
+                          }
                           
                           if (isLeader) {
                             return (
@@ -2925,27 +2957,28 @@ const StudyGroupsTab = () => {
   };
 
   // Local state for groups to enable optimistic updates
-  const [localGroups, setLocalGroups] = useState([]);
-  
-  // Sync local groups with model when model changes
-  useEffect(() => {
-    if (studyGroupsModel.results && studyGroupsModel.results.length > 0) {
-      setLocalGroups(studyGroupsModel.results);
-    } else if (studyGroupsModel.results && studyGroupsModel.results.length === 0) {
-      setLocalGroups([]);
-    }
-  }, [studyGroupsModel.results]);
+  // Only used for optimistic updates, not for initial render or refresh
+  const [localGroups, setLocalGroups] = useState(null); // null = use model, array = use local
 
   const groups = useMemo(() => {
-    // Use local groups if available, otherwise fall back to model
-    if (localGroups.length > 0) {
+    // Use local groups only if set (for optimistic updates)
+    // Otherwise use model directly to avoid unnecessary re-renders
+    if (localGroups !== null) {
       return localGroups;
     }
-    if (studyGroupsModel.results && studyGroupsModel.results.length > 0) {
-      return studyGroupsModel.results;
-    }
-    return [];
+    return studyGroupsModel.results || [];
   }, [localGroups, studyGroupsModel.results]);
+  
+  // Reset localGroups to null on manual refresh to use model directly
+  // This prevents double rendering when refresh happens
+  const lastRefreshKeyRefForSync = useRef(0);
+  useEffect(() => {
+    if (refreshKey > 0 && refreshKey !== lastRefreshKeyRefForSync.current) {
+      // Reset to use model directly on refresh
+      setLocalGroups(null);
+      lastRefreshKeyRefForSync.current = refreshKey;
+    }
+  }, [refreshKey]);
 
   // Dựa trên cờ từ BE, mặc định cho phép (giữ tương thích), nhưng vẫn cần user đăng nhập
   const canCreateGroup = (studyGroupsModel.canCreateGroup !== false) && Boolean(currentUserId);
