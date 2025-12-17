@@ -2939,7 +2939,12 @@ const StudyGroupsTab = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Debug: Log component render - only log when meaningful data changes
-  const prevRenderDataRef = useRef(null);
+  // Use window to persist across remounts
+  if (!window.__studyGroupsRenderCache) {
+    window.__studyGroupsRenderCache = new Map();
+  }
+  const renderCacheKey = `render::${courseId}`;
+  
   useEffect(() => {
     const currentData = {
       courseId,
@@ -2948,13 +2953,19 @@ const StudyGroupsTab = () => {
       refreshKey,
     };
     
-    const prevDataStr = JSON.stringify(prevRenderDataRef.current);
+    const prevData = window.__studyGroupsRenderCache.get(renderCacheKey);
+    const prevDataStr = prevData ? JSON.stringify(prevData) : null;
     const currentDataStr = JSON.stringify(currentData);
     const hasChanged = prevDataStr !== currentDataStr;
     
-    if (hasChanged || prevRenderDataRef.current === null) {
-      console.log('[StudyGroupsTab] Component rendered', currentData);
-      prevRenderDataRef.current = currentData;
+    if (hasChanged) {
+      console.log('[StudyGroupsTab] Component rendered (CHANGED)', {
+        ...currentData,
+        prevResultsCount: prevData?.resultsCount || 0,
+      });
+      window.__studyGroupsRenderCache.set(renderCacheKey, currentData);
+    } else {
+      console.log('[StudyGroupsTab] Component rendered (NO CHANGE)', currentData);
     }
   });
 
@@ -3001,13 +3012,33 @@ const StudyGroupsTab = () => {
     }
   }, [studyGroupsModel.results, courseId]);
 
-  // Debug: Log when localGroups changes
+  // Debug: Log when localGroups changes - only log actual changes
+  if (!window.__studyGroupsLocalGroupsCache) {
+    window.__studyGroupsLocalGroupsCache = new Map();
+  }
+  const localGroupsCacheKey = `localGroups::${courseId}`;
+  
   useEffect(() => {
-    console.log('[StudyGroupsTab] localGroups changed', {
-      isNull: localGroups === null,
-      count: localGroups?.length || 0,
-    });
-  }, [localGroups]);
+    const prevLocalGroups = window.__studyGroupsLocalGroupsCache.get(localGroupsCacheKey);
+    const prevLocalGroupsStr = prevLocalGroups !== undefined ? JSON.stringify(prevLocalGroups) : null;
+    const currentLocalGroupsStr = localGroups !== null ? JSON.stringify(localGroups) : null;
+    const hasChanged = prevLocalGroupsStr !== currentLocalGroupsStr;
+    
+    if (hasChanged) {
+      console.log('[StudyGroupsTab] localGroups changed', {
+        isNull: localGroups === null,
+        count: localGroups?.length || 0,
+        prevIsNull: prevLocalGroups === null,
+        prevCount: prevLocalGroups?.length || 0,
+      });
+      window.__studyGroupsLocalGroupsCache.set(localGroupsCacheKey, localGroups);
+    } else {
+      console.log('[StudyGroupsTab] localGroups (NO CHANGE)', {
+        isNull: localGroups === null,
+        count: localGroups?.length || 0,
+      });
+    }
+  }, [localGroups, courseId]);
 
   // Track previous groups to detect actual changes - use window to persist across remounts
   if (!window.__studyGroupsGroupsCache) {
