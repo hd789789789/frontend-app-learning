@@ -3141,6 +3141,10 @@ const StudyGroupsTab = () => {
   // Dựa trên cờ từ BE, mặc định cho phép (giữ tương thích), nhưng vẫn cần user đăng nhập
   const canCreateGroup = (studyGroupsModel.canCreateGroup !== false) && Boolean(currentUserId);
 
+  // Đã có data nhóm hay chưa (để tránh hiển thị trạng thái “chưa có nhóm”
+  // trước khi BE trả về results lần đầu)
+  const hasGroupsData = (studyGroupsModel.results !== undefined) || (localGroups !== null);
+
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
     setLocalGroups((prevGroups) => [newGroup, ...prevGroups]);
@@ -3397,44 +3401,53 @@ const StudyGroupsTab = () => {
               <h3>Nhóm của bạn</h3>
             </div>
             <div className="group-list">
-              {groups.length > 0 ? (
-                groups.map((group) => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    courseId={courseId}
-                    currentUserId={currentUserId}
-                    onUpdate={handleRefresh}
-                    onGroupUpdated={updateGroupInList}
-                    onGroupDeleted={removeGroupFromList}
-                    onMemberAdded={(groupId, newMember) => {
-                      updateGroupInList(groupId, {
-                        members: [...(groups.find(g => g.id === groupId)?.members || []), newMember],
-                        memberCount: (groups.find(g => g.id === groupId)?.memberCount || 0) + 1,
-                      });
-                    }}
-                    onMemberRemoved={(groupId, userId) => {
-                      const group = groups.find(g => g.id === groupId);
-                      if (group) {
-                        updateGroupInList(groupId, {
-                          members: (group.members || []).filter((m) => {
-                            const memberId = m.user_id || m.user?.id || m.userId;
-                            return memberId !== userId;
-                          }),
-                          memberCount: Math.max(0, (group.memberCount || 0) - 1),
-                        });
-                      }
-                    }}
-                  />
-                ))
-              ) : (
+              {!hasGroupsData ? (
                 <div className="text-center p-4">
-                  <p>
-                    {canCreateGroup 
-                      ? 'Chưa có nhóm học tập nào. Hãy tạo nhóm mới để bắt đầu!'
-                      : 'Chưa có nhóm học tập nào. Bạn cần được thêm vào nhóm để tham gia thảo luận.'}
-                  </p>
+                  <Spinner animation="border" size="sm" />
+                  <span className="ms-2 text-muted">Đang tải nhóm học tập...</span>
                 </div>
+              ) : (
+                <>
+                  {groups.length > 0 ? (
+                    groups.map((group) => (
+                      <GroupCard
+                        key={group.id}
+                        group={group}
+                        courseId={courseId}
+                        currentUserId={currentUserId}
+                        onUpdate={handleRefresh}
+                        onGroupUpdated={updateGroupInList}
+                        onGroupDeleted={removeGroupFromList}
+                        onMemberAdded={(groupId, newMember) => {
+                          updateGroupInList(groupId, {
+                            members: [...(groups.find(g => g.id === groupId)?.members || []), newMember],
+                            memberCount: (groups.find(g => g.id === groupId)?.memberCount || 0) + 1,
+                          });
+                        }}
+                        onMemberRemoved={(groupId, userId) => {
+                          const group = groups.find(g => g.id === groupId);
+                          if (group) {
+                            updateGroupInList(groupId, {
+                              members: (group.members || []).filter((m) => {
+                                const memberId = m.user_id || m.user?.id || m.userId;
+                                return memberId !== userId;
+                              }),
+                              memberCount: Math.max(0, (group.memberCount || 0) - 1),
+                            });
+                          }
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center p-4">
+                      <p>
+                        {canCreateGroup 
+                          ? 'Chưa có nhóm học tập nào. Hãy tạo nhóm mới để bắt đầu!'
+                          : 'Chưa có nhóm học tập nào. Bạn cần được thêm vào nhóm để tham gia thảo luận.'}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>
