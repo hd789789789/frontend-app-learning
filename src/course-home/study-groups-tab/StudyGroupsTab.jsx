@@ -2973,11 +2973,17 @@ const StudyGroupsTab = () => {
   const [localGroups, setLocalGroups] = useState(null); // null = use model, array = use local
 
   // Debug: Log when model changes - only log actual changes
-  const prevModelResultsRef = useRef(null);
+  // Use window object to persist across remounts
+  if (!window.__studyGroupsModelResultsCache) {
+    window.__studyGroupsModelResultsCache = new Map();
+  }
+  const cacheKey = `modelResults::${courseId}`;
+  
   useEffect(() => {
     const currentResults = studyGroupsModel.results;
-    const prevResultsStr = JSON.stringify(prevModelResultsRef.current);
-    const currentResultsStr = JSON.stringify(currentResults);
+    const prevResults = window.__studyGroupsModelResultsCache.get(cacheKey);
+    const prevResultsStr = prevResults ? JSON.stringify(prevResults) : null;
+    const currentResultsStr = currentResults ? JSON.stringify(currentResults) : null;
     const hasChanged = prevResultsStr !== currentResultsStr;
     
     if (hasChanged) {
@@ -2985,11 +2991,15 @@ const StudyGroupsTab = () => {
         hasResults: currentResults !== undefined,
         resultsCount: currentResults?.length || 0,
         results: currentResults,
-        prevCount: prevModelResultsRef.current?.length || 0,
+        prevCount: prevResults?.length || 0,
       });
-      prevModelResultsRef.current = currentResults;
+      window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
+    } else {
+      console.log('[StudyGroupsTab] studyGroupsModel.results (NO CHANGE)', {
+        resultsCount: currentResults?.length || 0,
+      });
     }
-  }, [studyGroupsModel.results]);
+  }, [studyGroupsModel.results, courseId]);
 
   // Debug: Log when localGroups changes
   useEffect(() => {
@@ -2999,19 +3009,23 @@ const StudyGroupsTab = () => {
     });
   }, [localGroups]);
 
-  // Track previous groups to detect actual changes
-  const prevGroupsRef = useRef(null);
+  // Track previous groups to detect actual changes - use window to persist across remounts
+  if (!window.__studyGroupsGroupsCache) {
+    window.__studyGroupsGroupsCache = new Map();
+  }
+  const groupsCacheKey = `groups::${courseId}`;
+  
   const groups = useMemo(() => {
     const result = localGroups !== null ? localGroups : (studyGroupsModel.results || []);
     
-    // Only log if groups actually changed (skip initial null → data transition if data is already available)
-    const prevGroups = prevGroupsRef.current;
+    // Only log if groups actually changed
+    const prevGroups = window.__studyGroupsGroupsCache.get(groupsCacheKey);
     const prevGroupsStr = prevGroups ? JSON.stringify(prevGroups) : null;
     const currentGroupsStr = JSON.stringify(result);
     const hasChanged = prevGroupsStr !== currentGroupsStr;
     
     // Skip logging initial render if data is already available (to reduce noise)
-    const isInitialRender = prevGroups === null;
+    const isInitialRender = prevGroups === undefined;
     const hasData = result.length > 0;
     
     if (hasChanged && (!isInitialRender || !hasData)) {
@@ -3029,9 +3043,9 @@ const StudyGroupsTab = () => {
       });
     }
     
-    prevGroupsRef.current = result;
+    window.__studyGroupsGroupsCache.set(groupsCacheKey, result);
     return result;
-  }, [localGroups, studyGroupsModel.results]);
+  }, [localGroups, studyGroupsModel.results, courseId]);
   
   // Reset localGroups to null on manual refresh to use model directly
   // This prevents double rendering when refresh happens
