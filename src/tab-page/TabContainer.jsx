@@ -32,11 +32,18 @@ const TabContainer = (props) => {
   const resolvedCourseId = courseIdFromUrl || courseId;
 
   const lastFetchKeyRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     const fetchKey = `${tab || ''}::${courseIdFromUrl || ''}::${targetUserId || ''}::${isProgressTab}`;
 
+    // Skip if already fetched for this key
     if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+
+    // Skip if currently fetching (prevent double fetch in StrictMode)
+    if (isFetchingRef.current) {
       return;
     }
 
@@ -46,12 +53,26 @@ const TabContainer = (props) => {
       return;
     }
 
+    // Set flags before dispatch to prevent double fetch
     lastFetchKeyRef.current = fetchKey;
+    isFetchingRef.current = true;
+
+    // Dispatch fetch
     if (isProgressTab) {
       dispatch(fetch(courseIdFromUrl, targetUserId));
     } else {
       dispatch(fetch(courseIdFromUrl));
     }
+
+    // Reset fetching flag after a short delay
+    // This prevents double fetch in StrictMode while allowing legitimate refetches
+    const timeoutId = setTimeout(() => {
+      isFetchingRef.current = false;
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 

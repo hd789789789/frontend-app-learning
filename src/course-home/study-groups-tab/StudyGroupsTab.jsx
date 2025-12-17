@@ -22,6 +22,7 @@ import { useDispatch } from 'react-redux';
 import { useModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { logError, logInfo } from '@edx/frontend-platform/logging';
+import { getConfig } from '@edx/frontend-platform';
 import StreakCalendar from '../welcome-tab/StreakCalendar';
 import GroupStreaks from '../welcome-tab/GroupStreaks';
 import StudyTip from '../welcome-tab/StudyTip';
@@ -2585,23 +2586,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                           const isLeader = isLeaderById || isLeaderByUsername;
                           const isCurrentUser = Boolean(currentUserKeyStr && memberIdStr && currentUserKeyStr === memberIdStr);
                           
-                          // Debug log (remove after testing)
-                          if (memberUsername === 'duy_le' || memberUsername === 'hd789789789') {
-                            console.log('Member debug:', {
-                              memberUsername,
-                              memberId,
-                              memberIdStr,
-                              ownerId,
-                              ownerIdStr,
-                              ownerUsername,
-                              isLeaderById,
-                              isLeaderByUsername,
-                              isLeader,
-                              localGroupCreatedBy: localGroup.createdBy,
-                              localGroupCreated_by: localGroup.created_by
-                            });
-                          }
-                          
                           if (isLeader) {
                             return (
                               <Badge 
@@ -2628,11 +2612,19 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                           }
                           // Chỉ trưởng nhóm mới có quyền xóa thành viên khác
                           if (isOwner && canManageMembers && !isLeader && !isCurrentUser) {
+                            const handleViewProfile = () => {
+                              const username = member.user?.username || member.username;
+                              if (username) {
+                                const profileUrl = `${getConfig().ACCOUNT_PROFILE_URL || getConfig().LMS_BASE_URL}/u/${username}`;
+                                window.open(profileUrl, '_blank', 'noopener,noreferrer');
+                              }
+                            };
+                            
                             return (
                               <>
                                 <button
                                   className="post-action-btn"
-                                  onClick={() => {/* View profile - TODO */}}
+                                  onClick={handleViewProfile}
                                   title="Xem hồ sơ"
                                   style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 >
@@ -3003,18 +2995,31 @@ const StudyGroupsTab = () => {
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
+  const groupStreaksFetchedRef = useRef(false);
+  const lastGroupStreaksCourseIdRef = useRef(null);
   
   useEffect(() => {
-    const fetchGroupStreaks = async () => {
+    // Reset when courseId changes
+    if (lastGroupStreaksCourseIdRef.current !== courseId) {
+      groupStreaksFetchedRef.current = false;
+      lastGroupStreaksCourseIdRef.current = courseId;
+    }
+
+    // Skip if already fetched for this course (prevent double fetch in StrictMode)
+    if (groupStreaksFetchedRef.current || !courseId) {
       if (!courseId) {
         setLoadingStreaks(false);
-        return;
       }
-      
+      return;
+    }
+
+    const fetchGroupStreaks = async () => {
+      // Set flag immediately to prevent double fetch
+      groupStreaksFetchedRef.current = true;
       setLoadingStreaks(true);
+      
       try {
         const data = await getGroupStreaks(courseId);
-        console.log('[StudyGroupsTab] Group streaks data:', data);
         if (data && data.success && data.groups) {
           setGroupStreaks(data.groups);
         } else {
@@ -3023,6 +3028,8 @@ const StudyGroupsTab = () => {
       } catch (error) {
         console.error('[StudyGroupsTab] Error fetching group streaks:', error);
         setGroupStreaks([]);
+        // Reset flag on error to allow retry
+        groupStreaksFetchedRef.current = false;
       } finally {
         setLoadingStreaks(false);
       }
