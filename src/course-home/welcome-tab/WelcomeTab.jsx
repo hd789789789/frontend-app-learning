@@ -39,6 +39,36 @@ const WelcomeTab = () => {
     }
   }, [courseId, dispatch, courseDateBlocks]);
 
+  // Fetch group streaks
+  const [groupStreaks, setGroupStreaks] = useState([]);
+  const [loadingStreaks, setLoadingStreaks] = useState(true);
+
+  useEffect(() => {
+    const fetchGroupStreaks = async () => {
+      if (!courseId) {
+        setLoadingStreaks(false);
+        return;
+      }
+      
+      setLoadingStreaks(true);
+      try {
+        const data = await getGroupStreaks(courseId);
+        if (data && data.success && data.groups) {
+          setGroupStreaks(data.groups);
+        } else {
+          setGroupStreaks([]);
+        }
+      } catch (error) {
+        // Giữ xử lý lỗi nhưng không log ra console để tránh spam
+        setGroupStreaks([]);
+      } finally {
+        setLoadingStreaks(false);
+      }
+    };
+
+    fetchGroupStreaks();
+  }, [courseId]);
+
   if (loading) {
     return (
       <Container className="welcome-tab py-5 px-2 px-md-4 text-center">
@@ -126,36 +156,6 @@ const WelcomeTab = () => {
           gradient: 'primary',
         },
       ];
-
-  // Fetch group streaks
-  const [groupStreaks, setGroupStreaks] = useState([]);
-  const [loadingStreaks, setLoadingStreaks] = useState(true);
-
-  useEffect(() => {
-    const fetchGroupStreaks = async () => {
-      if (!courseId) {
-        setLoadingStreaks(false);
-        return;
-      }
-      
-      setLoadingStreaks(true);
-      try {
-        const data = await getGroupStreaks(courseId);
-        if (data && data.success && data.groups) {
-          setGroupStreaks(data.groups);
-        } else {
-          setGroupStreaks([]);
-        }
-      } catch (error) {
-        // Giữ xử lý lỗi nhưng không log ra console để tránh spam
-        setGroupStreaks([]);
-      } finally {
-        setLoadingStreaks(false);
-      }
-    };
-
-    fetchGroupStreaks();
-  }, [courseId]);
 
   // Dates data đã được fetch và lưu trong model store
 
