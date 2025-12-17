@@ -93,8 +93,14 @@ const TabContainer = (props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 
-  // Avoid flashing loader for badge tab when course is already the active one
-  const effectiveCourseStatus = (tab === 'badge' && courseStatus === 'loading' && resolvedCourseId === courseIdFromUrl)
+  // Avoid flashing loader for some tabs (e.g., badge, study-groups)
+  // when the course is already the active one and we're just fetching extra tab data.
+  const shouldHideGlobalLoaderForTab = ['badge', 'study-groups'].includes(tab);
+  const effectiveCourseStatus = (
+    shouldHideGlobalLoaderForTab
+    && courseStatus === 'loading'
+    && resolvedCourseId === courseIdFromUrl
+  )
     ? 'loaded'
     : courseStatus;
 
