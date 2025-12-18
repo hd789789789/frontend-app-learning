@@ -39,7 +39,7 @@ import PreferencesUnsubscribe from "./preferences-unsubscribe";
 import PageNotFound from "./generic/PageNotFound";
 
 // THÊM IMPORT NÀY
-// import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
+import { TextReplacerProvider } from "./generic/text-replacer/TextReplacer";
 
 // Component to redirect from /course/:courseId to /course/:courseId/home (OUTLINE tab - default)
 // Only redirect if we're at the exact base course path (not a sub-path)
@@ -90,7 +90,7 @@ subscribe(APP_READY, () => {
                 <PathFixesProvider>
                     <NoticesProvider>
                         <UserMessagesProvider>
-                            {/* <TextReplacerProvider> */}
+                            <TextReplacerProvider>
                                 <Routes>
                                     <Route
                                         path="*"
@@ -307,7 +307,7 @@ subscribe(APP_READY, () => {
                                         }
                                     />
                                 </Routes>
-                            {/* </TextReplacerProvider> */}
+                            </TextReplacerProvider>
                         </UserMessagesProvider>
                     </NoticesProvider>
                 </PathFixesProvider>
