@@ -98,3 +98,45 @@
   gap: 5px;
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  .group-streaks-card {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .group-streaks-title {
+    color: #f9fafb !important;
+  }
+
+  .group-streak-item {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+  }
+
+  .group-streak-name {
+    color: #f9fafb !important;
+  }
+
+  .group-streak-badge {
+    .streak-days {
+      color: #C47E9E !important;
+    }
+  }
+
+  .group-streak-message {
+    color: #9ca3af !important;
+
+    &.completed {
+      color: #2ecc71 !important;
+    }
+  }
+
+  .group-streaks-empty {
+    .text-muted {
+      color: #9ca3af !important;
+    }
+  }
+}
+

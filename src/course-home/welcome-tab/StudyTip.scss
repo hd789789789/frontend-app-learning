@@ -24,3 +24,20 @@
   margin: 0;
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  .study-tip-card {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%) !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .study-tip-title {
+    color: #fbbf24 !important;
+  }
+
+  .study-tip-content {
+    color: #d1d5db !important;
+  }
+}
+

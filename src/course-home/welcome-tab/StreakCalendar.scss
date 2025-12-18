@@ -194,3 +194,94 @@
   color: var(--text-dark, #2c3e50);
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  .streak-calendar-card {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .streak-calendar-title {
+    color: #f9fafb !important;
+  }
+
+  .streak-calendar-number {
+    color: #C47E9E !important;
+  }
+
+  .streak-calendar-label {
+    color: #9ca3af !important;
+  }
+
+  .streak-calendar-day-header {
+    color: #9ca3af !important;
+  }
+
+  .streak-calendar-day {
+    color: #d1d5db !important;
+    border-color: #374151 !important;
+  }
+
+  .streak-calendar-day-today {
+    background: #8b3a62 !important;
+    background-color: #8b3a62 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(139, 58, 98, 0.5) !important;
+  }
+
+  .streak-calendar-day-completed {
+    background: #2ecc71 !important;
+    background-color: #2ecc71 !important;
+    color: #ffffff !important;
+  }
+
+  .streak-calendar-day-future {
+    border-color: #4b5563 !important;
+    color: #6b7280 !important;
+  }
+
+  .streak-calendar-day-other-month {
+    color: #4b5563 !important;
+    opacity: 0.4 !important;
+  }
+
+  .streak-calendar-nav-btn {
+    color: #C47E9E !important;
+
+    &:hover {
+      color: #8B3A62 !important;
+      opacity: 0.8 !important;
+    }
+  }
+
+  .streak-calendar-select {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+
+    &:hover {
+      border-color: #8B3A62 !important;
+    }
+
+    &:focus {
+      border-color: #8B3A62 !important;
+      box-shadow: 0 0 0 2px rgba(139, 58, 98, 0.3) !important;
+    }
+  }
+
+  .streak-calendar-legend {
+    color: #d1d5db !important;
+
+    span {
+      color: #d1d5db !important;
+    }
+  }
+
+  .streak-calendar-message {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    color: #d1d5db !important;
+  }
+}
+

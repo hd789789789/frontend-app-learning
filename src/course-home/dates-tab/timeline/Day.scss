@@ -45,3 +45,46 @@ $offset: $dot-radius * 1.5;
 .dates-bg-today {
   background: #ffdb87;
 }
+
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  .dates-day {
+    color: #f9fafb !important;
+  }
+
+  .dates-line-top,
+  .dates-line-bottom {
+    border-color: #374151 !important;
+    background-color: #374151 !important;
+  }
+
+  .dates-dot {
+    border-color: #374151 !important;
+    background-color: #374151 !important;
+  }
+
+  .dates-bg-today {
+    background: #8b3a62 !important;
+    border-color: #8b3a62 !important;
+  }
+
+  // Text colors in Day component
+  .text-primary-700 {
+    color: #f9fafb !important;
+  }
+
+  // Badge colors
+  .badge {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+
+  // Links
+  a {
+    color: #60a5fa !important;
+
+    &:hover {
+      color: #93c5fd !important;
+    }
+  }
+}

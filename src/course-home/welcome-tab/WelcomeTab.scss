@@ -584,3 +584,275 @@
   }
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  // Welcome Tab Container
+  .welcome-tab {
+    background-color: #0a0e1a !important;
+    color: #f9fafb !important;
+  }
+
+  // Welcome Banner
+  .welcome-banner {
+    background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(139, 58, 98, 0.3) !important;
+
+    h2 {
+      color: #ffffff !important;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+  }
+
+  // Stats Grid
+  .stat-card {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    .stat-value {
+      color: #ffffff !important;
+    }
+
+    .stat-label {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+  }
+
+  // Motivational Banner
+  .motivational-banner {
+    background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%) !important;
+    box-shadow: 0 4px 16px rgba(139, 58, 98, 0.3) !important;
+  }
+
+  .banner-bg-circle {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .banner-bg-circle-2 {
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .banner-title {
+    color: #ffffff !important;
+  }
+
+  .banner-subtitle {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .btn-start-learning {
+    background: #ffffff !important;
+    color: #8B3A62 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover {
+      background: #f3f4f6 !important;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    }
+  }
+
+  // Daily Quests Section
+  .daily-quests-section {
+    h3 {
+      color: #f9fafb !important;
+    }
+  }
+
+  .quest-card {
+    background: #1f2937 !important;
+    border: 2px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    color: #f9fafb !important;
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 16px rgba(139, 58, 98, 0.4) !important;
+      border-color: #8B3A62 !important;
+    }
+
+    &.completed {
+      background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.1) 100%) !important;
+      border-color: #2ECC71 !important;
+    }
+  }
+
+  .quest-icon-primary {
+    background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%) !important;
+  }
+
+  .quest-icon-warning {
+    background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%) !important;
+  }
+
+  .quest-title {
+    color: #f9fafb !important;
+  }
+
+  .quest-description {
+    color: #9ca3af !important;
+  }
+
+  .quest-reward {
+    color: #F39C12 !important;
+  }
+
+  .quest-progress-text {
+    color: #d1d5db !important;
+  }
+
+  .quest-progress-bar {
+    background: #374151 !important;
+  }
+
+  .quest-progress-fill {
+    background: linear-gradient(90deg, #8B3A62 0%, #C47E9E 100%) !important;
+  }
+
+  // Important Dates Card
+  .important-dates-card {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    color: #f9fafb !important;
+  }
+
+  .important-dates-title {
+    color: #f9fafb !important;
+  }
+
+  .timeline-line {
+    background: #374151 !important;
+  }
+
+  .timeline-dot {
+    border-color: #1f2937 !important;
+  }
+
+  .timeline-dot-upcoming {
+    background: #1f2937 !important;
+    border-color: #8B3A62 !important;
+  }
+
+  .timeline-dot-future {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+
+  .timeline-date {
+    color: #9ca3af !important;
+  }
+
+  .timeline-badge-today {
+    background: #FFD700 !important;
+    color: #1f2937 !important;
+  }
+
+  .timeline-title {
+    color: #f9fafb !important;
+  }
+
+  .timeline-title-future {
+    color: #6b7280 !important;
+    opacity: 0.6 !important;
+  }
+
+  // Invite Friends Section
+  .invite-friends-section {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.2) 0%, rgba(30, 64, 175, 0.15) 100%) !important;
+    border: 2px dashed #3b82f6 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .invite-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+  }
+
+  .invite-text {
+    h3 {
+      color: #60a5fa !important;
+    }
+
+    p {
+      color: #93c5fd !important;
+    }
+  }
+
+  .invite-benefit-item {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+
+    .benefit-label {
+      color: #9ca3af !important;
+    }
+  }
+
+  .invite-info-box {
+    background: #1f2937 !important;
+    border-left: 3px solid #3b82f6 !important;
+    border: 1px solid #374151 !important;
+
+    p {
+      color: #d1d5db !important;
+
+      strong {
+        color: #f9fafb !important;
+      }
+    }
+  }
+
+  .btn-invite-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5) !important;
+    }
+  }
+
+  .btn-invite-secondary {
+    background: transparent !important;
+    color: #60a5fa !important;
+    border: 2px solid #3b82f6 !important;
+
+    &:hover {
+      background: #3b82f6 !important;
+      color: #ffffff !important;
+    }
+  }
+
+  // Utility classes
+  .text-success {
+    color: #2ECC71 !important;
+  }
+
+  .text-primary {
+    color: #C47E9E !important;
+  }
+
+  // Loading and error states
+  .text-muted {
+    color: #9ca3af !important;
+  }
+
+  .group-streaks-loading {
+    color: #9ca3af !important;
+
+    .text-muted {
+      color: #9ca3af !important;
+    }
+  }
+
+  // Spinner colors
+  .spinner-border {
+    border-color: #374151 !important;
+    border-right-color: #8B3A62 !important;
+  }
+}
+

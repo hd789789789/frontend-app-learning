@@ -191,3 +191,107 @@
   }
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  .referral-widget-card {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%) !important;
+    border: 2px solid rgba(251, 191, 36, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .referral-title {
+    color: #fbbf24 !important;
+  }
+
+  .referral-description {
+    color: #fbbf24 !important;
+
+    strong {
+      color: #fcd34d !important;
+    }
+  }
+
+  .referral-code-box {
+    background: #1f2937 !important;
+    border-color: rgba(251, 191, 36, 0.4) !important;
+  }
+
+  .referral-code-label {
+    color: #9ca3af !important;
+  }
+
+  .referral-code-value {
+    color: #fbbf24 !important;
+  }
+
+  .referral-copy-btn {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+
+    &:hover {
+      background: #d97706 !important;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+    }
+  }
+
+  .referral-stat-item {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid #374151 !important;
+  }
+
+  .referral-stat-value {
+    color: #fbbf24 !important;
+
+    &.coins {
+      color: #fbbf24 !important;
+    }
+  }
+
+  .referral-stat-label {
+    color: #9ca3af !important;
+  }
+
+  .referral-share-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+
+    &:hover {
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5) !important;
+    }
+  }
+
+  .referral-list-btn {
+    background: transparent !important;
+    color: #fbbf24 !important;
+    border-color: #f59e0b !important;
+
+    &:hover {
+      background: #f59e0b !important;
+      color: #ffffff !important;
+    }
+  }
+
+  .referral-enter-section {
+    border-top-color: rgba(251, 191, 36, 0.3) !important;
+  }
+
+  .referral-enter-link {
+    color: #fbbf24 !important;
+
+    &:hover {
+      color: #fcd34d !important;
+    }
+  }
+
+  .referral-reward-info {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid #374151 !important;
+    color: #d1d5db !important;
+
+    strong {
+      color: #fbbf24 !important;
+    }
+  }
+}
+
