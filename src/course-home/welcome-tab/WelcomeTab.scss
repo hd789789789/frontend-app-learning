@@ -854,5 +854,140 @@
     border-color: #374151 !important;
     border-right-color: #8B3A62 !important;
   }
+
+  // Paragon Card components
+  .pgn__card,
+  [class*="pgn__card"],
+  .card,
+  .card-body {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+
+  // All input, select, textarea elements
+  input,
+  select,
+  textarea {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+
+    &:focus {
+      background-color: #1f2937 !important;
+      border-color: #8B3A62 !important;
+      color: #f9fafb !important;
+      box-shadow: 0 0 0 2px rgba(139, 58, 98, 0.3) !important;
+    }
+
+    &::placeholder {
+      color: #6b7280 !important;
+    }
+  }
+
+  // Button overrides
+  .btn {
+    &.btn-outline-primary,
+    &.btn-outline-secondary {
+      border-color: #374151 !important;
+      color: #f9fafb !important;
+
+      &:hover {
+        background-color: #374151 !important;
+        border-color: #4b5563 !important;
+        color: #f9fafb !important;
+      }
+    }
+  }
+
+  // Alert components
+  .alert {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+
+  // Container and wrapper elements
+  .container,
+  [class*="container"] {
+    background-color: transparent !important;
+  }
+
+  // Row and Col elements
+  .row,
+  [class*="row"] {
+    background-color: transparent !important;
+  }
+
+  // Ensure all text elements have proper color
+  span,
+  div,
+  p,
+  h1, h2, h3, h4, h5, h6 {
+    &:not([style*="color"]) {
+      color: inherit !important;
+    }
+  }
+
+  // Additional Paragon components
+  .pgn__btn {
+    &.btn-primary {
+      background-color: #8B3A62 !important;
+      border-color: #8B3A62 !important;
+      color: #ffffff !important;
+
+      &:hover {
+        background-color: #C47E9E !important;
+        border-color: #C47E9E !important;
+      }
+    }
+
+    &.btn-outline-primary {
+      background-color: transparent !important;
+      border-color: #8B3A62 !important;
+      color: #C47E9E !important;
+
+      &:hover {
+        background-color: #8B3A62 !important;
+        color: #ffffff !important;
+      }
+    }
+  }
+
+  // Bootstrap utility classes
+  .bg-white {
+    background-color: #1f2937 !important;
+  }
+
+  .bg-light {
+    background-color: #1f2937 !important;
+  }
+
+  .text-dark {
+    color: #f9fafb !important;
+  }
+
+  .border {
+    border-color: #374151 !important;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  // List elements
+  .list-unstyled {
+    li {
+      color: #f9fafb !important;
+    }
+  }
+
+  // Ensure all child elements within welcome-tab have proper colors
+  * {
+    &::selection {
+      background-color: #8B3A62 !important;
+      color: #ffffff !important;
+    }
+  }
 }
 

@@ -283,5 +283,26 @@
     border: 1px solid #374151 !important;
     color: #d1d5db !important;
   }
+
+  // Paragon Card overrides
+  .streak-calendar-card {
+    .card-body {
+      background-color: transparent !important;
+      color: #f9fafb !important;
+    }
+  }
+
+  // Paragon Button overrides
+  .streak-calendar-nav-btn {
+    &.pgn__btn,
+    &.btn {
+      color: #C47E9E !important;
+
+      &:hover {
+        color: #8B3A62 !important;
+        opacity: 0.8 !important;
+      }
+    }
+  }
 }
 

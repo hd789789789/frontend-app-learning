@@ -293,5 +293,96 @@
       color: #fbbf24 !important;
     }
   }
+
+  // Paragon Card overrides
+  .referral-widget-card {
+    .card-body {
+      background-color: transparent !important;
+      color: #f9fafb !important;
+    }
+  }
+
+  // Paragon Button overrides
+  .referral-copy-btn,
+  .referral-share-btn,
+  .referral-list-btn {
+    &.pgn__btn,
+    &.btn {
+      background-color: #f59e0b !important;
+      border-color: #f59e0b !important;
+      color: #ffffff !important;
+
+      &:hover {
+        background-color: #d97706 !important;
+        border-color: #d97706 !important;
+      }
+    }
+
+    &.btn-outline-primary {
+      background-color: transparent !important;
+      border-color: #f59e0b !important;
+      color: #fbbf24 !important;
+
+      &:hover {
+        background-color: #f59e0b !important;
+        color: #ffffff !important;
+      }
+    }
+  }
+
+  // Input and form elements
+  input,
+  select,
+  textarea {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+
+    &:focus {
+      background-color: #1f2937 !important;
+      border-color: #f59e0b !important;
+      color: #f9fafb !important;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
+    }
+
+    &::placeholder {
+      color: #6b7280 !important;
+    }
+  }
+
+  // Ensure all text in referral widget is visible
+  .referral-widget-content {
+    * {
+      color: inherit !important;
+    }
+  }
+
+  // Paragon Button component specific overrides
+  button.pgn__btn,
+  .pgn__btn {
+    &.btn-primary {
+      background-color: #f59e0b !important;
+      border-color: #f59e0b !important;
+      color: #ffffff !important;
+
+      &:hover,
+      &:focus {
+        background-color: #d97706 !important;
+        border-color: #d97706 !important;
+      }
+    }
+
+    &.btn-outline-primary {
+      background-color: transparent !important;
+      border-color: #f59e0b !important;
+      color: #fbbf24 !important;
+
+      &:hover,
+      &:focus {
+        background-color: #f59e0b !important;
+        color: #ffffff !important;
+      }
+    }
+  }
 }
 

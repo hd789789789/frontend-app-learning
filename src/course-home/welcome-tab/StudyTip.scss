@@ -39,5 +39,13 @@
   .study-tip-content {
     color: #d1d5db !important;
   }
+
+  // Paragon Card overrides
+  .study-tip-card {
+    .card-body {
+      background-color: transparent !important;
+      color: #f9fafb !important;
+    }
+  }
 }
 

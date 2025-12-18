@@ -3283,7 +3283,7 @@ const StudyGroupsTab = () => {
   }, [courseId]);
 
   return (
-     <Container className="study-groups-tab px-0" style={{ paddingRight: '15px' }}>
+     <Container className="study-groups-tab px-0" style={{ paddingRight: '15px !important' }}>
       <Row>
         <Col lg={8} md={12}>
           <div className="groups-header">

@@ -1378,3 +1378,518 @@
   }
 }
 
+// ===== DARK THEME STYLES =====
+.dark-theme {
+  // Badge Tab Container
+  .badge-tab {
+    background-color: transparent !important;
+    color: #f9fafb !important;
+  }
+
+  // Progress Section
+  .progress-section {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.1) 50%, rgba(46, 204, 113, 0.08) 100%) !important;
+    border: 2px solid rgba(46, 204, 113, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .progress-section-title {
+    color: #f9fafb !important;
+  }
+
+  .progress-percentage-text,
+  .progress-label-text {
+    color: #f9fafb !important;
+  }
+
+  .progress-stats-title {
+    color: #f9fafb !important;
+  }
+
+  .progress-stat-item {
+    color: #d1d5db !important;
+
+    strong {
+      color: #f9fafb !important;
+    }
+  }
+
+  .weekly-goal {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid #374151 !important;
+
+    strong {
+      color: #f9fafb !important;
+    }
+  }
+
+  .weekly-goal-text {
+    color: #9ca3af !important;
+  }
+
+  .progress-bar {
+    background: #374151 !important;
+  }
+
+  .progress-fill {
+    background: linear-gradient(90deg, #8B3A62 0%, #C47E9E 100%) !important;
+  }
+
+  .weekly-goal-progress {
+    color: #d1d5db !important;
+  }
+
+  // Grade Section
+  .grade-section {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 50%, rgba(251, 191, 36, 0.08) 100%) !important;
+    border: 2px solid rgba(251, 191, 36, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .grade-section-title {
+    color: #f9fafb !important;
+  }
+
+  .grade-section-description {
+    color: #d1d5db !important;
+  }
+
+  .grade-slider-start {
+    background: rgba(31, 41, 55, 0.7) !important;
+    color: #fbbf24 !important;
+    border: 1px solid #374151 !important;
+  }
+
+  .grade-slider-label {
+    color: #d1d5db !important;
+  }
+
+  .grade-slider-track {
+    background: linear-gradient(to right, #374151 0%, #f59e0b 50%, #2ecc71 100%) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .grade-warning {
+    background: rgba(31, 41, 55, 0.7) !important;
+    border-left-color: #f59e0b !important;
+    border: 1px solid #374151 !important;
+
+    .grade-warning-content {
+      strong {
+        color: #f9fafb !important;
+      }
+    }
+
+    .grade-warning-info {
+      color: #9ca3af !important;
+    }
+  }
+
+  .grade-summary-title {
+    color: #f9fafb !important;
+  }
+
+  .grade-table {
+    color: #f9fafb !important;
+
+    thead tr {
+      background: rgba(31, 41, 55, 0.8) !important;
+      border-bottom-color: #374151 !important;
+    }
+
+    th {
+      color: #f9fafb !important;
+    }
+
+    td {
+      border-bottom-color: #374151 !important;
+      color: #d1d5db !important;
+    }
+  }
+
+  .grade-table-total {
+    background: rgba(31, 41, 55, 0.5) !important;
+  }
+
+  .grade-total-value {
+    color: #fbbf24 !important;
+  }
+
+  .grade-footnotes {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border-left-color: #3b82f6 !important;
+    color: #d1d5db !important;
+
+    span {
+      color: #d1d5db !important;
+    }
+
+    sup {
+      color: #60a5fa !important;
+    }
+  }
+
+  .grade-details-title {
+    color: #f9fafb !important;
+  }
+
+  .grade-details {
+    background: rgba(31, 41, 55, 0.5) !important;
+    color: #d1d5db !important;
+
+    ul {
+      color: #d1d5db !important;
+
+      li strong {
+        color: #f9fafb !important;
+      }
+    }
+  }
+
+  .grade-details-note {
+    color: #9ca3af !important;
+  }
+
+  .grade-details-link {
+    color: #C47E9E !important;
+
+    &:hover {
+      color: #8B3A62 !important;
+    }
+  }
+
+  // Achievement Banner
+  .achievement-banner {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%) !important;
+    border-left: 4px solid rgba(251, 191, 36, 0.6) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .achievement-banner-title {
+    color: #fbbf24 !important;
+  }
+
+  .achievement-banner-subtitle {
+    color: #fbbf24 !important;
+
+    strong {
+      color: #fcd34d !important;
+    }
+  }
+
+  .achievement-banner-actions {
+    .btn-secondary {
+      background: #3b82f6 !important;
+      border-color: #3b82f6 !important;
+      color: #ffffff !important;
+
+      &:hover {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+      }
+    }
+  }
+
+  // Certificates Section
+  .certificates-section {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 50%, rgba(251, 191, 36, 0.08) 100%) !important;
+    border: 2px solid rgba(251, 191, 36, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .certificates-title {
+    color: #f9fafb !important;
+  }
+
+  .certificates-description {
+    color: #9ca3af !important;
+  }
+
+  .certificate-subsection-title {
+    color: #C47E9E !important;
+  }
+
+  .certificate-card {
+    background: #1f2937 !important;
+    border: 2px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(139, 58, 98, 0.4) !important;
+      border-color: #8B3A62 !important;
+    }
+
+    &.locked {
+      opacity: 0.6 !important;
+    }
+  }
+
+  .certificate-info h3 {
+    color: #f9fafb !important;
+
+    &.locked {
+      color: #6b7280 !important;
+    }
+  }
+
+  .certificate-meta {
+    color: #9ca3af !important;
+  }
+
+  .certificate-info p {
+    color: #9ca3af !important;
+
+    &.locked {
+      color: #4b5563 !important;
+    }
+  }
+
+  .certificate-status {
+    &.locked {
+      background: #374151 !important;
+      color: #6b7280 !important;
+    }
+
+    &.in-progress {
+      background: rgba(251, 191, 36, 0.2) !important;
+      color: #fbbf24 !important;
+    }
+
+    &.earned {
+      background: rgba(46, 204, 113, 0.2) !important;
+      color: #2ecc71 !important;
+    }
+  }
+
+  .certificate-progress-text {
+    color: #f9fafb !important;
+
+    .locked {
+      color: #6b7280 !important;
+    }
+  }
+
+  .certificate-progress-bar {
+    background: #374151 !important;
+  }
+
+  .certificate-progress-fill {
+    background: linear-gradient(90deg, #8B3A62 0%, #C47E9E 100%) !important;
+  }
+
+  .certificate-requirements {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid #374151 !important;
+
+    strong {
+      color: #C47E9E !important;
+    }
+
+    ul {
+      color: #9ca3af !important;
+    }
+  }
+
+  .btn-cert-primary {
+    background: #8B3A62 !important;
+    color: #ffffff !important;
+
+    &:hover {
+      background: #C47E9E !important;
+    }
+  }
+
+  .btn-cert-secondary {
+    background: #1f2937 !important;
+    color: #f9fafb !important;
+    border-color: #374151 !important;
+
+    &:hover {
+      background: #374151 !important;
+    }
+  }
+
+  // Rewards Section
+  .rewards-section {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.1) 100%) !important;
+    border: 2px solid rgba(46, 204, 113, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .rewards-title {
+    color: #f9fafb !important;
+  }
+
+  .btn-shop {
+    background: #2ecc71 !important;
+    color: #ffffff !important;
+
+    &:hover {
+      background: #27ae60 !important;
+    }
+  }
+
+  .filter-btn {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+
+    &.active {
+      background: #8B3A62 !important;
+      border-color: #8B3A62 !important;
+      color: #ffffff !important;
+    }
+
+    &:hover:not(.active) {
+      background: #374151 !important;
+    }
+  }
+
+  .reward-item {
+    background: #1f2937 !important;
+    border: 2px solid #374151 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(139, 58, 98, 0.4) !important;
+      border-color: #8B3A62 !important;
+    }
+  }
+
+  .reward-name {
+    color: #C47E9E !important;
+  }
+
+  .reward-date {
+    color: #9ca3af !important;
+  }
+
+  .reward-status {
+    background: rgba(251, 191, 36, 0.2) !important;
+    border: 1px solid #374151 !important;
+
+    strong {
+      color: #fbbf24 !important;
+    }
+  }
+
+  .btn-reward-equip {
+    background: #8B3A62 !important;
+    color: #ffffff !important;
+
+    &:hover {
+      background: #C47E9E !important;
+    }
+  }
+
+  .btn-reward-equipped {
+    background: #2ecc71 !important;
+    color: #ffffff !important;
+
+    &:hover {
+      background: #27ae60 !important;
+    }
+  }
+
+  .btn-reward-share {
+    background: #1f2937 !important;
+    color: #f9fafb !important;
+    border: 1px solid #374151 !important;
+
+    &:hover {
+      background: #374151 !important;
+    }
+  }
+
+  .rewards-empty {
+    h4 {
+      color: #9ca3af !important;
+    }
+
+    p {
+      color: #9ca3af !important;
+    }
+  }
+
+  .reward-stats {
+    background: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid #374151 !important;
+
+    h4 {
+      color: #C47E9E !important;
+    }
+  }
+
+  .reward-stat-value {
+    color: #C47E9E !important;
+  }
+
+  .reward-stat-label {
+    color: #9ca3af !important;
+  }
+
+  // Stats Banner (if used)
+  .stats-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
+  }
+
+  .stats-banner-title {
+    color: #ffffff !important;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.18) !important;
+    }
+  }
+
+  .stat-value {
+    color: #ffffff !important;
+  }
+
+  .stat-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  // Loading overlay
+  .badge-tab__loading-overlay {
+    .text-muted {
+      color: #9ca3af !important;
+    }
+  }
+
+  // Paragon Card components
+  .pgn__card,
+  [class*="pgn__card"],
+  .card,
+  .card-body {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+
+  // All text elements
+  span,
+  div,
+  p,
+  h1, h2, h3, h4, h5, h6 {
+    &:not([style*="color"]) {
+      color: inherit !important;
+    }
+  }
+
+  // Links
+  a {
+    color: #60a5fa !important;
+
+    &:hover {
+      color: #93c5fd !important;
+    }
+  }
+}
+
