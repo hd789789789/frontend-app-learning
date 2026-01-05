@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 function LeaderboardTableSimple({ leaderboard, totalStudents }) {
-  console.log('[LeaderboardTableSimple] Rendering with', leaderboard.length, 'items');
 
   return (
     <div className="leaderboard-table mt-4">

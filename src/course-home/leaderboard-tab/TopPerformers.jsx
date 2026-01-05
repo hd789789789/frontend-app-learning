@@ -18,7 +18,7 @@ function TopPerformers({ topPerformers }) {
     return '';
   };
 
-  console.log('[TopPerformers] Rendering with data:', topPerformers);
+ 
 
   return (
     <div className="top-performers mb-4">

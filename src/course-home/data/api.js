@@ -227,9 +227,7 @@ export async function getLeaderboardTabData(courseId) {
   const url = `${getConfig().LMS_BASE_URL}/api/course_home/leaderboard/${courseId}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Leaderboard API] Raw response:', data);
     const camelCased = camelCaseObject(data);
-    console.log('[Leaderboard API] After camelCase:', camelCased);
     return camelCased;
   } catch (error) {
     const httpErrorStatus = error?.response?.status;
@@ -254,9 +252,7 @@ export async function getTopGradesLeaderboard(courseId, limit = 10) {
   const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Top Grades API] Raw response:', data);
     const camelCased = camelCaseObject(data);
-    console.log('[Top Grades API] After camelCase:', camelCased);
     return camelCased;
   } catch (error) {
     console.error('[Top Grades API] Error:', error);
@@ -274,9 +270,7 @@ export async function getTopProgressLeaderboard(courseId, period = 'all', limit 
   const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-progress/${courseId}?period=${period}&limit=${limit}`;
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
-    console.log('[Top Progress API] Raw response:', data);
     const camelCased = camelCaseObject(data);
-    console.log('[Top Progress API] After camelCase:', camelCased);
     return camelCased;
   } catch (error) {
     console.error('[Top Progress API] Error:', error);

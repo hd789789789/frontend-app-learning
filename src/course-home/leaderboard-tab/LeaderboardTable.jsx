@@ -61,7 +61,7 @@ const LeaderboardTable = ({ leaderboard, totalStudents }) => {
     },
   ];
 
-  console.log('[LeaderboardTable] Rendering with', leaderboard.length, 'items');
+ 
 
   return (
     <div className="leaderboard-table mt-4">

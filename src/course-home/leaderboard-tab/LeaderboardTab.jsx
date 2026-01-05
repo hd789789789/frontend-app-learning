@@ -39,12 +39,14 @@ const LeaderboardTab = () => {
           const resp = await getAuthenticatedHttpClient().get(xpUrl);
           camelCased = camelCaseObject(resp.data);
           if (camelCased && camelCased.summary) {
+            // camelCaseObject() converts API keys to camelCase, so read the camelCased keys here.
             setSummaryData((prev) => ({
               ...prev,
-              totalStudents: camelCased.summary.total_students || prev.totalStudents,
-              avgGrade: camelCased.summary.avg_xp || prev.avgGrade,
-              maxGrade: camelCased.summary.max_xp || prev.maxGrade,
-              competingCount: camelCased.summary.top_count || prev.competingCount,
+              totalStudents: camelCased.summary.totalStudents ?? prev.totalStudents,
+              // XP endpoint uses avgXp / maxXp after camelCasing
+              avgGrade: camelCased.summary.avgXp ?? prev.avgGrade,
+              maxGrade: camelCased.summary.maxXp ?? prev.maxGrade,
+              competingCount: camelCased.summary.topCount ?? prev.competingCount,
               currentStreak: prev.currentStreak,
               bestStreak: prev.bestStreak,
             }));
@@ -124,7 +126,7 @@ const LeaderboardTab = () => {
         competingCount={summaryData.competingCount}
         currentStreak={summaryData.currentStreak}
         bestStreak={summaryData.bestStreak}
-          />
+      />
 
       <div className="row">
         <div className="col-lg-4 col-md-6 mb-4">

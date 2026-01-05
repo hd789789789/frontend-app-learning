@@ -58,7 +58,6 @@ function TopStudentsByProgress({ courseId }) {
             const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-progress/${courseId}?period=${period}&limit=${limit}${testParam}`;
             const { data } = await getAuthenticatedHttpClient().get(url);
             const camelCased = camelCaseObject(data);
-            console.log("[TopStudentsByProgress] Data:", camelCased);
             
             const topStudents = camelCased.topStudents || [];
             setSummary(camelCased.summary || {});

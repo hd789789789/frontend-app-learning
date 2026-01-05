@@ -84,8 +84,6 @@ function TopStudentsByGrade({ courseId }) {
             }
 
             const camelCased = camelCaseObject(data);
-            // eslint-disable-next-line no-console
-            console.log("[TopStudentsByGrade] Data:", camelCased);
             const topStudents = camelCased.topStudents || [];
             setSummary(camelCased.summary || {});
 
