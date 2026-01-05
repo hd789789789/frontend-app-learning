@@ -250,6 +250,9 @@ const WelcomeTab = () => {
             </div>
           </div>
 
+          {/* Study Tip - moved from sidebar into main content per design */}
+          <StudyTip />
+
           {/* Invite Friends Section */}
           <div className="invite-friends-section">
             <div className="invite-bg-emoji invite-bg-emoji-1">😊</div>
@@ -296,8 +299,7 @@ const WelcomeTab = () => {
               </div>
             </div>
           </div>
-          {/* Study Tip - moved from sidebar into main content per design */}
-          <StudyTip />
+          
 
         </Col>
 
