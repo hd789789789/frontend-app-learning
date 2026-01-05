@@ -3353,6 +3353,10 @@ const StudyGroupsTab = () => {
               )}
             </div>
           </section>
+ 
+          {/* Study Tip - moved from sidebar into main content per design */}
+          <StudyTip />
+ 
         </Col>
 
         <Col lg={3} md={12} className="mt-3 mt-lg-0">
@@ -3369,7 +3373,7 @@ const StudyGroupsTab = () => {
             ) : (
               <GroupStreaks groups={groupStreaks} disableFallback={true} />
             )}
-            <StudyTip />
+            
             {referralEnabled && <ReferralWidget />}
           </div>
         </Col>

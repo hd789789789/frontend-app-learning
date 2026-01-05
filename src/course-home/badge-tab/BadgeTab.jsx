@@ -466,10 +466,9 @@ const BadgeTab = memo(function BadgeTab() {
           <span className="ms-2 text-muted">Đang tải dữ liệu Thành tích...</span>
         </div>
       )}
+      {/* Full-width Progress Row (make Tiến độ span full width so sidebar drops below) */}
       <Row className="mx-0">
-        {/* Main Content */}
-        <Col lg={9} md={12} className="px-1 px-md-2">
-          {/* Progress Section - Moved to top */}
+        <Col xs={12} className="px-1 px-md-2">
           <div className="progress-section">
             <h3 className="progress-section-title">📈 Tiến độ</h3>
             <div className="progress-overview">
@@ -511,8 +510,14 @@ const BadgeTab = memo(function BadgeTab() {
               </div>
             </div>
           </div>
+        </Col>
+      </Row>
 
-          {/* Grade Section - Moved to top */}
+      {/* Main Content Row */}
+      <Row className="mx-0">
+        {/* Main Content */}
+        <Col lg={9} md={12} className="px-1 px-md-2">
+          {/* Grade Section */}
           <div className="grade-section">
             <h3 className="grade-section-title">📝 Điểm</h3>
             <p className="grade-section-description">

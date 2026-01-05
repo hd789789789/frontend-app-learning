@@ -342,7 +342,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
               🔥
             </span>
             <span className="font-weight-bold" style={{ fontSize: "1.1rem", color: "#333" }}>
-              {mode === "current" ? "Top Streak hiện tại" : "Top Streak cao nhất"}
+              {mode === "current" ? "Chuỗi liên tiếp" : "Chuỗi dài nhất"}
             </span>
           </div>
           <div className="d-flex align-items-center">
@@ -407,18 +407,6 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
                     <option value={50}>Top 50</option>
                   </Form.Control>
                 </div>
-                <label
-                  className="d-flex align-items-center mb-0"
-                  style={{ fontSize: "0.75rem", cursor: "pointer" }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={testMode}
-                    onChange={(e) => setTestMode(e.target.checked)}
-                    className="mr-1"
-                  />
-                  <span className="text-muted">Test 100</span>
-                </label>
               </div>
             </div>
 

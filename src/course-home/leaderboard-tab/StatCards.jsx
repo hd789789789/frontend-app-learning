@@ -28,7 +28,7 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
     },
     {
       value: `${maxGrade?.toFixed(1) || 0}/10`,
-      label: 'ĐIỂM CAO NHẤT',
+      label: 'ĐIỂM XP CAO NHẤT',
       color: '#9c27b0',
     },
     {
@@ -38,12 +38,12 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
     },
     {
       value: `${currentStreak || 0} ngày`,
-      label: 'STREAK HIỆN TẠI',
+      label: 'CHUỖI LIÊN TIẾP',
       color: '#ff9800',
     },
     {
       value: `${bestStreak || 0} ngày`,
-      label: 'STREAK CAO NHẤT CỦA BẠN',
+      label: 'CHUỖI DÀI NHẤT',
       color: '#f57c00',
     },
   ];

@@ -205,7 +205,7 @@ const WelcomeTab = () => {
       </Row>
 
       {/* Row 2: Main content and sidebar */}
-      <Row className="mt-4">
+      <Row className="mt-4 mb-4">
         {/* Main Content */}
         <Col lg={9} md={12}>
           {/* Daily Quests Section */}
