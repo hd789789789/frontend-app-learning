@@ -3098,21 +3098,21 @@ const StudyGroupsTab = () => {
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
     setLocalGroups((prevGroups) => {
-      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
       return [newGroup, ...base];
     });
   }, []);
 
   const updateGroupInList = useCallback((groupId, updatedData) => {
     setLocalGroups((prevGroups) => {
-      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
       return base.map((group) => (group.id === groupId ? { ...group, ...updatedData } : group));
     });
   }, []);
 
   const removeGroupFromList = useCallback((groupId) => {
     setLocalGroups((prevGroups) => {
-      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
       return base.filter((group) => group.id !== groupId);
     });
   }, []);

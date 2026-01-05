@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
 import { fetchDatesTab } from '../data';
 import { getGroupStreaks } from '../data/api';
@@ -37,7 +38,7 @@ const WelcomeTab = () => {
   const incompleteCount = completionSummary.incompleteCount || 0;
   const lockedCount = completionSummary.lockedCount || 0;
   const totalUnits = completeCount + incompleteCount + lockedCount || 0;
- 
+
   // Determine enrollment (try several fields returned by API; default to true if not provided)
   const isEnrolled = (() => {
     if (typeof welcomeData?.courseAccess?.isEnrolled === 'boolean') return welcomeData.courseAccess.isEnrolled;
@@ -45,9 +46,28 @@ const WelcomeTab = () => {
     if (typeof welcomeData?.userStats?.isEnrolled === 'boolean') return welcomeData.userStats.isEnrolled;
     return true;
   })();
- 
-  // Study groups posts count (if backend provides it on welcomeData)
-  const studyGroupPostsCount = welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || 0;
+
+  // Attempt to determine whether current user has posted in any study group from study-groups model
+  const studyGroupsModel = useModel('study-groups', courseId) || {};
+  const studyGroups = studyGroupsModel.results || [];
+  const currentUser = getAuthenticatedUser();
+  const currentUsername = currentUser?.username || null;
+
+  const hasPostedDiscussion = (() => {
+    if (!currentUsername) return false;
+    for (const g of studyGroups) {
+      const comments = g.comments || g.comments_results || g.commentsList || g.comments_list || [];
+      if (!Array.isArray(comments)) continue;
+      for (const c of comments) {
+        const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
+        const authorUsername = authorUser?.username || c.username || c.userName || null;
+        if (authorUsername && currentUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  })();
   
   // Fetch dates data để dùng Timeline component
   const datesModel = useModel('dates', courseId) || {};
@@ -123,12 +143,12 @@ const WelcomeTab = () => {
     : [
         {
           id: 1,
-          title: 'Hoàn thành ít nhất 1 bài học',
+          title: 'Hoàn thành bài học',
           description: 'Hoàn thành Unit trong khoá học',
           reward: '+ XP',
-          progress: Math.min(completeCount, totalUnits > 0 ? completeCount : 1),
-          total: totalUnits > 0 ? totalUnits : 1,
-          completed: totalUnits > 0 ? completeCount >= 1 : true,
+          progress: Math.min(completeCount, totalUnits > 0 ? completeCount : 0),
+          total: totalUnits > 0 ? totalUnits : 0,
+          completed: totalUnits > 0 ? completeCount >= 1 : false,
           icon: '📚',
           gradient: 'primary',
         },
@@ -148,9 +168,9 @@ const WelcomeTab = () => {
           title: 'Tham gia thảo luận',
           description: 'Bạn phải là học viên khoá học và đăng ít nhất 1 bài trong Nhóm học tập',
           reward: '+ XP • 💰 + Xu',
-          progress: studyGroupPostsCount > 0 ? 1 : 0,
+          progress: hasPostedDiscussion ? 1 : 0,
           total: 1,
-          completed: Boolean(isEnrolled && studyGroupPostsCount > 0),
+          completed: Boolean(isEnrolled && hasPostedDiscussion),
           icon: '💬',
           gradient: 'primary',
         },
