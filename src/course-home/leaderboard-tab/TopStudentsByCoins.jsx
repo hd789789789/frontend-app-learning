@@ -169,15 +169,49 @@ const TopStudentsByCoins = ({ courseId }) => {
 
   const getRankBadge = (rank) => {
     if (rank === 1) {
-      return <span className="text-warning">🥇 #{rank}</span>;
+      return (
+        <span
+          className="d-inline-flex align-items-center justify-content-center"
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #ffd700 0%, #ffb300 100%)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '0.85rem',
+          }}
+        >
+          {rank}
+        </span>
+      );
     }
-    if (rank === 2) {
-      return <span className="text-muted">🥈 #{rank}</span>;
+    if (rank <= 3) {
+      return (
+        <span
+          className="d-inline-flex align-items-center justify-content-center"
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            background:
+              rank === 2
+                ? 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)'
+                : 'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '0.85rem',
+          }}
+        >
+          {rank}
+        </span>
+      );
     }
-    if (rank === 3) {
-      return <span className="text-muted">🥉 #{rank}</span>;
-    }
-    return <span className="text-muted">#{rank}</span>;
+    return (
+      <span className="text-muted font-weight-bold" style={{ fontSize: '0.9rem' }}>
+        {rank}
+      </span>
+    );
   };
 
   const extractCoinValue = (student) =>
@@ -321,13 +355,13 @@ const TopStudentsByCoins = ({ courseId }) => {
                               </span>
                               {isCurrentUser && (
                               <span
-                                    className="ml-2 px-2 py-0"
-                                    style={{
-                                      backgroundColor: '#f57c00', color: '#fff', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 'bold',
-                                    }}
-                                  >
-                                    Bạn
-                                  </span>
+                                className="ml-2 px-2 py-0"
+                                style={{
+                                  backgroundColor: '#f57c00', color: '#fff', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 'bold',
+                                }}
+                              >
+                                Bạn
+                              </span>
                               )}
                             </div>
                             <div className="text-muted" style={{ fontSize: '0.75rem' }}>
