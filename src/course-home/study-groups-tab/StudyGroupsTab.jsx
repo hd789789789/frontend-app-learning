@@ -3097,19 +3097,24 @@ const StudyGroupsTab = () => {
 
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
-    setLocalGroups((prevGroups) => [newGroup, ...prevGroups]);
+    setLocalGroups((prevGroups) => {
+      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      return [newGroup, ...base];
+    });
   }, []);
 
   const updateGroupInList = useCallback((groupId, updatedData) => {
-    setLocalGroups((prevGroups) =>
-      prevGroups.map((group) =>
-        group.id === groupId ? { ...group, ...updatedData } : group
-      )
-    );
+    setLocalGroups((prevGroups) => {
+      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      return base.map((group) => (group.id === groupId ? { ...group, ...updatedData } : group));
+    });
   }, []);
 
   const removeGroupFromList = useCallback((groupId) => {
-    setLocalGroups((prevGroups) => prevGroups.filter((group) => group.id !== groupId));
+    setLocalGroups((prevGroups) => {
+      const base = Array.isArray(prevGroups) ? prevGroups : [];
+      return base.filter((group) => group.id !== groupId);
+    });
   }, []);
 
   // Use module-level storage to persist across component remounts

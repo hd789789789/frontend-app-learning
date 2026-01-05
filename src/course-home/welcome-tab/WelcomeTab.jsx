@@ -29,6 +29,25 @@ const WelcomeTab = () => {
   // Nếu chưa có dữ liệu welcome hoặc course đang loading, luôn hiển thị trạng thái đang tải
   const loading = courseStatus === 'loading' || !hasWelcomeData;
   const error = courseStatus === 'failed' ? 'Không thể tải dữ liệu Chào mừng' : null;
+ 
+  // Use progress model early so hooks order remains stable
+  const progressModel = useModel('progress', courseId) || {};
+  const completionSummary = progressModel.completionSummary || {};
+  const completeCount = completionSummary.completeCount || 0;
+  const incompleteCount = completionSummary.incompleteCount || 0;
+  const lockedCount = completionSummary.lockedCount || 0;
+  const totalUnits = completeCount + incompleteCount + lockedCount || 0;
+ 
+  // Determine enrollment (try several fields returned by API; default to true if not provided)
+  const isEnrolled = (() => {
+    if (typeof welcomeData?.courseAccess?.isEnrolled === 'boolean') return welcomeData.courseAccess.isEnrolled;
+    if (typeof welcomeData?.is_enrolled === 'boolean') return welcomeData.is_enrolled;
+    if (typeof welcomeData?.userStats?.isEnrolled === 'boolean') return welcomeData.userStats.isEnrolled;
+    return true;
+  })();
+ 
+  // Study groups posts count (if backend provides it on welcomeData)
+  const studyGroupPostsCount = welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || 0;
   
   // Fetch dates data để dùng Timeline component
   const datesModel = useModel('dates', courseId) || {};
@@ -99,24 +118,6 @@ const WelcomeTab = () => {
   };
 
   // Use daily quests from API when available, otherwise build fallback using real progress data
-  const progressModel = useModel('progress', courseId) || {};
-  const completionSummary = progressModel.completionSummary || {};
-  const completeCount = completionSummary.completeCount || 0;
-  const incompleteCount = completionSummary.incompleteCount || 0;
-  const lockedCount = completionSummary.lockedCount || 0;
-  const totalUnits = completeCount + incompleteCount + lockedCount || 0;
-
-  // Determine enrollment (try several fields returned by API; default to true if not provided)
-  const isEnrolled = (() => {
-    if (typeof welcomeData?.courseAccess?.isEnrolled === 'boolean') return welcomeData.courseAccess.isEnrolled;
-    if (typeof welcomeData?.is_enrolled === 'boolean') return welcomeData.is_enrolled;
-    if (typeof welcomeData?.userStats?.isEnrolled === 'boolean') return welcomeData.userStats.isEnrolled;
-    return true;
-  })();
-
-  // Study groups posts count (if backend provides it on welcomeData)
-  const studyGroupPostsCount = welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || 0;
-
   const dailyQuests = (welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0)
     ? welcomeData.dailyQuests
     : [
