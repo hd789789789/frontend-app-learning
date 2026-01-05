@@ -22,12 +22,12 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
       color: '#4285f4',
     },
     {
-      value: `${avgGrade?.toFixed(1) || 0}/10`,
+      value: `${avgGrade != null ? Number(avgGrade).toLocaleString() : 0} XP`,
       label: 'ĐIỂM XP TRUNG BÌNH',
       color: '#34a853',
     },
     {
-      value: `${maxGrade?.toFixed(1) || 0}/10`,
+      value: `${maxGrade != null ? Number(maxGrade).toLocaleString() : 0} XP`,
       label: 'ĐIỂM XP CAO NHẤT',
       color: '#9c27b0',
     },

@@ -32,19 +32,42 @@ const LeaderboardTab = () => {
 
       setSummaryLoading(true);
       try {
+        // Try XP summary first
+        const xpUrl = `${getConfig().LMS_BASE_URL}/api/course_home/top-xp/${courseId}?limit=10`;
+        let camelCased;
+        try {
+          const resp = await getAuthenticatedHttpClient().get(xpUrl);
+          camelCased = camelCaseObject(resp.data);
+          if (camelCased && camelCased.summary) {
+            setSummaryData((prev) => ({
+              ...prev,
+              totalStudents: camelCased.summary.total_students || prev.totalStudents,
+              avgGrade: camelCased.summary.avg_xp || prev.avgGrade,
+              maxGrade: camelCased.summary.max_xp || prev.maxGrade,
+              competingCount: camelCased.summary.top_count || prev.competingCount,
+              currentStreak: prev.currentStreak,
+              bestStreak: prev.bestStreak,
+            }));
+            setSummaryLoading(false);
+            return;
+          }
+        } catch (err) {
+          // xp endpoint may not exist; fall back to top-grades
+        }
+
+        // Fallback to top-grades summary
         const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=10`;
         const { data } = await getAuthenticatedHttpClient().get(url);
-        const camelCased = camelCaseObject(data);
+        camelCased = camelCaseObject(data);
 
-        if (camelCased.summary) {
-          // Preserve existing streak values when updating summary
+        if (camelCased && camelCased.summary) {
           setSummaryData((prev) => ({
             ...prev,
-            totalStudents: camelCased.summary.totalStudents || 0,
-            avgGrade: camelCased.summary.avgGrade || 0,
-            maxGrade: camelCased.summary.maxGrade || 0,
-            competingCount: camelCased.summary.topCount || 10,
-            // Keep existing streak values, don't reset to 0
+            totalStudents: camelCased.summary.totalStudents || prev.totalStudents,
+            // avgGrade/maxGrade from grades are in scale of 10; keep them if no XP
+            avgGrade: camelCased.summary.avgGrade || prev.avgGrade,
+            maxGrade: camelCased.summary.maxGrade || prev.maxGrade,
+            competingCount: camelCased.summary.topCount || prev.competingCount,
             currentStreak: prev.currentStreak,
             bestStreak: prev.bestStreak,
           }));
