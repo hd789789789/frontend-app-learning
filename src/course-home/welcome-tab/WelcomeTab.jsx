@@ -6,7 +6,7 @@ import { useModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
 import { fetchDatesTab } from '../data';
-import { getGroupStreaks } from '../data/api';
+import { getGroupStreaks, getStudyGroupComments, getStudyGroupsTabData } from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
 import StudyTip from './StudyTip';
@@ -47,27 +47,69 @@ const WelcomeTab = () => {
     return true;
   })();
 
-  // Attempt to determine whether current user has posted in any study group from study-groups model
+  // Determine whether current user has posted in any study group (scan model then fallback to API)
   const studyGroupsModel = useModel('study-groups', courseId) || {};
   const studyGroups = studyGroupsModel.results || [];
   const currentUser = getAuthenticatedUser();
   const currentUsername = currentUser?.username || null;
+  const [hasPostedDiscussion, setHasPostedDiscussion] = useState(Boolean(welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || false));
 
-  const hasPostedDiscussion = (() => {
-    if (!currentUsername) return false;
-    for (const g of studyGroups) {
-      const comments = g.comments || g.comments_results || g.commentsList || g.comments_list || [];
-      if (!Array.isArray(comments)) continue;
-      for (const c of comments) {
-        const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
-        const authorUsername = authorUser?.username || c.username || c.userName || null;
-        if (authorUsername && currentUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
-          return true;
+  useEffect(() => {
+    let cancelled = false;
+    if (!currentUsername || !courseId) return undefined;
+
+    const checkPosted = async () => {
+      let groupsToCheck = studyGroups;
+      // if model has no groups, try fetching via API
+      if ((!groupsToCheck || groupsToCheck.length === 0) && courseId) {
+        try {
+          const data = await getStudyGroupsTabData(courseId);
+          groupsToCheck = data.results || data || [];
+        } catch (err) {
+          groupsToCheck = [];
         }
       }
-    }
-    return false;
-  })();
+      // First scan any embedded comments on groups returned in the model
+      for (const g of groupsToCheck) {
+        const comments = g.comments || g.comments_results || g.commentsList || g.comments_list || [];
+        if (Array.isArray(comments) && comments.length > 0) {
+          for (const c of comments) {
+            const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
+            const authorUsername = authorUser?.username || c.username || c.userName || null;
+            if (authorUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
+              if (!cancelled) setHasPostedDiscussion(true);
+              return;
+            }
+          }
+        }
+      }
+
+      // Fallback: request comments per group from API until we find one by current user
+      for (const g of groupsToCheck) {
+        try {
+          const data = await getStudyGroupComments(g.id);
+          const results = data.results || [];
+          for (const c of results) {
+            const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
+            const authorUsername = authorUser?.username || c.username || c.userName || null;
+            if (authorUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
+              if (!cancelled) setHasPostedDiscussion(true);
+              return;
+            }
+          }
+        } catch (err) {
+          // ignore and continue
+        }
+      }
+
+      if (!cancelled) setHasPostedDiscussion(false);
+    };
+
+    checkPosted();
+    return () => {
+      cancelled = true;
+    };
+  }, [studyGroups, currentUsername, courseId, welcomeData]);
   
   // Fetch dates data để dùng Timeline component
   const datesModel = useModel('dates', courseId) || {};
@@ -313,14 +355,23 @@ const WelcomeTab = () => {
                   <div className="quest-progress">
                     <div className="quest-progress-text">
                       <span>{quest.progress}/{quest.total} bài</span>
-                      <span className={quest.completed ? 'text-success' : 'text-primary'}>
-                        {quest.completed ? 'Hoàn thành!' : `${Math.round((quest.progress / quest.total) * 100)}%`}
-                      </span>
+                      {quest.id === 1 ? (
+                        <span className={quest.completed ? 'text-success' : 'text-primary'}>
+                          {quest.completed ? 'Hoàn thành!' : ''}
+                        </span>
+                      ) : (
+                        <span className={quest.completed ? 'text-success' : 'text-primary'}>
+                          {quest.completed ? 'Hoàn thành!' : (() => {
+                            const pct = quest.total && quest.total > 0 ? Math.round((quest.progress / quest.total) * 100) : 0;
+                            return `${pct}%`;
+                          })()}
+                        </span>
+                      )}
                     </div>
                     <div className="quest-progress-bar">
                       <div 
                         className="quest-progress-fill"
-                        style={{ width: `${(quest.progress / quest.total) * 100}%` }}
+                        style={{ width: `${quest.total && quest.total > 0 ? (quest.progress / quest.total) * 100 : 0}%` }}
                       />
                     </div>
                   </div>

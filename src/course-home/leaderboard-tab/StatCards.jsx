@@ -23,7 +23,7 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
     },
     {
       value: `${avgGrade?.toFixed(1) || 0}/10`,
-      label: 'ĐIỂM TRUNG BÌNH',
+      label: 'ĐIỂM XP TRUNG BÌNH',
       color: '#34a853',
     },
     {

@@ -9,6 +9,7 @@ import StatCards from './StatCards';
 import TopStudentsByGrade from './TopStudentsByGrade';
 import TopStudentsByProgress from './TopStudentsByProgress';
 import TopStudentsByStreak from './TopStudentsByStreak';
+import TopStudentsByCoins from './TopStudentsByCoins';
 
 const LeaderboardTab = () => {
   const { courseId } = useParams();
@@ -107,6 +108,12 @@ const LeaderboardTab = () => {
           <TopStudentsByGrade courseId={courseId} />
         </div>
 
+        <div className="col-lg-6 col-md-6 mb-4">
+          <TopStudentsByCoins courseId={courseId} />
+        </div>
+      </div>
+
+      <div className="row mt-3">
         <div className="col-lg-6 col-md-6 mb-4">
           <TopStudentsByProgress courseId={courseId} />
         </div>

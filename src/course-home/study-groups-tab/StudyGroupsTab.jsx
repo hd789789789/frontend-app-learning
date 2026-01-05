@@ -3097,25 +3097,35 @@ const StudyGroupsTab = () => {
 
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
+    // ensure we base on latest model results when prevGroups is null
     setLocalGroups((prevGroups) => {
       const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
-      return [newGroup, ...base];
+      const updated = [newGroup, ...base];
+      // debug
+      // console.log('addGroupToList updated', newGroup, updated.length);
+      return updated;
     });
-  }, []);
+  }, [studyGroupsModel.results]);
 
   const updateGroupInList = useCallback((groupId, updatedData) => {
     setLocalGroups((prevGroups) => {
       const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
-      return base.map((group) => (group.id === groupId ? { ...group, ...updatedData } : group));
+      const updated = base.map((group) => (group.id === groupId ? { ...group, ...updatedData } : group));
+      // debug
+      // console.log('updateGroupInList', groupId, updatedData, updated.length);
+      return updated;
     });
-  }, []);
+  }, [studyGroupsModel.results]);
 
   const removeGroupFromList = useCallback((groupId) => {
     setLocalGroups((prevGroups) => {
       const base = Array.isArray(prevGroups) ? prevGroups : (studyGroupsModel.results || []);
-      return base.filter((group) => group.id !== groupId);
+      const updated = base.filter((group) => group.id !== groupId);
+      // debug
+      // console.log('removeGroupFromList', groupId, updated.length);
+      return updated;
     });
-  }, []);
+  }, [studyGroupsModel.results]);
 
   // Use module-level storage to persist across component remounts
   // This ensures the fetch guard works even when component unmounts/remounts

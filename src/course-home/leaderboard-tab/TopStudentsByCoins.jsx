@@ -5,7 +5,7 @@ import { getConfig } from "@edx/frontend-platform";
 import { getAuthenticatedHttpClient } from "@edx/frontend-platform/auth";
 import { camelCaseObject } from "@edx/frontend-platform";
 
-// CSS styles for hover animation
+// CSS styles for hover animation and sticky
 const hoverStyles = `
   .leaderboard-row-hover {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -21,8 +21,8 @@ const hoverStyles = `
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: #e3f2fd !important;
-    border-bottom: 2px solid #1976d2;
+    background-color: #fff7e6 !important;
+    border-bottom: 2px solid #f57c00;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
@@ -30,20 +30,15 @@ const hoverStyles = `
     position: sticky;
     bottom: 0;
     z-index: 10;
-    background-color: #e3f2fd !important;
-    border-top: 2px solid #1976d2;
+    background-color: #fff7e6 !important;
+    border-top: 2px solid #f57c00;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     transition: opacity 0.3s ease, transform 0.3s ease;
     margin-top: auto;
   }
-  .sticky-user-row-top.hidden,
-  .sticky-user-row-bottom.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
 `;
 
-function TopStudentsByGrade({ courseId }) {
+function TopStudentsByCoins({ courseId }) {
     const [students, setStudents] = useState([]);
     const [summary, setSummary] = useState({});
     const [loading, setLoading] = useState(true);
@@ -51,55 +46,31 @@ function TopStudentsByGrade({ courseId }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [currentUserEntry, setCurrentUserEntry] = useState(null);
     const [showStickyUser, setShowStickyUser] = useState(false);
-    const [stickyPosition, setStickyPosition] = useState("top"); // 'top' hoặc 'bottom'
-    const [testMode, setTestMode] = useState(false); // Test mode với 100 mock users
+    const [stickyPosition, setStickyPosition] = useState("top");
+    const [testMode, setTestMode] = useState(false);
     const scrollContainerRef = useRef(null);
     const userRowRef = useRef(null);
-
-    const extractXpValue = (student) => {
-        // Support several possible field names returned by backend
-        return student.xp ?? student.xpPoints ?? student.points ?? student.totalXp ?? student.xp_total ?? null;
-    };
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const testParam = testMode ? "&test=true" : "";
-
-            // Try the dedicated XP endpoint first; fall back to top-grades if not available
-            const xpUrl = `${getConfig().LMS_BASE_URL}/api/course_home/top-xp/${courseId}?limit=${limit}${testParam}`;
-            let data;
-            try {
-                const resp = await getAuthenticatedHttpClient().get(xpUrl);
-                data = resp.data;
-            } catch (err) {
-                // fallback to top-grades
-                const fallbackUrl = `${getConfig().LMS_BASE_URL}/api/course_home/top-grades/${courseId}?limit=${limit}${testParam}`;
-                const resp = await getAuthenticatedHttpClient().get(fallbackUrl);
-                data = resp.data;
-            }
-
+            const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-coins/${courseId}?limit=${limit}${testParam}`;
+            const { data } = await getAuthenticatedHttpClient().get(url);
             const camelCased = camelCaseObject(data);
-            // eslint-disable-next-line no-console
-            console.log("[TopStudentsByGrade] Data:", camelCased);
             const topStudents = camelCased.topStudents || [];
             setSummary(camelCased.summary || {});
 
-            // Lấy current user entry từ API hoặc trong top
             const currentUserInTop = topStudents.find((s) => s.isCurrentUser);
             const currentUserFromApi = camelCased.currentUserEntry || null;
-
-            // Ưu tiên current user trong top, nếu không có thì dùng từ API
-            const currentUser = currentUserInTop || currentUserFromApi;
+            const currentUser = currentUserInTop || currentUserFromApi || null;
             setCurrentUserEntry(currentUser);
 
             setStudents(topStudents);
-
-            // Initial state: không hiển thị sticky
             setShowStickyUser(false);
         } catch (error) {
             // eslint-disable-next-line no-console
-            console.error("[TopStudentsByGrade] Error fetching data:", error);
+            console.error("[TopStudentsByCoins] Error fetching data:", error);
             setStudents([]);
         } finally {
             setLoading(false);
@@ -112,28 +83,23 @@ function TopStudentsByGrade({ courseId }) {
         }
     }, [courseId, limit, testMode, fetchData]);
 
-    // Kiểm tra xem user có nằm trong danh sách students không
     const isUserInList = students.some((s) => s.isCurrentUser);
 
-    // Handle scroll để ẩn/hiện sticky user row
     useEffect(() => {
         const container = scrollContainerRef.current;
         const userRow = userRowRef.current;
 
-        // Nếu không có currentUserEntry, không cần sticky
         if (!container || !currentUserEntry) {
             setShowStickyUser(false);
             return;
         }
 
-        // Nếu user KHÔNG nằm trong danh sách students → luôn hiển thị sticky ở dưới
         if (!isUserInList) {
             setShowStickyUser(true);
             setStickyPosition("bottom");
             return;
         }
 
-        // Nếu không có userRow (chưa render), không hiển thị sticky
         if (!userRow) {
             setShowStickyUser(false);
             return;
@@ -141,7 +107,6 @@ function TopStudentsByGrade({ courseId }) {
 
         const handleScroll = () => {
             if (!userRow) {
-                // User không trong danh sách → luôn hiển thị sticky ở dưới
                 if (!isUserInList && currentUserEntry) {
                     setShowStickyUser(true);
                     setStickyPosition("bottom");
@@ -151,33 +116,23 @@ function TopStudentsByGrade({ courseId }) {
                 return;
             }
 
-            // Sử dụng getBoundingClientRect để tính vị trí chính xác
             const containerRect = container.getBoundingClientRect();
             const userRowRect = userRow.getBoundingClientRect();
-
-            // Kiểm tra xem user row có trong viewport của container không
             const isUserRowVisible = userRowRect.top >= containerRect.top && userRowRect.bottom <= containerRect.bottom;
 
             if (isUserRowVisible) {
-                // User row đang hiển thị → ẩn sticky
                 setShowStickyUser(false);
             } else {
-                // User row không hiển thị → hiển thị sticky
                 setShowStickyUser(true);
-
-                // Xác định vị trí sticky: trên hay dưới
                 if (userRowRect.top < containerRect.top) {
-                    // User row ở phía TRÊN viewport (đã scroll qua) → sticky ở TRÊN
                     setStickyPosition("top");
                 } else {
-                    // User row ở phía DƯỚI viewport (chưa scroll đến) → sticky ở DƯỚI
                     setStickyPosition("bottom");
                 }
             }
         };
 
         container.addEventListener("scroll", handleScroll, { passive: true });
-        // Check initial state sau khi render
         const timeoutId = setTimeout(handleScroll, 100);
 
         return () => {
@@ -192,56 +147,26 @@ function TopStudentsByGrade({ courseId }) {
 
     const getRankBadge = (rank) => {
         if (rank === 1) {
-            return (
-                <span
-                    className="d-inline-flex align-items-center justify-content-center"
-                    style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "8px",
-                        background: "linear-gradient(135deg, #ffd700 0%, #ffb300 100%)",
-                        color: "#fff",
-                        fontWeight: "bold",
-                        fontSize: "0.85rem",
-                    }}
-                >
-                    {rank}
-                </span>
-            );
+            return <span className="text-warning">🥇 #{rank}</span>;
         }
-        if (rank <= 3) {
-            return (
-                <span
-                    className="d-inline-flex align-items-center justify-content-center"
-                    style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "8px",
-                        background:
-                            rank === 2
-                                ? "linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)"
-                                : "linear-gradient(135deg, #CD7F32 0%, #B87333 100%)",
-                        color: "#fff",
-                        fontWeight: "bold",
-                        fontSize: "0.85rem",
-                    }}
-                >
-                    {rank}
-                </span>
-            );
+        if (rank === 2) {
+            return <span className="text-muted">🥈 #{rank}</span>;
         }
-        return (
-            <span className="text-muted font-weight-bold" style={{ fontSize: "0.9rem" }}>
-                {rank}
-            </span>
-        );
+        if (rank === 3) {
+            return <span className="text-muted">🥉 #{rank}</span>;
+        }
+        return <span className="text-muted">#{rank}</span>;
+    };
+
+    const extractCoinValue = (student) => {
+        // Support multiple possible fields returned from backend
+        return student.coins ?? student.coinsEarned ?? student.coinBalance ?? student.coins_balance ?? 0;
     };
 
     return (
         <>
             <style>{hoverStyles}</style>
             <Card className="h-100 shadow-sm" style={{ borderRadius: "12px", overflow: "hidden" }}>
-                {/* Header với title rõ ràng */}
                 <div
                     className="d-flex justify-content-between align-items-center px-3 py-3"
                     style={{
@@ -251,10 +176,10 @@ function TopStudentsByGrade({ courseId }) {
                 >
                     <div className="d-flex align-items-center">
                         <span style={{ fontSize: "1.25rem" }} className="mr-2">
-                            🏆
+                            🪙
                         </span>
                         <span className="font-weight-bold" style={{ fontSize: "1.1rem", color: "#333" }}>
-                            Top Điểm XP
+                            Top Xu
                         </span>
                     </div>
                     <div className="d-flex align-items-center">
@@ -281,7 +206,6 @@ function TopStudentsByGrade({ courseId }) {
 
                 {!isCollapsed && (
                     <Card.Body className="p-0">
-                        {/* Filter */}
                         <div className="px-3 py-2 border-bottom bg-light">
                             <div className="d-flex align-items-center justify-content-between">
                                 <div className="d-flex align-items-center">
@@ -304,7 +228,6 @@ function TopStudentsByGrade({ courseId }) {
                             </div>
                         </div>
 
-                        {/* Content */}
                         {loading ? (
                             <div className="text-center py-4">
                                 <Spinner animation="border" size="sm" />
@@ -325,35 +248,17 @@ function TopStudentsByGrade({ courseId }) {
                                     <div className="text-center py-4 text-muted">Chưa có dữ liệu</div>
                                 ) : (
                                     <>
-                                        {/* Sticky user row ở trên đầu khi scroll xuống qua user */}
                                         {currentUserEntry && showStickyUser && stickyPosition === "top" && (
-                                            <div
-                                                className="d-flex align-items-center px-3 py-2 sticky-user-row-top"
-                                                style={{
-                                                    backgroundColor: "#e3f2fd",
-                                                }}
-                                            >
+                                            <div className="d-flex align-items-center px-3 py-2 sticky-user-row-top" style={{ backgroundColor: "#fff7e6" }}>
                                                 <div className="mr-3" style={{ minWidth: "35px" }}>
                                                     {getRankBadge(currentUserEntry.rank)}
                                                 </div>
                                                 <div className="flex-grow-1">
-                                                    <div
-                                                        className="d-flex align-items-center"
-                                                        style={{ fontSize: "0.9rem" }}
-                                                    >
+                                                    <div className="d-flex align-items-center" style={{ fontSize: "0.9rem" }}>
                                                         <span className="font-weight-semibold">
                                                             {currentUserEntry.fullName || currentUserEntry.displayName}
                                                         </span>
-                                                        <span
-                                                            className="ml-2 px-2 py-0"
-                                                            style={{
-                                                                backgroundColor: "#1976d2",
-                                                                color: "#fff",
-                                                                borderRadius: "10px",
-                                                                fontSize: "0.65rem",
-                                                                fontWeight: "bold",
-                                                            }}
-                                                        >
+                                                        <span className="ml-2 px-2 py-0" style={{ backgroundColor: "#f57c00", color: "#fff", borderRadius: "10px", fontSize: "0.65rem", fontWeight: "bold" }}>
                                                             Bạn
                                                         </span>
                                                     </div>
@@ -361,66 +266,36 @@ function TopStudentsByGrade({ courseId }) {
                                                         @{currentUserEntry.username}
                                                     </div>
                                                 </div>
-                                        <div
-                                                    className="font-weight-bold"
-                                                    style={{
-                                                        fontSize: "1rem",
-                                                        color: "#f57c00",
-                                                    }}
-                                                >
-                                                    {(() => {
-                                                        const xp = extractXpValue(currentUserEntry);
-                                                        if (xp !== null && xp !== undefined) {
-                                                            return xp.toLocaleString();
-                                                        }
-                                                        return (currentUserEntry.gradePercentage?.toFixed(1) ||
-                                                            currentUserEntry.gradePercent?.toFixed(1) ||
-                                                            0) + "/10";
-                                                    })()}
+                                                <div className="font-weight-bold" style={{ fontSize: "1rem", color: "#f57c00" }}>
+                                                    {extractCoinValue(currentUserEntry)}
+                                                    &nbsp;xu
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Danh sách students */}
                                         <div style={{ flex: "1 1 auto" }}>
                                             {students.map((student, index) => {
-                                                // Set ref cho current user entry (dù ở đâu trong danh sách)
                                                 const isCurrentUser = student.isCurrentUser;
+                                                const coinValue = extractCoinValue(student);
                                                 return (
                                                     <div
                                                         key={student.userId || index}
                                                         ref={isCurrentUser ? userRowRef : null}
                                                         className="d-flex align-items-center px-3 py-2 border-bottom leaderboard-row-hover"
                                                         style={{
-                                                            backgroundColor: isCurrentUser
-                                                                ? "#e3f2fd"
-                                                                : index % 2 === 0
-                                                                ? "#fff"
-                                                                : "#f9f9f9",
+                                                            backgroundColor: isCurrentUser ? "#fff7e6" : index % 2 === 0 ? "#fff" : "#f9f9f9",
                                                         }}
                                                     >
                                                         <div className="mr-3" style={{ minWidth: "35px" }}>
                                                             {getRankBadge(student.rank)}
                                                         </div>
                                                         <div className="flex-grow-1">
-                                                            <div
-                                                                className="d-flex align-items-center"
-                                                                style={{ fontSize: "0.9rem" }}
-                                                            >
+                                                            <div className="d-flex align-items-center" style={{ fontSize: "0.9rem" }}>
                                                                 <span className="font-weight-semibold">
                                                                     {student.fullName || student.displayName}
                                                                 </span>
                                                                 {isCurrentUser && (
-                                                                    <span
-                                                                        className="ml-2 px-2 py-0"
-                                                                        style={{
-                                                                            backgroundColor: "#1976d2",
-                                                                            color: "#fff",
-                                                                            borderRadius: "10px",
-                                                                            fontSize: "0.65rem",
-                                                                            fontWeight: "bold",
-                                                                        }}
-                                                                    >
+                                                                    <span className="ml-2 px-2 py-0" style={{ backgroundColor: "#f57c00", color: "#fff", borderRadius: "10px", fontSize: "0.65rem", fontWeight: "bold" }}>
                                                                         Bạn
                                                                     </span>
                                                                 )}
@@ -429,57 +304,26 @@ function TopStudentsByGrade({ courseId }) {
                                                                 @{student.username}
                                                             </div>
                                                         </div>
-                                                        <div
-                                                            className="font-weight-bold"
-                                                            style={{
-                                                                fontSize: "1rem",
-                                                                color: "#f57c00",
-                                                            }}
-                                                        >
-                                                            {(() => {
-                                                                const xp = extractXpValue(student);
-                                                                if (xp !== null && xp !== undefined) {
-                                                                    return Number(xp).toLocaleString();
-                                                                }
-                                                                return (student.gradePercentage?.toFixed(1) ||
-                                                                    student.gradePercent?.toFixed(1) ||
-                                                                    0) + "/10";
-                                                            })()}
+                                                        <div className="font-weight-bold" style={{ fontSize: "1rem", color: "#f57c00" }}>
+                                                            {coinValue}
+                                                            &nbsp;xu
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
 
-                                        {/* Sticky user row ở dưới cùng khi scroll lên (user ở dưới) */}
                                         {currentUserEntry && showStickyUser && stickyPosition === "bottom" && (
-                                            <div
-                                                className="d-flex align-items-center px-3 py-2 sticky-user-row-bottom"
-                                                style={{
-                                                    backgroundColor: "#e3f2fd",
-                                                }}
-                                            >
+                                            <div className="d-flex align-items-center px-3 py-2 sticky-user-row-bottom" style={{ backgroundColor: "#fff7e6" }}>
                                                 <div className="mr-3" style={{ minWidth: "35px" }}>
                                                     {getRankBadge(currentUserEntry.rank)}
                                                 </div>
                                                 <div className="flex-grow-1">
-                                                    <div
-                                                        className="d-flex align-items-center"
-                                                        style={{ fontSize: "0.9rem" }}
-                                                    >
+                                                    <div className="d-flex align-items-center" style={{ fontSize: "0.9rem" }}>
                                                         <span className="font-weight-semibold">
                                                             {currentUserEntry.fullName || currentUserEntry.displayName}
                                                         </span>
-                                                        <span
-                                                            className="ml-2 px-2 py-0"
-                                                            style={{
-                                                                backgroundColor: "#1976d2",
-                                                                color: "#fff",
-                                                                borderRadius: "10px",
-                                                                fontSize: "0.65rem",
-                                                                fontWeight: "bold",
-                                                            }}
-                                                        >
+                                                        <span className="ml-2 px-2 py-0" style={{ backgroundColor: "#f57c00", color: "#fff", borderRadius: "10px", fontSize: "0.65rem", fontWeight: "bold" }}>
                                                             Bạn
                                                         </span>
                                                     </div>
@@ -487,17 +331,9 @@ function TopStudentsByGrade({ courseId }) {
                                                         @{currentUserEntry.username}
                                                     </div>
                                                 </div>
-                                                <div
-                                                    className="font-weight-bold"
-                                                    style={{
-                                                        fontSize: "1rem",
-                                                        color: "#f57c00",
-                                                    }}
-                                                >
-                                                    {currentUserEntry.gradePercentage?.toFixed(1) ||
-                                                        currentUserEntry.gradePercent?.toFixed(1) ||
-                                                        0}
-                                                    /10
+                                                <div className="font-weight-bold" style={{ fontSize: "1rem", color: "#f57c00" }}>
+                                                    {extractCoinValue(currentUserEntry)}
+                                                    &nbsp;xu
                                                 </div>
                                             </div>
                                         )}
@@ -512,8 +348,10 @@ function TopStudentsByGrade({ courseId }) {
     );
 }
 
-TopStudentsByGrade.propTypes = {
+TopStudentsByCoins.propTypes = {
     courseId: PropTypes.string.isRequired,
 };
 
-export default TopStudentsByGrade;
+export default TopStudentsByCoins;
+
+
