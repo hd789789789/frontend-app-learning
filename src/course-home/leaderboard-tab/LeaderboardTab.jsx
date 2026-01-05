@@ -104,17 +104,15 @@ const LeaderboardTab = () => {
           />
 
       <div className="row">
-        <div className="col-lg-6 col-md-6 mb-4">
+        <div className="col-lg-4 col-md-6 mb-4">
           <TopStudentsByGrade courseId={courseId} />
         </div>
 
-        <div className="col-lg-6 col-md-6 mb-4">
+        <div className="col-lg-4 col-md-6 mb-4">
           <TopStudentsByCoins courseId={courseId} />
         </div>
-      </div>
 
-      <div className="row mt-3">
-        <div className="col-lg-6 col-md-6 mb-4">
+        <div className="col-lg-4 col-md-6 mb-4">
           <TopStudentsByProgress courseId={courseId} />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
-import { fetchDatesTab } from '../data';
+import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab } from '../data';
 import { getGroupStreaks, getStudyGroupComments, getStudyGroupsTabData } from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
@@ -121,6 +121,22 @@ const WelcomeTab = () => {
       dispatch(fetchDatesTab(courseId));
     }
   }, [courseId, dispatch, courseDateBlocks]);
+
+  // Ensure progress model is loaded (BadgeTab fetches it; WelcomeTab needs it too)
+  useEffect(() => {
+    const shouldFetchProgress = courseId && !(progressModel && progressModel.completionSummary);
+    if (shouldFetchProgress) {
+      dispatch(fetchProgressTab(courseId));
+    }
+  }, [courseId, dispatch, progressModel]);
+
+  // Ensure study-groups model is loaded so we can inspect comments if backend provides them
+  useEffect(() => {
+    const shouldFetchStudyGroups = courseId && !(studyGroupsModel && studyGroupsModel.results !== undefined);
+    if (shouldFetchStudyGroups) {
+      dispatch(fetchStudyGroupsTab(courseId));
+    }
+  }, [courseId, dispatch, studyGroupsModel]);
 
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);

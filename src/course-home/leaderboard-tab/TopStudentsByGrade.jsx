@@ -60,6 +60,10 @@ function TopStudentsByGrade({ courseId }) {
         // Support several possible field names returned by backend
         return student.xp ?? student.xpPoints ?? student.points ?? student.totalXp ?? student.xp_total ?? null;
     };
+    
+    const extractLevelValue = (student) => {
+        return student.level ?? student.lv ?? student.levelNumber ?? student.level_no ?? student.currentLevel ?? null;
+    };
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -370,8 +374,9 @@ function TopStudentsByGrade({ courseId }) {
                                                 >
                                                     {(() => {
                                                         const xp = extractXpValue(currentUserEntry);
+                                                        const lvl = extractLevelValue(currentUserEntry);
                                                         if (xp !== null && xp !== undefined) {
-                                                            return xp.toLocaleString();
+                                                            return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
                                                         }
                                                         return (currentUserEntry.gradePercentage?.toFixed(1) ||
                                                             currentUserEntry.gradePercent?.toFixed(1) ||
@@ -438,8 +443,9 @@ function TopStudentsByGrade({ courseId }) {
                                                         >
                                                             {(() => {
                                                                 const xp = extractXpValue(student);
+                                                                const lvl = extractLevelValue(student);
                                                                 if (xp !== null && xp !== undefined) {
-                                                                    return Number(xp).toLocaleString();
+                                                                    return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
                                                                 }
                                                                 return (student.gradePercentage?.toFixed(1) ||
                                                                     student.gradePercent?.toFixed(1) ||
@@ -494,10 +500,16 @@ function TopStudentsByGrade({ courseId }) {
                                                         color: "#f57c00",
                                                     }}
                                                 >
-                                                    {currentUserEntry.gradePercentage?.toFixed(1) ||
-                                                        currentUserEntry.gradePercent?.toFixed(1) ||
-                                                        0}
-                                                    /10
+                                                    {(() => {
+                                                        const xp = extractXpValue(currentUserEntry);
+                                                        const lvl = extractLevelValue(currentUserEntry);
+                                                        if (xp !== null && xp !== undefined) {
+                                                            return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
+                                                        }
+                                                        return (currentUserEntry.gradePercentage?.toFixed(1) ||
+                                                            currentUserEntry.gradePercent?.toFixed(1) ||
+                                                            0) + "/10";
+                                                    })()}
                                                 </div>
                                             </div>
                                         )}
