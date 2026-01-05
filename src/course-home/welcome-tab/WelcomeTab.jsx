@@ -105,9 +105,9 @@ const WelcomeTab = () => {
     : [
         {
           id: 1,
-          title: 'Hoàn thành 1 bài học',
+          title: 'Hoàn thành ít nhất 1 bài học',
           description: 'Học ít nhất 1 bài để duy trì chuỗi',
-          reward: '+20 XP',
+          reward: '+ XP',
           progress: 1,
           total: 1,
           completed: true,
@@ -116,9 +116,9 @@ const WelcomeTab = () => {
         },
         {
           id: 2,
-          title: 'Làm 5 bài tập thực hành',
+          title: 'Luyện Game học tập tương tác',
           description: 'Rèn luyện kỹ năng với bài tập',
-          reward: '+50 XP • 💰 +30 Điểm',
+          reward: '+ XP • 💰 + Xu',
           progress: 2,
           total: 5,
           completed: false,
@@ -129,7 +129,7 @@ const WelcomeTab = () => {
           id: 3,
           title: 'Tham gia thảo luận',
           description: 'Đăng ít nhất 1 bài viết trong diễn đàn',
-          reward: '+30 XP • 💰 +20 Điểm',
+          reward: '+ XP • 💰 + Xu',
           progress: 0,
           total: 1,
           completed: false,
@@ -139,6 +139,9 @@ const WelcomeTab = () => {
       ];
 
   // Dates data đã được fetch và lưu trong model store
+
+  // Feature flags / feature availability from welcomeData (if provided by backend)
+  const referralEnabled = Boolean(welcomeData && welcomeData.referralEnabled);
 
   const scrollToDailyQuests = () => {
     const element = document.getElementById('daily-quests-section');
@@ -293,6 +296,9 @@ const WelcomeTab = () => {
               </div>
             </div>
           </div>
+          {/* Study Tip - moved from sidebar into main content per design */}
+          <StudyTip />
+
         </Col>
 
         {/* Sidebar */}
@@ -324,9 +330,10 @@ const WelcomeTab = () => {
             <GroupStreaks groups={groupStreaks} disableFallback={true} />
           )}
           
-          <StudyTip />
-          
-          <ReferralWidget />
+          {/* StudyTip removed from sidebar (moved into main content) */}
+
+          {/* Referral widget: only show when the feature is enabled (temporarily hide otherwise) */}
+          {referralEnabled && <ReferralWidget />}
         </Col>
       </Row>
     </Container>
