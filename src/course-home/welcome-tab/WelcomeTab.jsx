@@ -201,12 +201,12 @@ const WelcomeTab = () => {
     : [
         {
           id: 1,
-          title: 'Hoàn thành bài học',
+          title: 'Hoàn thành khoá học',
           description: 'Hoàn thành Unit trong khoá học',
           reward: '+ XP',
-          progress: Math.min(completeCount, totalUnits > 0 ? completeCount : 0),
-          total: totalUnits > 0 ? totalUnits : 0,
-          completed: totalUnits > 0 ? completeCount >= 1 : false,
+          progress: completeCount,
+          total: totalUnits,
+          completed: totalUnits > 0 ? completeCount >= totalUnits : false,
           icon: '📚',
           gradient: 'primary',
         },
