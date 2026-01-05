@@ -2942,6 +2942,9 @@ const StudyGroupsTab = () => {
     welcomeModelRaw.success,
     courseId,
   ]);
+
+  // Feature flags from welcome model (e.g. referral availability)
+  const referralEnabled = Boolean(welcomeModel && welcomeModel.referralEnabled);
   
   const studyGroupsModel = useMemo(() => studyGroupsModelRaw, [
     studyGroupsModelRaw.results,
@@ -3367,7 +3370,7 @@ const StudyGroupsTab = () => {
               <GroupStreaks groups={groupStreaks} disableFallback={true} />
             )}
             <StudyTip />
-            <ReferralWidget />
+            {referralEnabled && <ReferralWidget />}
           </div>
         </Col>
       </Row>
