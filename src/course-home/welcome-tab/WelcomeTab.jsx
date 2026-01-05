@@ -207,7 +207,7 @@ const WelcomeTab = () => {
       {/* Row 2: Main content and sidebar */}
       <Row className="mt-4">
         {/* Main Content */}
-        <Col lg={8} md={12}>
+        <Col lg={9} md={12}>
           {/* Daily Quests Section */}
           <div id="daily-quests-section" className="daily-quests-section">
             <h3>🎯 Nhiệm vụ hôm nay</h3>
@@ -304,7 +304,7 @@ const WelcomeTab = () => {
         </Col>
 
         {/* Sidebar */}
-        <Col lg={4} md={12} className="mt-3 mt-lg-0">
+        <Col lg={3} md={12} className="mt-3 mt-lg-0">
           {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
           <div className="important-dates-card">
             <h3 className="important-dates-title">📌 Ngày quan trọng</h3>
