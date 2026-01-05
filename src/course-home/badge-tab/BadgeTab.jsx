@@ -386,6 +386,31 @@ const BadgeTab = memo(function BadgeTab() {
   const completionSummary = useMemo(() => {
     return progressModel?.completionSummary || {};
   }, [progressModel?.completionSummary]);
+
+  // Share achievements handler (use navigator.share when available, fallback to clipboard)
+  const handleShareAchievements = async () => {
+    const shareText = `Mình vừa đạt Level ${stats.level} (${stats.xp.toLocaleString()} XP) trong khoá học ${welcomeModel?.title || ''} trên PiStudy!`;
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Thành tích của tôi trên PiStudy',
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      alert('Nội dung chia sẻ đã được sao chép vào clipboard.');
+    } catch (err) {
+      alert('Không thể chia sẻ — vui lòng sao chép thủ công: ' + shareUrl);
+    }
+  };
   
   const courseGrade = useMemo(() => {
     return progressModel?.courseGrade || {};
@@ -1029,6 +1054,9 @@ const BadgeTab = memo(function BadgeTab() {
         </div>
       </div> */}
 
+          {/* Study Tip - moved from sidebar into main column */}
+          <StudyTip />
+
           {/* Achievement Motivation Banner */}
           <div className="achievement-banner">
             <div className="achievement-banner-icon">🎯</div>
@@ -1041,7 +1069,7 @@ const BadgeTab = memo(function BadgeTab() {
               </div>
             </div>
             <div className="achievement-banner-actions">
-              <button className="btn btn-secondary">
+              <button className="btn btn-secondary" onClick={handleShareAchievements}>
                 📊 Chia sẻ thành tích
               </button>
             </div>
@@ -1057,7 +1085,7 @@ const BadgeTab = memo(function BadgeTab() {
           
           <GroupStreaks groups={groupStreaks} />
           
-          <StudyTip />
+          {/* StudyTip moved to left column */}
           
           {/* Tạm thời ẩn: ReferralWidget - Giới thiệu & Nhận thưởng! */}
           {/* <ReferralWidget /> */}

@@ -13,6 +13,14 @@
   margin-bottom: 1rem;
 }
 
+// Add slight horizontal margin for study tip card inside study groups sidebar
+@media (min-width: 768px) {
+  .study-groups-sidebar .study-tip-card {
+    margin-left: 1rem;
+    width: 97%;
+  }
+}
+
 .groups-header {
   display: flex;
   justify-content: space-between;
@@ -1241,4 +1249,8 @@ a.comment-menu-item.comment-menu-item-danger.pgn__dropdown-item.dropdown-item {
 
 .study-groups-tab.px-0.container-fluid {
   padding-right: 15px !important;
+}
+
+.streak-calendar-card.pgn__card.pgn__card-light.card {
+  margin-top: 2rem;
 }

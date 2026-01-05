@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import PropTypes from "prop-types";
-import { Card, Form, Button, Spinner } from "@openedx/paragon";
-import { getConfig } from "@edx/frontend-platform";
-import { getAuthenticatedHttpClient } from "@edx/frontend-platform/auth";
-import { camelCaseObject } from "@edx/frontend-platform";
+import React, {
+  useState, useEffect, useCallback, useRef,
+} from 'react';
+import PropTypes from 'prop-types';
+import {
+  Card, Form, Button, Spinner,
+} from '@openedx/paragon';
+import { getConfig, camelCaseObject } from '@edx/frontend-platform';
+import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 
 // CSS styles for hover animation and sticky row
 const hoverStyles = `
@@ -37,22 +40,24 @@ const hoverStyles = `
   }
 `;
 
-function TopStudentsByStreak({ courseId, onSummaryChange }) {
+const TopStudentsByStreak = ({ courseId, onSummaryChange }) => {
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(10);
-  const [mode, setMode] = useState("current"); // 'current' | 'best'
+  const [mode, setMode] = useState('current'); // 'current' | 'best'
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentUserEntry, setCurrentUserEntry] = useState(null);
   const [showStickyUser, setShowStickyUser] = useState(false);
-  const [stickyPosition, setStickyPosition] = useState("top");
+  const [stickyPosition, setStickyPosition] = useState('top');
   const [testMode, setTestMode] = useState(false);
   const scrollContainerRef = useRef(null);
   const userRowRef = useRef(null);
   const onSummaryChangeRef = useRef(onSummaryChange);
   const isFetchingRef = useRef(false);
-  const lastParamsRef = useRef({ courseId: null, limit: null, mode: null, testMode: null });
+  const lastParamsRef = useRef({
+    courseId: null, limit: null, mode: null, testMode: null,
+  });
 
   // Keep onSummaryChange ref up to date
   useEffect(() => {
@@ -65,11 +70,10 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     }
 
     // Check if any parameter actually changed
-    const paramsChanged = 
-      lastParamsRef.current.courseId !== courseId ||
-      lastParamsRef.current.limit !== limit ||
-      lastParamsRef.current.mode !== mode ||
-      lastParamsRef.current.testMode !== testMode;
+    const paramsChanged = lastParamsRef.current.courseId !== courseId
+      || lastParamsRef.current.limit !== limit
+      || lastParamsRef.current.mode !== mode
+      || lastParamsRef.current.testMode !== testMode;
 
     // If nothing changed or already fetching, skip
     if (!paramsChanged || isFetchingRef.current) {
@@ -77,14 +81,16 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     }
 
     // Update last params
-    lastParamsRef.current = { courseId, limit, mode, testMode };
+    lastParamsRef.current = {
+      courseId, limit, mode, testMode,
+    };
     isFetchingRef.current = true;
 
     // Fetch data directly in useEffect to avoid dependency issues
     const fetchData = async () => {
       setLoading(true);
       try {
-        const testParam = testMode ? "&test=true" : "";
+        const testParam = testMode ? '&test=true' : '';
         const modeParam = `&mode=${mode}`;
         const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-streak/${courseId}?limit=${limit}${modeParam}${testParam}`;
         const { data } = await getAuthenticatedHttpClient().get(url);
@@ -109,10 +115,12 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
         setShowStickyUser(false);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error("[TopStudentsByStreak] Error fetching data:", error);
+        console.error('[TopStudentsByStreak] Error fetching data:', error);
         setStudents([]);
         // Reset params on error so we can retry
-        lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
+        lastParamsRef.current = {
+          courseId: null, limit: null, mode: null, testMode: null,
+        };
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
@@ -129,13 +137,15 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     }
 
     // Reset last params to force a new fetch
-    lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
+    lastParamsRef.current = {
+      courseId: null, limit: null, mode: null, testMode: null,
+    };
     isFetchingRef.current = true;
-    
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        const testParam = testMode ? "&test=true" : "";
+        const testParam = testMode ? '&test=true' : '';
         const modeParam = `&mode=${mode}`;
         const url = `${getConfig().LMS_BASE_URL}/api/course_home/top-streak/${courseId}?limit=${limit}${modeParam}${testParam}`;
         const { data } = await getAuthenticatedHttpClient().get(url);
@@ -159,12 +169,16 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
         setStudents(topStudents);
         setShowStickyUser(false);
         // Update last params after successful fetch
-        lastParamsRef.current = { courseId, limit, mode, testMode };
+        lastParamsRef.current = {
+          courseId, limit, mode, testMode,
+        };
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error("[TopStudentsByStreak] Error fetching data:", error);
+        console.error('[TopStudentsByStreak] Error fetching data:', error);
         setStudents([]);
-        lastParamsRef.current = { courseId: null, limit: null, mode: null, testMode: null };
+        lastParamsRef.current = {
+          courseId: null, limit: null, mode: null, testMode: null,
+        };
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
@@ -187,7 +201,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
 
     if (!isUserInList) {
       setShowStickyUser(true);
-      setStickyPosition("bottom");
+      setStickyPosition('bottom');
       return;
     }
 
@@ -200,7 +214,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
       if (!userRow) {
         if (!isUserInList && currentUserEntry) {
           setShowStickyUser(true);
-          setStickyPosition("bottom");
+          setStickyPosition('bottom');
         } else {
           setShowStickyUser(false);
         }
@@ -210,27 +224,26 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
       const containerRect = container.getBoundingClientRect();
       const userRowRect = userRow.getBoundingClientRect();
 
-      const isUserRowVisible =
-        userRowRect.top >= containerRect.top &&
-        userRowRect.bottom <= containerRect.bottom;
+      const isUserRowVisible = userRowRect.top >= containerRect.top
+        && userRowRect.bottom <= containerRect.bottom;
 
       if (isUserRowVisible) {
         setShowStickyUser(false);
       } else {
         setShowStickyUser(true);
         if (userRowRect.top < containerRect.top) {
-          setStickyPosition("top");
+          setStickyPosition('top');
         } else {
-          setStickyPosition("bottom");
+          setStickyPosition('bottom');
         }
       }
     };
 
-    container.addEventListener("scroll", handleScroll, { passive: true });
+    container.addEventListener('scroll', handleScroll, { passive: true });
     const timeoutId = setTimeout(handleScroll, 100);
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener('scroll', handleScroll);
       clearTimeout(timeoutId);
     };
   }, [currentUserEntry, students, isUserInList]);
@@ -241,13 +254,13 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
         <span
           className="d-inline-flex align-items-center justify-content-center"
           style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "8px",
-            background: "linear-gradient(135deg, #ffd700 0%, #ffb300 100%)",
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: "0.85rem",
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #ffd700 0%, #ffb300 100%)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '0.85rem',
           }}
         >
           {rank}
@@ -259,16 +272,16 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
         <span
           className="d-inline-flex align-items-center justify-content-center"
           style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "8px",
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
             background:
               rank === 2
-                ? "linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)"
-                : "linear-gradient(135deg, #CD7F32 0%, #B87333 100%)",
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: "0.85rem",
+                ? 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)'
+                : 'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)',
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '0.85rem',
           }}
         >
           {rank}
@@ -276,7 +289,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
       );
     }
     return (
-      <span className="text-muted font-weight-bold" style={{ fontSize: "0.9rem" }}>
+      <span className="text-muted font-weight-bold" style={{ fontSize: '0.9rem' }}>
         {rank}
       </span>
     );
@@ -289,38 +302,38 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
     return (
       <div
         className={`d-flex align-items-center px-3 py-2 streak-sticky-${position}`}
-        style={{ backgroundColor: "#fff3e0" }}
+        style={{ backgroundColor: '#fff3e0' }}
       >
-        <div className="mr-3" style={{ minWidth: "35px" }}>
+        <div className="mr-3" style={{ minWidth: '35px' }}>
           {getRankBadge(currentUserEntry.rank)}
         </div>
         <div className="flex-grow-1">
-          <div className="d-flex align-items-center" style={{ fontSize: "0.9rem" }}>
+          <div className="d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
             <span className="font-weight-semibold">
               {currentUserEntry.fullName || currentUserEntry.displayName}
             </span>
             <span
               className="ml-2 px-2 py-0"
               style={{
-                backgroundColor: "#ff9800",
-                color: "#fff",
-                borderRadius: "10px",
-                fontSize: "0.65rem",
-                fontWeight: "bold",
+                backgroundColor: '#ff9800',
+                color: '#fff',
+                borderRadius: '10px',
+                fontSize: '0.65rem',
+                fontWeight: 'bold',
               }}
             >
               Bạn
             </span>
           </div>
-          <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+          <div className="text-muted" style={{ fontSize: '0.75rem' }}>
             @{currentUserEntry.username}
           </div>
         </div>
         <div
           className="font-weight-bold"
-          style={{ fontSize: "1rem", color: "#ff9800" }}
+          style={{ fontSize: '1rem', color: '#ff9800' }}
         >
-          {currentUserEntry.currentStreak || 0} ngày
+          {(mode === 'best' ? (currentUserEntry.longestEverStreak || 0) : (currentUserEntry.currentStreak || 0))} ngày
         </div>
       </div>
     );
@@ -329,39 +342,39 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
   return (
     <>
       <style>{hoverStyles}</style>
-      <Card className="h-100 shadow-sm" style={{ borderRadius: "12px", overflow: "hidden" }}>
+      <Card className="h-100 shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden' }}>
         <div
           className="d-flex justify-content-between align-items-center px-3 py-3"
           style={{
-            backgroundColor: "#fff",
-            borderBottom: "1px solid #dee2e6",
+            backgroundColor: '#fff',
+            borderBottom: '1px solid #dee2e6',
           }}
         >
           <div className="d-flex align-items-center">
-            <span style={{ fontSize: "1.25rem" }} className="mr-2">
+            <span style={{ fontSize: '1.25rem' }} className="mr-2">
               🔥
             </span>
-            <span className="font-weight-bold" style={{ fontSize: "1.1rem", color: "#333" }}>
-              {mode === "current" ? "Chuỗi liên tiếp" : "Chuỗi dài nhất"}
+            <span className="font-weight-bold" style={{ fontSize: '1.1rem', color: '#333' }}>
+              {mode === 'current' ? 'Chuỗi liên tiếp' : 'Chuỗi dài nhất'}
             </span>
           </div>
           <div className="d-flex align-items-center">
             <div className="btn-group mr-2" role="group" aria-label="Streak mode toggle">
               <button
                 type="button"
-                className={`btn btn-sm ${mode === "current" ? "btn-warning" : "btn-outline-warning"}`}
-                style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
-                onClick={() => setMode("current")}
+                className={`btn btn-sm ${mode === 'current' ? 'btn-warning' : 'btn-outline-warning'}`}
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                onClick={() => setMode('current')}
               >
                 Hiện tại
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${mode === "best" ? "btn-warning" : "btn-outline-warning"}`}
-                style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
-                onClick={() => setMode("best")}
+                className={`btn btn-sm ${mode === 'best' ? 'btn-warning' : 'btn-outline-warning'}`}
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                onClick={() => setMode('best')}
               >
-                Cao nhất
+                Dài nhất
               </button>
             </div>
             <Button
@@ -370,14 +383,14 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
               className="p-1 text-muted"
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
-              {isCollapsed ? "▼" : "▲"}
+              {isCollapsed ? '▼' : '▲'}
             </Button>
             <Button
               variant="outline-secondary"
               size="sm"
               onClick={handleRefresh}
               className="ml-2"
-              style={{ fontSize: "1rem", padding: "0.25rem 0.5rem" }}
+              style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}
               title="Tải lại"
             >
               ↻
@@ -391,7 +404,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
             <div className="px-3 py-2 border-bottom bg-light">
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
-                  <span className="text-muted mr-2" style={{ fontSize: "0.85rem" }}>
+                  <span className="text-muted mr-2" style={{ fontSize: '0.85rem' }}>
                     Hiển thị:
                   </span>
                   <Form.Control
@@ -399,7 +412,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
                     size="sm"
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
-                    style={{ width: "auto", fontSize: "0.85rem" }}
+                    style={{ width: 'auto', fontSize: '0.85rem' }}
                   >
                     <option value={5}>Top 5</option>
                     <option value={10}>Top 10</option>
@@ -420,22 +433,22 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
               <div
                 ref={scrollContainerRef}
                 style={{
-                  maxHeight: "400px",
-                  overflowY: "auto",
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "column",
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
                 {students.length === 0 ? (
                   <div className="text-center py-4 text-muted">Chưa có dữ liệu</div>
                 ) : (
                   <>
-                    {renderStickyUserRow("top")}
+                    {renderStickyUserRow('top')}
 
-                    <div style={{ flex: "1 1 auto" }}>
+                    <div style={{ flex: '1 1 auto' }}>
                       {students.map((student, index) => {
-                        const isCurrentUser = student.isCurrentUser;
+                        const { isCurrentUser } = student;
                         return (
                           <div
                             key={student.userId || index}
@@ -443,19 +456,19 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
                             className="d-flex align-items-center px-3 py-2 border-bottom streak-row-hover"
                             style={{
                               backgroundColor: isCurrentUser
-                                ? "#fff3e0"
+                                ? '#fff3e0'
                                 : index % 2 === 0
-                                  ? "#fff"
-                                  : "#f9f9f9",
+                                  ? '#fff'
+                                  : '#f9f9f9',
                             }}
                           >
-                            <div className="mr-3" style={{ minWidth: "35px" }}>
+                            <div className="mr-3" style={{ minWidth: '35px' }}>
                               {getRankBadge(student.rank)}
                             </div>
                             <div className="flex-grow-1">
                               <div
                                 className="d-flex align-items-center"
-                                style={{ fontSize: "0.9rem" }}
+                                style={{ fontSize: '0.9rem' }}
                               >
                                 <span className="font-weight-semibold">
                                   {student.fullName || student.displayName}
@@ -464,33 +477,33 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
                                   <span
                                     className="ml-2 px-2 py-0"
                                     style={{
-                                      backgroundColor: "#ff9800",
-                                      color: "#fff",
-                                      borderRadius: "10px",
-                                      fontSize: "0.65rem",
-                                      fontWeight: "bold",
+                                      backgroundColor: '#ff9800',
+                                      color: '#fff',
+                                      borderRadius: '10px',
+                                      fontSize: '0.65rem',
+                                      fontWeight: 'bold',
                                     }}
                                   >
                                     Bạn
                                   </span>
                                 )}
                               </div>
-                              <div className="text-muted" style={{ fontSize: "0.75rem" }}>
+                              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                                 @{student.username}
                               </div>
                             </div>
                             <div
                               className="font-weight-bold"
-                              style={{ fontSize: "1rem", color: "#ff9800" }}
+                              style={{ fontSize: '1rem', color: '#ff9800' }}
                             >
-                              {student.currentStreak || 0} ngày
+                              {(mode === 'best' ? (student.longestEverStreak || 0) : (student.currentStreak || 0))} ngày
                             </div>
                           </div>
                         );
                       })}
                     </div>
 
-                    {renderStickyUserRow("bottom")}
+                    {renderStickyUserRow('bottom')}
                   </>
                 )}
               </div>
@@ -500,7 +513,7 @@ function TopStudentsByStreak({ courseId, onSummaryChange }) {
       </Card>
     </>
   );
-}
+};
 
 TopStudentsByStreak.propTypes = {
   courseId: PropTypes.string.isRequired,
@@ -512,5 +525,3 @@ TopStudentsByStreak.defaultProps = {
 };
 
 export default TopStudentsByStreak;
-
-

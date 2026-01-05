@@ -98,19 +98,36 @@ const WelcomeTab = () => {
     classRank: 0,
   };
 
-  // Use daily quests from API or fallback to mock data
-  // Always show mock data for now (until API is ready)
-  const dailyQuests = welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0 
-    ? welcomeData.dailyQuests 
+  // Use daily quests from API when available, otherwise build fallback using real progress data
+  const progressModel = useModel('progress', courseId) || {};
+  const completionSummary = progressModel.completionSummary || {};
+  const completeCount = completionSummary.completeCount || 0;
+  const incompleteCount = completionSummary.incompleteCount || 0;
+  const lockedCount = completionSummary.lockedCount || 0;
+  const totalUnits = completeCount + incompleteCount + lockedCount || 0;
+
+  // Determine enrollment (try several fields returned by API; default to true if not provided)
+  const isEnrolled = (() => {
+    if (typeof welcomeData?.courseAccess?.isEnrolled === 'boolean') return welcomeData.courseAccess.isEnrolled;
+    if (typeof welcomeData?.is_enrolled === 'boolean') return welcomeData.is_enrolled;
+    if (typeof welcomeData?.userStats?.isEnrolled === 'boolean') return welcomeData.userStats.isEnrolled;
+    return true;
+  })();
+
+  // Study groups posts count (if backend provides it on welcomeData)
+  const studyGroupPostsCount = welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || 0;
+
+  const dailyQuests = (welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0)
+    ? welcomeData.dailyQuests
     : [
         {
           id: 1,
           title: 'Hoàn thành ít nhất 1 bài học',
-          description: 'Học ít nhất 1 bài để duy trì chuỗi',
+          description: 'Hoàn thành Unit trong khoá học',
           reward: '+ XP',
-          progress: 1,
-          total: 1,
-          completed: true,
+          progress: Math.min(completeCount, totalUnits > 0 ? completeCount : 1),
+          total: totalUnits > 0 ? totalUnits : 1,
+          completed: totalUnits > 0 ? completeCount >= 1 : true,
           icon: '📚',
           gradient: 'primary',
         },
@@ -119,7 +136,7 @@ const WelcomeTab = () => {
           title: 'Luyện Game học tập tương tác',
           description: 'Rèn luyện kỹ năng với bài tập',
           reward: '+ XP • 💰 + Xu',
-          progress: 2,
+          progress: 0,
           total: 5,
           completed: false,
           icon: '🎯',
@@ -128,11 +145,11 @@ const WelcomeTab = () => {
         {
           id: 3,
           title: 'Tham gia thảo luận',
-          description: 'Đăng ít nhất 1 bài viết trong diễn đàn',
+          description: 'Bạn phải là học viên khoá học và đăng ít nhất 1 bài trong Nhóm học tập',
           reward: '+ XP • 💰 + Xu',
-          progress: 0,
+          progress: studyGroupPostsCount > 0 ? 1 : 0,
           total: 1,
-          completed: false,
+          completed: Boolean(isEnrolled && studyGroupPostsCount > 0),
           icon: '💬',
           gradient: 'primary',
         },
@@ -147,6 +164,47 @@ const WelcomeTab = () => {
     const element = document.getElementById('daily-quests-section');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Helpers for sharing / copying referral
+  const referralCode = welcomeData?.referralCode || welcomeData?.referral_code || 'PI2025';
+  const referralLink = `${window.location.origin}${window.location.pathname}?ref=${referralCode}`;
+  const handleInviteShare = async () => {
+    const shareText = `Mời bạn học ${title || ''} cùng mình trên PiStudy! Mã giới thiệu: ${referralCode}\n${referralLink}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Mời học ${title || ''}`,
+          text: shareText,
+          url: referralLink,
+        });
+        // no-op on success
+      } catch (err) {
+        // user cancelled or failed - fallback to clipboard
+        try {
+          await navigator.clipboard.writeText(shareText);
+          alert('Nội dung chia sẻ đã được sao chép vào clipboard.');
+        } catch (e) {
+          alert('Không thể chia sẻ — vui lòng sao chép thủ công: ' + referralLink);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('Nội dung chia sẻ đã được sao chép vào clipboard.');
+      } catch (err) {
+        alert('Trình duyệt không hỗ trợ chia sẻ, vui lòng sao chép thủ công: ' + referralLink);
+      }
+    }
+  };
+
+  const handleCopyReferral = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      alert('Mã giới thiệu/link đã được sao chép vào clipboard.');
+    } catch (err) {
+      alert('Không thể sao chép tự động, vui lòng sao chép: ' + referralLink);
     }
   };
 
@@ -290,10 +348,10 @@ const WelcomeTab = () => {
               </div>
               
               <div className="invite-actions">
-                <button className="btn btn-invite-primary">
+                <button className="btn btn-invite-primary" onClick={handleInviteShare}>
                   👥 Mời bạn cùng học
                 </button>
-                <button className="btn btn-invite-secondary">
+                <button className="btn btn-invite-secondary" onClick={handleCopyReferral}>
                   📱 Chia sẻ
                 </button>
               </div>
