@@ -3285,7 +3285,7 @@ const StudyGroupsTab = () => {
   return (
      <Container className="study-groups-tab px-0" style={{ paddingRight: '15px !important' }}>
       <Row>
-        <Col lg={8} md={12}>
+        <Col lg={9} md={12}>
           <div className="groups-header">
             <h2>Nhóm học tập</h2>
             {canCreateGroup && (
@@ -3352,7 +3352,7 @@ const StudyGroupsTab = () => {
           </section>
         </Col>
 
-        <Col lg={4} md={12} className="mt-3 mt-lg-0">
+        <Col lg={3} md={12} className="mt-3 mt-lg-0">
           <div className="study-groups-sidebar">
             <StreakCalendar
               streakDays={userStats.streakDays}

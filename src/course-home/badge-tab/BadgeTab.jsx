@@ -468,7 +468,7 @@ const BadgeTab = memo(function BadgeTab() {
       )}
       <Row className="mx-0">
         {/* Main Content */}
-        <Col lg={8} md={12} className="px-1 px-md-2">
+        <Col lg={9} md={12} className="px-1 px-md-2">
           {/* Progress Section - Moved to top */}
           <div className="progress-section">
             <h3 className="progress-section-title">📈 Tiến độ</h3>
@@ -1044,7 +1044,7 @@ const BadgeTab = memo(function BadgeTab() {
         </Col>
 
         {/* Sidebar */}
-        <Col lg={4} md={12} className="px-1 px-md-2">
+        <Col lg={3} md={12} className="px-1 px-md-2">
           <StreakCalendar 
             streakDays={stats.streakDays} 
             lastDayOfStreak={userStats.lastDayOfStreak}
