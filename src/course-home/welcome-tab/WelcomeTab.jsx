@@ -204,44 +204,73 @@ const WelcomeTab = () => {
     classRank: 0,
   };
 
-  // Use daily quests from API when provided (even if empty). Otherwise build fallback using real progress data.
-  const dailyQuests = (welcomeData && welcomeData.dailyQuests !== undefined && welcomeData.dailyQuests !== null)
-    ? welcomeData.dailyQuests
-    : [
-        {
-          id: 1,
-          title: 'Hoàn thành khoá học',
-          description: 'Hoàn thành Unit trong khoá học',
-          reward: '+ XP',
-          progress: completeCount,
-          total: totalUnits,
-          completed: totalUnits > 0 ? completeCount >= totalUnits : false,
-          icon: '📚',
-          gradient: 'primary',
-        },
-        {
-          id: 2,
-          title: 'Luyện Game học tập tương tác',
-          description: 'Rèn luyện kỹ năng với bài tập',
-          reward: '+ XP • 💰 + Xu',
-          progress: 0,
-          total: 5,
-          completed: false,
-          icon: '🎯',
-          gradient: 'warning',
-        },
-        {
-          id: 3,
-          title: 'Tham gia thảo luận',
-          description: 'Bạn phải là học viên khoá học và đăng ít nhất 1 bài trong Nhóm học tập',
-          reward: '+ XP • 💰 + Xu',
-          progress: hasPostedDiscussion ? 1 : 0,
-          total: 1,
-          completed: Boolean(isEnrolled && hasPostedDiscussion),
-          icon: '💬',
-          gradient: 'primary',
-        },
-      ];
+  // Use daily quests from API when provided; merge missing/zero fields with local fallbacks.
+  // If API returns no quests (empty array) fall back to computed defaults.
+  const buildFallbackQuests = () => ([
+    {
+      id: 1,
+      title: 'Hoàn thành khoá học',
+      description: 'Hoàn thành Unit trong khoá học',
+      reward: '+ XP',
+      progress: completeCount,
+      total: totalUnits,
+      completed: totalUnits > 0 ? completeCount >= totalUnits : false,
+      icon: '📚',
+      gradient: 'primary',
+    },
+    {
+      id: 2,
+      title: 'Luyện Game học tập tương tác',
+      description: 'Rèn luyện kỹ năng với bài tập',
+      reward: '+ XP • 💰 + Xu',
+      progress: 0,
+      total: 5,
+      completed: false,
+      icon: '🎯',
+      gradient: 'warning',
+    },
+    {
+      id: 3,
+      title: 'Tham gia thảo luận',
+      description: 'Bạn phải là học viên khoá học và đăng ít nhất 1 bài trong Nhóm học tập',
+      reward: '+ XP • 💰 + Xu',
+      progress: hasPostedDiscussion ? 1 : 0,
+      total: 1,
+      completed: Boolean(isEnrolled && hasPostedDiscussion),
+      icon: '💬',
+      gradient: 'primary',
+    },
+  ]);
+
+  let dailyQuests = [];
+  if (welcomeData && Array.isArray(welcomeData.dailyQuests) && welcomeData.dailyQuests.length > 0) {
+    // Merge API quests with local computed values where API values are missing or zero for key tasks
+    dailyQuests = welcomeData.dailyQuests.map((q) => {
+      const quest = { ...q };
+      if (quest.id === 1) {
+        quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : completeCount;
+        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : totalUnits;
+        quest.completed = (quest.completed !== undefined && quest.completed !== null)
+          ? quest.completed
+          : (quest.total > 0 ? quest.progress >= quest.total : false);
+      } else if (quest.id === 2) {
+        quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : 0;
+        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : 5;
+        quest.completed = (quest.completed !== undefined && quest.completed !== null)
+          ? quest.completed
+          : (quest.total > 0 ? quest.progress >= quest.total : false);
+      } else if (quest.id === 3) {
+        quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : (hasPostedDiscussion ? 1 : 0);
+        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : 1;
+        quest.completed = (quest.completed !== undefined && quest.completed !== null)
+          ? quest.completed
+          : Boolean(isEnrolled && (quest.progress > 0));
+      }
+      return quest;
+    });
+  } else {
+    dailyQuests = buildFallbackQuests();
+  }
 
   // Dates data đã được fetch và lưu trong model store
 
