@@ -52,6 +52,21 @@ const LeaderboardTab = () => {
               currentStreak: prev.currentStreak,
               bestStreak: prev.bestStreak,
             }));
+            // Also attempt to fetch coin/xu summary so that maxCoins is available even when XP summary is returned.
+            try {
+              const coinsUrl = `${getConfig().LMS_BASE_URL}/api/course_home/top-coins/${courseId}?limit=1`;
+              const coinsResp = await getAuthenticatedHttpClient().get(coinsUrl);
+              const coinsCamel = camelCaseObject(coinsResp.data);
+              if (coinsCamel && coinsCamel.summary) {
+                setSummaryData((prev) => ({
+                  ...prev,
+                  maxCoins: coinsCamel.summary.maxCoins ?? coinsCamel.summary.maxXu ?? prev.maxCoins,
+                  totalStudents: coinsCamel.summary.totalStudents ?? prev.totalStudents,
+                }));
+              }
+            } catch (coinErr) {
+              // coin endpoint may not exist or fail — ignore and keep existing summary
+            }
             setSummaryLoading(false);
             return;
           }
