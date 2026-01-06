@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
@@ -125,21 +125,39 @@ const WelcomeTab = () => {
   }, [courseId, dispatch, courseDateBlocks]);
 
   // Ensure progress model is loaded (BadgeTab fetches it; WelcomeTab needs it too)
+  const progressFetchingRef = useRef(false);
   useEffect(() => {
-    const shouldFetchProgress = courseId && !(progressModel && progressModel.completionSummary);
+    if (!courseId) return;
+    const shouldFetchProgress = courseId && !progressFetchingRef.current && !(progressModel && progressModel.completionSummary);
     if (shouldFetchProgress) {
-      dispatch(fetchProgressTab(courseId));
+      progressFetchingRef.current = true;
+      const p = dispatch(fetchProgressTab(courseId));
+      if (p && typeof p.finally === 'function') {
+        p.finally(() => { progressFetchingRef.current = false; });
+      } else {
+        progressFetchingRef.current = false;
+      }
     }
-  }, [courseId, dispatch, progressModel]);
+    // Only depend on courseId and dispatch to avoid loops caused by changing model references
+  }, [courseId, dispatch]);
 
   // Ensure welcome data contains dailyQuests (refresh if backend didn't provide them)
+  const welcomeFetchingRef = useRef(false);
   useEffect(() => {
     if (!courseId) return;
     const hasDailyQuests = Boolean(welcomeData && welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0);
-    if (!hasDailyQuests) {
-      dispatch(fetchWelcomeTab(courseId));
+    const shouldFetchWelcome = !hasDailyQuests && !welcomeFetchingRef.current;
+    if (shouldFetchWelcome) {
+      welcomeFetchingRef.current = true;
+      const p = dispatch(fetchWelcomeTab(courseId));
+      if (p && typeof p.finally === 'function') {
+        p.finally(() => { welcomeFetchingRef.current = false; });
+      } else {
+        welcomeFetchingRef.current = false;
+      }
     }
-  }, [courseId, dispatch, welcomeData]);
+    // Only depend on courseId and dispatch to avoid continuous fetch loops
+  }, [courseId, dispatch]);
 
   // Ensure study-groups model is loaded so we can inspect comments if backend provides them
   useEffect(() => {
@@ -150,12 +168,22 @@ const WelcomeTab = () => {
   }, [courseId, dispatch, studyGroupsModel]);
 
   // Ensure leaderboard model is loaded so we can show the current user's class rank
+  const leaderboardFetchingRef = useRef(false);
   useEffect(() => {
-    const shouldFetchLeaderboard = courseId && !(leaderboardModel && (leaderboardModel.topStudents !== undefined || leaderboardModel.summary !== undefined));
+    if (!courseId) return;
+    const hasLeaderboardData = Boolean(leaderboardModel && (leaderboardModel.topStudents !== undefined || leaderboardModel.summary !== undefined));
+    const shouldFetchLeaderboard = courseId && !hasLeaderboardData && !leaderboardFetchingRef.current;
     if (shouldFetchLeaderboard) {
-      dispatch(fetchLeaderboardTab(courseId));
+      leaderboardFetchingRef.current = true;
+      const p = dispatch(fetchLeaderboardTab(courseId));
+      if (p && typeof p.finally === 'function') {
+        p.finally(() => { leaderboardFetchingRef.current = false; });
+      } else {
+        leaderboardFetchingRef.current = false;
+      }
     }
-  }, [courseId, dispatch, leaderboardModel]);
+    // Only depend on courseId and dispatch to avoid loops caused by changing model object references
+  }, [courseId, dispatch]);
 
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);
