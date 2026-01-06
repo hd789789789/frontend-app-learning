@@ -5,7 +5,7 @@ import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
-import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab, fetchWelcomeTab } from '../data';
+import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab, fetchWelcomeTab, fetchLeaderboardTab } from '../data';
 import { getGroupStreaks, getStudyGroupComments, getStudyGroupsTabData } from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
@@ -38,6 +38,8 @@ const WelcomeTab = () => {
   const incompleteCount = completionSummary.incompleteCount || 0;
   const lockedCount = completionSummary.lockedCount || 0;
   const totalUnits = completeCount + incompleteCount + lockedCount || 0;
+  // Leaderboard model - used to determine current user's class rank (sync with Leaderboard / Xếp hạng)
+  const leaderboardModel = useModel('leaderboardTab', courseId) || {};
 
   // Determine enrollment (try several fields returned by API; default to true if not provided)
   const isEnrolled = (() => {
@@ -147,6 +149,14 @@ const WelcomeTab = () => {
     }
   }, [courseId, dispatch, studyGroupsModel]);
 
+  // Ensure leaderboard model is loaded so we can show the current user's class rank
+  useEffect(() => {
+    const shouldFetchLeaderboard = courseId && !(leaderboardModel && (leaderboardModel.topStudents !== undefined || leaderboardModel.summary !== undefined));
+    if (shouldFetchLeaderboard) {
+      dispatch(fetchLeaderboardTab(courseId));
+    }
+  }, [courseId, dispatch, leaderboardModel]);
+
   // Fetch group streaks
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
@@ -204,6 +214,18 @@ const WelcomeTab = () => {
     classRank: 0,
   };
 
+  // Prefer progress data from the Progress/Thành tích model when available so the Welcome tab stays in sync.
+  const progressApiPercent = progressModel?.completionSummary?.percent;
+  const calculatedPercent = totalUnits > 0 ? Math.round((completeCount / totalUnits) * 100) : 0;
+  const displayCompletionPercent = (progressApiPercent !== undefined && progressApiPercent !== null && !isNaN(progressApiPercent) && progressApiPercent > 0)
+    ? Math.round(progressApiPercent)
+    : calculatedPercent;
+
+  // Determine current user's class rank from leaderboard model when available, otherwise fall back to welcome data.
+  const currentLeaderboardEntry = leaderboardModel?.currentUserEntry
+    || (Array.isArray(leaderboardModel?.topStudents) ? leaderboardModel.topStudents.find((s) => s.isCurrentUser || (s.username && s.username.toLowerCase() === currentUsername?.toLowerCase())) : null);
+  const displayClassRank = (currentLeaderboardEntry && currentLeaderboardEntry.rank) || userStats.classRank || 0;
+
   // Use daily quests from API when provided; merge missing/zero fields with local fallbacks.
   // If API returns no quests (empty array) fall back to computed defaults.
   const buildFallbackQuests = () => ([
@@ -248,23 +270,30 @@ const WelcomeTab = () => {
     dailyQuests = welcomeData.dailyQuests.map((q) => {
       const quest = { ...q };
       if (quest.id === 1) {
-        quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : completeCount;
-        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : totalUnits;
+        // Prefer local progress (completeCount) unless API reports a positive progress value.
+        quest.progress = (quest.progress !== undefined && quest.progress !== null && Number(quest.progress) > 0)
+          ? quest.progress
+          : completeCount;
+        // treat total <= 0 as missing and replace with computed totalUnits
+        quest.total = (quest.total !== undefined && quest.total !== null && Number(quest.total) > 0) ? quest.total : totalUnits;
         quest.completed = (quest.completed !== undefined && quest.completed !== null)
           ? quest.completed
-          : (quest.total > 0 ? quest.progress >= quest.total : false);
+          : (quest.total > 0 ? Number(quest.progress) >= Number(quest.total) : false);
       } else if (quest.id === 2) {
         quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : 0;
-        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : 5;
+        quest.total = (quest.total !== undefined && quest.total !== null && Number(quest.total) > 0) ? quest.total : 5;
         quest.completed = (quest.completed !== undefined && quest.completed !== null)
           ? quest.completed
           : (quest.total > 0 ? quest.progress >= quest.total : false);
       } else if (quest.id === 3) {
-        quest.progress = (quest.progress !== undefined && quest.progress !== null) ? quest.progress : (hasPostedDiscussion ? 1 : 0);
-        quest.total = (quest.total !== undefined && quest.total !== null) ? quest.total : 1;
+        // Prefer local discussion state unless API reports progress > 0
+        quest.progress = (quest.progress !== undefined && quest.progress !== null && Number(quest.progress) > 0)
+          ? quest.progress
+          : (hasPostedDiscussion ? 1 : 0);
+        quest.total = (quest.total !== undefined && quest.total !== null && Number(quest.total) > 0) ? quest.total : 1;
         quest.completed = (quest.completed !== undefined && quest.completed !== null)
           ? quest.completed
-          : Boolean(isEnrolled && (quest.progress > 0));
+          : Boolean(isEnrolled && (Number(quest.progress) > 0));
       }
       return quest;
     });
@@ -341,15 +370,15 @@ const WelcomeTab = () => {
                 <div className="stat-label">🔥 Ngày liên tiếp</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">{userStats.completionPercent}%</div>
+                <div className="stat-value">{displayCompletionPercent}%</div>
                 <div className="stat-label">📈 Hoàn thành khóa học</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">{userStats.todayLessons}</div>
-                <div className="stat-label">🎯 Bài học hôm nay</div>
+                <div className="stat-value">{completeCount}</div>
+                <div className="stat-label">🎯 Bài học đã hoàn thành</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">#{userStats.classRank}</div>
+                <div className="stat-value">#{displayClassRank}</div>
                 <div className="stat-label">🏆 Xếp hạng lớp</div>
               </div>
             </div>
