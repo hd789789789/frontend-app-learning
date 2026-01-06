@@ -250,9 +250,22 @@ const WelcomeTab = () => {
     : calculatedPercent;
 
   // Determine current user's class rank from leaderboard model when available, otherwise fall back to welcome data.
-  const currentLeaderboardEntry = leaderboardModel?.currentUserEntry
-    || (Array.isArray(leaderboardModel?.topStudents) ? leaderboardModel.topStudents.find((s) => s.isCurrentUser || (s.username && s.username.toLowerCase() === currentUsername?.toLowerCase())) : null);
-  const displayClassRank = (currentLeaderboardEntry && currentLeaderboardEntry.rank) || userStats.classRank || 0;
+  const leaderboardCurrentRank = leaderboardModel?.currentUserRank?.rank
+    || leaderboardModel?.currentUserEntry?.rank;
+
+  // Try to find the user in different possible leaderboard arrays returned by APIs.
+  let foundLeaderboardEntry = null;
+  if (Array.isArray(leaderboardModel?.leaderboard) && leaderboardModel.leaderboard.length > 0) {
+    foundLeaderboardEntry = leaderboardModel.leaderboard.find((s) => s.isCurrentUser || (s.username && s.username.toLowerCase() === currentUsername?.toLowerCase()));
+  }
+  if (!foundLeaderboardEntry && Array.isArray(leaderboardModel?.topStudents) && leaderboardModel.topStudents.length > 0) {
+    foundLeaderboardEntry = leaderboardModel.topStudents.find((s) => s.isCurrentUser || (s.username && s.username.toLowerCase() === currentUsername?.toLowerCase()));
+  }
+
+  const displayClassRank = leaderboardCurrentRank
+    || (foundLeaderboardEntry && (foundLeaderboardEntry.rank || foundLeaderboardEntry.rank === 0 ? foundLeaderboardEntry.rank : null))
+    || userStats.classRank
+    || 0;
 
   // Use daily quests from API when provided; merge missing/zero fields with local fallbacks.
   // If API returns no quests (empty array) fall back to computed defaults.
