@@ -5,7 +5,7 @@ import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
 import { useModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
-import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab } from '../data';
+import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab, fetchWelcomeTab } from '../data';
 import { getGroupStreaks, getStudyGroupComments, getStudyGroupsTabData } from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
@@ -130,6 +130,15 @@ const WelcomeTab = () => {
     }
   }, [courseId, dispatch, progressModel]);
 
+  // Ensure welcome data contains dailyQuests (refresh if backend didn't provide them)
+  useEffect(() => {
+    if (!courseId) return;
+    const hasDailyQuests = Boolean(welcomeData && welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0);
+    if (!hasDailyQuests) {
+      dispatch(fetchWelcomeTab(courseId));
+    }
+  }, [courseId, dispatch, welcomeData]);
+
   // Ensure study-groups model is loaded so we can inspect comments if backend provides them
   useEffect(() => {
     const shouldFetchStudyGroups = courseId && !(studyGroupsModel && studyGroupsModel.results !== undefined);
@@ -195,8 +204,8 @@ const WelcomeTab = () => {
     classRank: 0,
   };
 
-  // Use daily quests from API when available, otherwise build fallback using real progress data
-  const dailyQuests = (welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0)
+  // Use daily quests from API when provided (even if empty). Otherwise build fallback using real progress data.
+  const dailyQuests = (welcomeData && welcomeData.dailyQuests !== undefined && welcomeData.dailyQuests !== null)
     ? welcomeData.dailyQuests
     : [
         {
