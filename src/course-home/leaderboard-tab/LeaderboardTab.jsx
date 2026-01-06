@@ -17,6 +17,8 @@ const LeaderboardTab = () => {
     totalStudents: 0,
     avgGrade: 0,
     maxGrade: 0,
+    // maxCoins will hold the highest xu value for display in StatCards
+    maxCoins: 0,
     competingCount: 0,
     currentStreak: 0,
     bestStreak: 0,
@@ -74,6 +76,23 @@ const LeaderboardTab = () => {
             bestStreak: prev.bestStreak,
           }));
         }
+        // Additionally try to fetch coin/xu summary so we can show highest xu in StatCards.
+        try {
+          const coinsUrl = `${getConfig().LMS_BASE_URL}/api/course_home/top-coins/${courseId}?limit=10`;
+          const coinsResp = await getAuthenticatedHttpClient().get(coinsUrl);
+          const coinsCamel = camelCaseObject(coinsResp.data);
+          if (coinsCamel && coinsCamel.summary) {
+            setSummaryData((prev) => ({
+              ...prev,
+              // summary key may be maxCoins after camelCasing
+              maxCoins: coinsCamel.summary.maxCoins ?? coinsCamel.summary.maxXu ?? prev.maxCoins,
+              // prefer coins' totalStudents if present
+              totalStudents: coinsCamel.summary.totalStudents ?? prev.totalStudents,
+            }));
+          }
+        } catch (err) {
+          // coin endpoint may not exist; ignore and continue
+        }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('[LeaderboardTab] Error fetching summary:', error);
@@ -123,6 +142,7 @@ const LeaderboardTab = () => {
         totalStudents={summaryData.totalStudents}
         avgGrade={summaryData.avgGrade}
         maxGrade={summaryData.maxGrade}
+        maxCoins={summaryData.maxCoins}
         competingCount={summaryData.competingCount}
         currentStreak={summaryData.currentStreak}
         bestStreak={summaryData.bestStreak}

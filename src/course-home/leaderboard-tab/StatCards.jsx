@@ -14,7 +14,9 @@ const cardHoverStyle = `
   }
 `;
 
-function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentStreak, bestStreak }) {
+const StatCards = ({
+  totalStudents, avgGrade, maxGrade, maxCoins, competingCount, currentStreak, bestStreak,
+}) => {
   const stats = [
     {
       value: totalStudents,
@@ -22,8 +24,9 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
       color: '#4285f4',
     },
     {
-      value: `${avgGrade != null ? Number(avgGrade).toLocaleString() : 0} XP`,
-      label: 'ĐIỂM XP TRUNG BÌNH',
+      // Show highest coins (xu) instead of average XP per request
+      value: `${maxCoins != null ? Number(maxCoins).toLocaleString() : 0} xu`,
+      label: 'Xu cao nhất',
       color: '#34a853',
     },
     {
@@ -54,8 +57,8 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
       <div className="row mb-4">
         {stats.map((stat, index) => (
           <div key={index} className="col-lg-4 col-md-4 col-sm-6 mb-3">
-            <Card 
-              className="h-100 text-center shadow-sm stat-card-hover" 
+            <Card
+              className="h-100 text-center shadow-sm stat-card-hover"
               style={{ borderRadius: '12px' }}
             >
               <Card.Body className="py-4">
@@ -78,12 +81,13 @@ function StatCards({ totalStudents, avgGrade, maxGrade, competingCount, currentS
       </div>
     </>
   );
-}
+};
 
 StatCards.propTypes = {
   totalStudents: PropTypes.number,
   avgGrade: PropTypes.number,
   maxGrade: PropTypes.number,
+  maxCoins: PropTypes.number,
   competingCount: PropTypes.number,
   currentStreak: PropTypes.number,
   bestStreak: PropTypes.number,
@@ -93,10 +97,10 @@ StatCards.defaultProps = {
   totalStudents: 0,
   avgGrade: 0,
   maxGrade: 0,
+  maxCoins: 0,
   competingCount: 0,
   currentStreak: 0,
   bestStreak: 0,
 };
 
 export default StatCards;
-
