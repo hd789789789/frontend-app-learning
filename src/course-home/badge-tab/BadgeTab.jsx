@@ -420,14 +420,12 @@ const BadgeTab = memo(function BadgeTab() {
     return progressModel?.sectionScores || [];
   }, [progressModel?.sectionScores]);
   
-  // Calculate total lessons by counting subsections from section_scores
-  // This is more accurate than using completion_summary which might miss some subsections
-  // Use useMemo to prevent recalculation on every render
-  const totalLessons = useMemo(() => {
-    return sectionScores.reduce((total, section) => {
-      return total + (section.subsections?.length || 0);
-    }, 0);
-  }, [sectionScores]);
+  // Calculate total units from completionSummary (backend summary).
+  // Use completionSummary totals for consistency with backend counts.
+  const totalUnits = useMemo(() => {
+    const cs = completionSummary || {};
+    return (cs.completeCount || 0) + (cs.incompleteCount || 0) + (cs.lockedCount || 0);
+  }, [completionSummary.completeCount, completionSummary.incompleteCount, completionSummary.lockedCount]);
   
   // Get counts from completion_summary for status breakdown - memoized
   const completeCount = useMemo(() => completionSummary.completeCount || 0, [completionSummary.completeCount]);
@@ -442,8 +440,8 @@ const BadgeTab = memo(function BadgeTab() {
   // Always ensure we have a valid number (0-100)
   const progressPercent = useMemo(() => {
     // Calculate from actual data
-    const calculatedPercent = totalLessons > 0 
-      ? Math.round((completedLessons / totalLessons) * 100)
+    const calculatedPercent = totalUnits > 0 
+      ? Math.round((completedLessons / totalUnits) * 100)
       : 0;
     
     // Use API percent if available and valid (greater than 0), otherwise use calculated
@@ -505,8 +503,8 @@ const BadgeTab = memo(function BadgeTab() {
                   <h4 className="progress-stats-title">Thống kê học tập</h4>
                   <div className="progress-stats-list">
                     <div className="progress-stat-item">
-                      <span>Tổng số bài học:</span>
-                      <strong>{totalLessons} bài</strong>
+                      <span>Tổng số mục:</span>
+                      <strong>{totalUnits} mục</strong>
                     </div>
                     <div className="progress-stat-item">
                       <span>Đã hoàn thành:</span>
