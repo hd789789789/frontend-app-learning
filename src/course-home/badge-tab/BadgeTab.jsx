@@ -521,14 +521,14 @@ const BadgeTab = memo(function BadgeTab() {
                   </div>
                 </div>
                 <div className="weekly-goal">
-                  <strong>Mục tiêu tuần này</strong>
+                  <strong>Mục tiêu khoá học</strong>
                   <div className="weekly-goal-text">
-                    Hoàn thành 5 bài học để nhận danh hiệu "Người học chăm chỉ" 🌟
+                    Hoàn thành khoá học để nhận danh hiệu "Người học chăm chỉ" 🌟
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '60%' }}></div>
+                    <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
                   </div>
-                  <div className="weekly-goal-progress">3/5 bài</div>
+                  <div className="weekly-goal-progress">{completedLessons}/{totalUnits} mục</div>
                 </div>
               </div>
             </div>
