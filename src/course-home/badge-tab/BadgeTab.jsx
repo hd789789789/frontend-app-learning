@@ -454,7 +454,7 @@ const BadgeTab = memo(function BadgeTab() {
     
     // Ensure we always return a valid number
     return isNaN(finalPercent) ? 0 : finalPercent;
-  }, [totalLessons, completedLessons, completionPercent]);
+  }, [totalUnits, completedLessons, completionPercent]);
   
   // Get grade data - memoized
   const currentGrade = useMemo(() => courseGrade.percent || 0, [courseGrade.percent]);
@@ -1081,7 +1081,7 @@ const BadgeTab = memo(function BadgeTab() {
             lastDayOfStreak={userStats.lastDayOfStreak}
           />
           
-          <GroupStreaks groups={groupStreaks} />
+          <GroupStreaks groups={groupStreaks} disableFallback={true} />
           
           {/* StudyTip moved to left column */}
           
