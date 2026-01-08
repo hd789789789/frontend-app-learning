@@ -1046,9 +1046,9 @@
   .stat-value {
     font-weight: 700;
     color: #ffffff;
-    background: rgba(255,255,255,0.04);
-    padding: 0.12rem 0.5rem;
-    border-radius: 999px;
+    background: transparent; /* default: no pill for most items */
+    padding: 0; /* keep values compact */
+    border-radius: 0;
     font-size: 0.92rem;
   }
 
@@ -1062,7 +1062,7 @@
 .progress-stat-item .stat-right {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem; /* tighten spacing */
+  gap: 0.12rem; /* tighten spacing so icon sits very near value */
 }
 
 .progress-stat-item .stat-end-icon {
@@ -1100,6 +1100,17 @@
 .progress-stat-item .stat-value.stat-completed + .stat-end-icon { color: #16a34a; background: transparent; }
 .progress-stat-item .stat-value.stat-inprogress + .stat-end-icon { color: #d97706; background: transparent; }
 .progress-stat-item .stat-value.stat-locked + .stat-end-icon { color: #0ea5e9; background: transparent; }
+
+/* Make Tổng số mục pill prominent */
+.progress-stat-item .stat-value.stat-total {
+  background: rgba(255,255,255,0.12);
+  padding: 0.18rem 0.65rem;
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) inset;
+}
 
 .weekly-goal {
   padding: 1.1rem;
