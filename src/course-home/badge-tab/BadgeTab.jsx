@@ -214,6 +214,17 @@ const BadgeTab = memo(function BadgeTab() {
     const { courseId } = useParams();
     const dispatch = useDispatch();
   
+  // Ensure Material Icons Round stylesheet is loaded (some apps don't include it globally)
+  useEffect(() => {
+    const href = "https://fonts.googleapis.com/icon?family=Material+Icons+Round";
+    if (!document.querySelector(`link[href="${href}"]`)) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  }, []);
+  
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   
