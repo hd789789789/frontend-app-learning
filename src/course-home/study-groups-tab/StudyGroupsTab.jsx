@@ -50,8 +50,9 @@ import {
 
 import './StudyGroupsTab.scss';
 
-// Ensure Material Icons Round stylesheet is loaded (some apps don't include it globally)
-useEffect(() => {
+// Load Material Icons Round stylesheet if running in browser (no React hooks here)
+(function ensureMaterialIcons() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
   const href = "https://fonts.googleapis.com/icon?family=Material+Icons+Round";
   if (!document.querySelector(`link[href="${href}"]`)) {
     const link = document.createElement('link');
@@ -59,7 +60,7 @@ useEffect(() => {
     link.href = href;
     document.head.appendChild(link);
   }
-}, []);
+})();
 
 const REACTION_TYPES = [
   { type: 'like', emoji: '👍', label: 'Like' },
