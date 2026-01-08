@@ -419,7 +419,9 @@
   background: #ffffff;
   display: grid;
   gap: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+  /* make create box stand out like a soft card */
 }
 
 .create-post-input {
@@ -470,6 +472,31 @@
   }
 }
 
+/* Improve action buttons and file icon pills */
+.post-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+
+  &:hover {
+    background: #eef2ff;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 .post-action-btn {
   display: flex;
   align-items: center;
@@ -499,23 +526,34 @@
 
 .create-post-textarea {
   width: 100%;
-  border: none;
-  border-radius: 8px;
-  padding: 0.625rem 0.75rem;
-  min-height: 40px;
-  background: #f0f2f5;
-  font-size: 0.9375rem;
-  color: #050505;
+  border: 1px solid #e6e9ef;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  min-height: 64px;
+  background: #fff;
+  font-size: 1rem;
+  color: #111827;
   resize: none;
-  transition: background 0.2s;
+  transition: box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
 
   &:focus {
     outline: none;
-    background: #e4e6eb;
+    border-color: #6c5ce7;
+    box-shadow: 0 6px 18px rgba(108,92,231,0.12);
+    background: #ffffff;
   }
 
   &::placeholder {
-    color: #65676b;
+    color: #9ca3af;
+    font-size: 1rem;
+  }
+}
+
+/* small responsive tweak so textarea keeps good height on mobile */
+@media (max-width: 480px) {
+  .create-post-textarea {
+    min-height: 56px;
+    padding: 0.75rem 0.9rem;
   }
 }
 

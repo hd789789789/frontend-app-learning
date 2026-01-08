@@ -1044,12 +1044,12 @@
   }
 
   .stat-value {
-    font-weight: 800;
+    font-weight: 700;
     color: #ffffff;
-    background: rgba(255,255,255,0.06);
-    padding: 0.2rem 0.6rem;
+    background: rgba(255,255,255,0.04);
+    padding: 0.12rem 0.5rem;
     border-radius: 999px;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 
   .stat-completed { color: #7EE787; } /* light green */
@@ -1062,20 +1062,21 @@
 .progress-stat-item .stat-right {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem; /* tighten spacing */
 }
 
 .progress-stat-item .stat-end-icon {
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: rgba(255,255,255,0.95);
-  opacity: 0.95;
-  background: rgba(255,255,255,0.04);
-  padding: 0.18rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  opacity: 0.98;
+  background: transparent;
+  padding: 0;
+  border-radius: 4px;
+  box-shadow: none; /* remove shadow as requested */
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-left: 6px;
 }
 
 /* ensure Material Icons font is used (prevents fallback to text) */
@@ -1096,9 +1097,9 @@
 }
 
 /* color icons according to adjacent stat value class */
-.progress-stat-item .stat-value.stat-completed + .stat-end-icon { color: #16a34a; background: rgba(22,163,74,0.08); }
-.progress-stat-item .stat-value.stat-inprogress + .stat-end-icon { color: #d97706; background: rgba(217,119,17,0.06); }
-.progress-stat-item .stat-value.stat-locked + .stat-end-icon { color: #0ea5e9; background: rgba(14,165,233,0.06); }
+.progress-stat-item .stat-value.stat-completed + .stat-end-icon { color: #16a34a; background: transparent; }
+.progress-stat-item .stat-value.stat-inprogress + .stat-end-icon { color: #d97706; background: transparent; }
+.progress-stat-item .stat-value.stat-locked + .stat-end-icon { color: #0ea5e9; background: transparent; }
 
 .weekly-goal {
   padding: 1.1rem;

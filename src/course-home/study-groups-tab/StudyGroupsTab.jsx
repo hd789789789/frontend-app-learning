@@ -2393,8 +2393,14 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
       <div className={`group-card ${collapsed ? 'collapsed' : ''}`}>
         <div className="group-header">
-          <button className="group-collapse-toggle" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? '▶' : '▼'}
+          <button
+            className="group-collapse-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Mở rộng nhóm' : 'Thu gọn nhóm'}
+          >
+            <span className="material-icons-round" aria-hidden="true">
+              {collapsed ? 'chevron_right' : 'expand_more'}
+            </span>
           </button>
           <div className="group-info">
             <h3>{localGroup.name}</h3>
