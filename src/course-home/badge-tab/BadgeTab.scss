@@ -1119,17 +1119,57 @@
 .grade-slider-indicator {
   position: absolute;
   top: 50%;
+  /* default centered transform */
   transform: translate(-50%, -50%);
-  /* indicator uses muted gray with dark text for better contrast and lower saturation */
   background: #F3F4F6;
   color: #2C3E50;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.9rem;
   border-radius: 6px;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 2;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16,24,40,0.08);
+  z-index: 3;
   white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: 1px solid #D1D5DB;
+}
+
+.grade-slider-indicator.center {
+  transform: translate(-50%, -50%);
+}
+
+.grade-slider-indicator.left {
+  transform: translate(0%, -50%);
+}
+
+.grade-slider-indicator.right {
+  transform: translate(-100%, -50%);
+}
+
+/* small pointer/tooltip tail */
+.grade-slider-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #F3F4F6;
+}
+
+.grade-slider-indicator.left::after {
+  left: 12%;
+  transform: translateX(-50%);
+}
+
+.grade-slider-indicator.right::after {
+  left: auto;
+  right: 12%;
+  transform: translateX(50%);
 }
 
 .grade-warning {

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { DataTable } from '@openedx/paragon';
+import { formatDecimal } from './numberUtils';
 // import { Trophy, Person } from '@openedx/paragon/icons'; // Icons don't exist in this version
 
 const LeaderboardTable = ({ leaderboard, totalStudents }) => {
@@ -39,8 +40,8 @@ const LeaderboardTable = ({ leaderboard, totalStudents }) => {
       accessor: 'gradePercent',
       Cell: ({ value, row }) => (
         <div>
-          <div className="font-weight-bold">
-            {(value || 0).toFixed(1)}%
+            <div className="font-weight-bold">
+            {formatDecimal(value ?? 0, 1)}%
           </div>
           {row.original.letterGrade && row.original.letterGrade.trim() && (
             <small className="text-muted">

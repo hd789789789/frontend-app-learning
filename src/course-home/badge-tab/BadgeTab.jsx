@@ -480,6 +480,10 @@ const BadgeTab = memo(function BadgeTab() {
     fetchGroupStreaks();
   }, [courseId]);
 
+    // compute indicator position and alignment to avoid overflow (left/right)
+    const indicatorPos = Math.min(100, Math.max(0, currentGrade));
+    const indicatorAlign = indicatorPos <= 4 ? 'left' : indicatorPos >= 96 ? 'right' : 'center';
+
         return (
     <Container className="badge-tab py-4 px-0">
       {/* Full-width Progress Row (make Tiến độ span full width so sidebar drops below) */}
@@ -548,8 +552,8 @@ const BadgeTab = memo(function BadgeTab() {
               </div>
               <div className="grade-slider-track">
                 <div 
-                  className="grade-slider-indicator"
-                  style={{ left: `${Math.min(100, Math.max(0, currentGrade))}%` }}
+                  className={`grade-slider-indicator ${indicatorAlign}`}
+                  style={{ left: `${indicatorPos}%` }}
                 >
                   Điểm đạt: {currentGrade}%
                 </div>

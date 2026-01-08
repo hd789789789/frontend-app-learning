@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDecimal } from './numberUtils';
 import PropTypes from 'prop-types';
 
 function LeaderboardTableSimple({ leaderboard, totalStudents }) {
@@ -23,7 +24,7 @@ function LeaderboardTableSimple({ leaderboard, totalStudents }) {
                 <div>{student.displayName}</div>
                 <small className="text-muted">@{student.username}</small>
               </td>
-              <td>{(student.gradePercent || 0).toFixed(1)}%</td>
+              <td>{formatDecimal(student?.gradePercent ?? 0, 1)}%</td>
               <td>
                 <span className={`badge badge-${student.isPassing ? 'success' : 'secondary'}`}>
                   {student.isPassing ? 'Đạt' : 'Chưa đạt'}

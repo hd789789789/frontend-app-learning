@@ -498,11 +498,15 @@ const TopStudentsByGrade = ({ courseId }) => {
                         const xp = extractXpValue(currentUserEntry);
                         const lvl = extractLevelValue(currentUserEntry);
                         if (xp !== null && xp !== undefined) {
-                          return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
+                          return `${formatInteger(xp)} XP${lvl ? ` · Lv ${lvl}` : ''}`;
                         }
-                        return `${currentUserEntry.gradePercentage?.toFixed(1)
-                                                            || currentUserEntry.gradePercent?.toFixed(1)
-                                                            || 0}/10`;
+                        return `${formatDecimal(currentUserEntry.gradePercentage ?? currentUserEntry.gradePercent ?? 0, 1)}/10`;
+                        const xp = extractXpValue(currentUserEntry);
+                        const lvl = extractLevelValue(currentUserEntry);
+                        if (xp !== null && xp !== undefined) {
+                          return `${formatInteger(xp)} XP${lvl ? ` · Lv ${lvl}` : ''}`;
+                        }
+                        return `${formatDecimal(currentUserEntry.gradePercentage ?? currentUserEntry.gradePercent ?? 0, 1)}/10`;
                       })()}
                     </div>
                   </div>

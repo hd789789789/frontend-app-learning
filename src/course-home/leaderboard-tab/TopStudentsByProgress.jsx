@@ -4,6 +4,7 @@ import { Card, Form, Button, Spinner } from "@openedx/paragon";
 import { getConfig } from "@edx/frontend-platform";
 import { getAuthenticatedHttpClient } from "@edx/frontend-platform/auth";
 import { camelCaseObject } from "@edx/frontend-platform";
+import { formatDecimal } from './numberUtils';
 
 // CSS styles for hover animation and sticky
 const hoverStyles = `
@@ -250,7 +251,7 @@ function TopStudentsByProgress({ courseId }) {
                     className="font-weight-bold"
                     style={{ fontSize: "1rem", color: "#4caf50" }}
                 >
-                    {currentUserEntry.progressPercent?.toFixed(1) || 0}%
+                    {formatDecimal(currentUserEntry?.progressPercent ?? 0, 1)}%
                 </div>
             </div>
         );
@@ -410,7 +411,7 @@ function TopStudentsByProgress({ courseId }) {
                                                             className="font-weight-bold"
                                                             style={{ fontSize: "1rem", color: "#4caf50" }}
                                                         >
-                                                            {student.progressPercent?.toFixed(1) || 0}%
+                                                            {formatDecimal(student?.progressPercent ?? 0, 1)}%
                                                         </div>
                                                     </div>
                                                 );

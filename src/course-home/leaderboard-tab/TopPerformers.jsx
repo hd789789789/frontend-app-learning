@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
+import { formatDecimal } from './numberUtils';
 // import { Trophy } from '@openedx/paragon/icons'; // Trophy doesn't exist in this Paragon version
 
 function TopPerformers({ topPerformers }) {
@@ -38,7 +39,7 @@ function TopPerformers({ topPerformers }) {
                 </div>
                 <div className="text-muted mb-2">@{student.username}</div>
                 <div className="display-4 font-weight-bold text-primary mb-2">
-                  {(student.gradePercent || 0).toFixed(1)}%
+                  {formatDecimal(student?.gradePercent ?? 0, 1)}%
                 </div>
                 <div className="text-muted small">Tiến độ hoàn thành</div>
                 {student.letterGrade && student.letterGrade.trim() && (
