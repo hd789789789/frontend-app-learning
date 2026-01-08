@@ -25,8 +25,8 @@ const StatCards = ({
       color: '#4285f4',
     },
     {
-      // Show highest coins (xu) instead of average XP per request
-      value: `${formatInteger(maxCoins != null ? maxCoins : 0)} xu`,
+      // Show highest coins (Xu) instead of average XP per request
+      value: `${formatInteger(maxCoins != null ? maxCoins : 0)} Xu`,
       label: 'Xu cao nhất',
       color: '#34a853',
     },

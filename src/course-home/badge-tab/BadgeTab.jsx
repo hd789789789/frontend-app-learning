@@ -501,19 +501,33 @@ const BadgeTab = memo(function BadgeTab() {
                   <div className="progress-stats-list">
                     <div className="progress-stat-item">
                       <span className="stat-label">Tổng số mục:</span>
-                      <strong className="stat-value stat-total">{totalUnits} mục</strong>
+                      <div className="stat-right">
+                        <strong className="stat-value stat-total">{totalUnits} mục</strong>
+                      </div>
                     </div>
+
                     <div className="progress-stat-item">
                       <span className="stat-label">Đã hoàn thành:</span>
-                      <strong className="stat-value stat-completed">{completedLessons} bài</strong>
+                      <div className="stat-right">
+                        <strong className="stat-value stat-completed">{completedLessons} bài</strong>
+                        <span className="material-icons-round stat-end-icon" title="Đã hoàn thành">check_circle</span>
+                      </div>
                     </div>
+
                     <div className="progress-stat-item">
                       <span className="stat-label">Đang học:</span>
-                      <strong className="stat-value stat-inprogress">{inProgressLessons} bài</strong>
+                      <div className="stat-right">
+                        <strong className="stat-value stat-inprogress">{inProgressLessons} bài</strong>
+                        <span className="material-icons-round stat-end-icon" title="Đang học">local_fire_department</span>
+                      </div>
                     </div>
+
                     <div className="progress-stat-item">
                       <span className="stat-label">Chưa bắt đầu:</span>
-                      <strong className="stat-value stat-locked">{notStartedLessons} bài</strong>
+                      <div className="stat-right">
+                        <strong className="stat-value stat-locked">{notStartedLessons} bài</strong>
+                        <span className="material-icons-round stat-end-icon" title="Chưa bắt đầu">schedule</span>
+                      </div>
                     </div>
                   </div>
                 </div>

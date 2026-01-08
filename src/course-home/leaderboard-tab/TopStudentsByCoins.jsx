@@ -328,7 +328,7 @@ const TopStudentsByCoins = ({ courseId }) => {
                     </div>
                     <div className="font-weight-bold" style={{ fontSize: '1rem', color: '#f57c00' }}>
                       {formatInteger(extractCoinValue(currentUserEntry))}
-                                                    &nbsp;xu
+                                                    &nbsp;Xu
                     </div>
                   </div>
                   )}
@@ -371,7 +371,7 @@ const TopStudentsByCoins = ({ courseId }) => {
                           </div>
                           <div className="font-weight-bold" style={{ fontSize: '1rem', color: '#f57c00' }}>
                             {formatInteger(coinValue)}
-                                                            &nbsp;xu
+                                                            &nbsp;Xu
                           </div>
                         </div>
                       );
@@ -402,8 +402,8 @@ const TopStudentsByCoins = ({ courseId }) => {
                       </div>
                     </div>
                     <div className="font-weight-bold" style={{ fontSize: '1rem', color: '#f57c00' }}>
-                      {extractCoinValue(currentUserEntry)}
-                                                    &nbsp;xu
+                      {formatInteger(extractCoinValue(currentUserEntry))}
+                                                    &nbsp;Xu
                     </div>
                   </div>
                   )}

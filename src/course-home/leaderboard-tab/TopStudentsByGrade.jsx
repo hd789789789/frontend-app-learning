@@ -256,7 +256,7 @@ const TopStudentsByGrade = ({ courseId }) => {
               🏆
             </span>
             <span className="font-weight-bold" style={{ fontSize: '1.1rem', color: '#333' }}>
-              Top Điểm XP
+              Top XP
             </span>
           </div>
           <div className="d-flex align-items-center">
