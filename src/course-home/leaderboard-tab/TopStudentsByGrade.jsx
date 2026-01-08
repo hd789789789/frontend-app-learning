@@ -7,6 +7,7 @@ import {
 } from '@openedx/paragon';
 import { getConfig, camelCaseObject } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import { formatInteger, formatDecimal } from './numberUtils';
 
 // CSS styles for hover animation
 const hoverStyles = `
@@ -373,11 +374,9 @@ const TopStudentsByGrade = ({ courseId }) => {
                         const xp = extractXpValue(currentUserEntry);
                         const lvl = extractLevelValue(currentUserEntry);
                         if (xp !== null && xp !== undefined) {
-                          return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
+                          return `${formatInteger(xp)} XP${lvl ? ` · Lv ${lvl}` : ''}`;
                         }
-                        return `${currentUserEntry.gradePercentage?.toFixed(1)
-                                                            || currentUserEntry.gradePercent?.toFixed(1)
-                                                            || 0}/10`;
+                        return `${formatDecimal(currentUserEntry.gradePercentage ?? currentUserEntry.gradePercent ?? 0, 1)}/10`;
                       })()}
                     </div>
                   </div>
@@ -442,11 +441,9 @@ const TopStudentsByGrade = ({ courseId }) => {
                               const xp = extractXpValue(student);
                               const lvl = extractLevelValue(student);
                               if (xp !== null && xp !== undefined) {
-                                return `${Number(xp).toLocaleString()} XP${lvl ? ` · Lv ${lvl}` : ''}`;
+                                return `${formatInteger(xp)} XP${lvl ? ` · Lv ${lvl}` : ''}`;
                               }
-                              return `${student.gradePercentage?.toFixed(1)
-                                                                    || student.gradePercent?.toFixed(1)
-                                                                    || 0}/10`;
+                              return `${formatDecimal(student.gradePercentage ?? student.gradePercent ?? 0, 1)}/10`;
                             })()}
                           </div>
                         </div>

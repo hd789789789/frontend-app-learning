@@ -875,15 +875,16 @@
 // Progress Section
 .progress-section {
   margin-top: 0px;
-  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%);
-  border: 2px solid #2ECC71;
+  /* Use same purple/pink gradient as Welcome banner */
+  background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%);
+  border: 2px solid #8B3A62;
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 16px rgba(46, 204, 113, 0.15);
+  box-shadow: 0 4px 16px rgba(139, 58, 98, 0.12);
 }
 
 .progress-section-title {
-  color: #2C3E50;
+  color: #ffffff;
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
@@ -930,11 +931,24 @@
   transform-origin: center;
   opacity: 1 !important; // Ensure outer ring is visible
   visibility: visible !important;
+  /* outer ring color to match welcome banner (subtle white) */
+  /* make outer progress ring prominent: pink/purple, thicker and subtle shadow */
+  stroke: #C47E9E;
+  stroke-width: 10;
+  filter: drop-shadow(0 4px 10px rgba(196,126,158,0.18));
 }
 
 .progress-circle-fill {
   transition: stroke-dashoffset 0.5s ease;
   transform-origin: center;
+  /* filled ring color to match welcome banner */
+  stroke: #ffffff;
+}
+
+/* Background ring (behind the progress) - subtle, contrasts with gradient) */
+.progress-circle-bg {
+  stroke: rgba(255,255,255,0.12);
+  stroke-width: 8;
 }
 
 .progress-text-overlay {
@@ -955,7 +969,7 @@
 .progress-percentage-text {
   font-size: 2.5rem;
   font-weight: bold;
-  color: #2C3E50;
+  color: #ffffff;
   line-height: 1;
   margin-bottom: 0.25rem;
   display: block; // Ensure text is displayed
@@ -965,7 +979,7 @@
 .progress-label-text {
   font-size: 1rem;
   font-weight: 600;
-  color: #2C3E50;
+  color: #ffffff;
   line-height: 1.2;
   display: block; // Ensure text is displayed
   visibility: visible; // Ensure visibility
@@ -994,7 +1008,7 @@
 .progress-stat-item {
   display: flex;
   justify-content: space-between;
-  color: #2C3E50;
+  color: #ffffff;
 
   strong {
     font-weight: 600;
@@ -1003,19 +1017,19 @@
 
 .weekly-goal {
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 8px;
 }
 
 .weekly-goal strong {
-  color: #2C3E50;
+  color: #ffffff;
   display: block;
   margin-bottom: 0.5rem;
 }
 
 .weekly-goal-text {
   margin-top: 0.5rem;
-  color: #5A6C7D;
+  color: rgba(255,255,255,0.9);
   font-size: 0.9rem;
 }
 
@@ -1038,7 +1052,7 @@
 .weekly-goal-progress {
   font-size: 0.9rem;
   margin-top: 0.25rem;
-  color: #2C3E50;
+  color: #ffffff;
 }
 
 // Grade Section
@@ -1077,12 +1091,14 @@
 }
 
 .grade-slider-start {
-  background: #FCF3CF;
+  /* muted gray background for less glare */
+  background: #F3F4F6;
   padding: 0.25rem 0.75rem;
   border-radius: 4px;
   font-weight: 600;
   font-size: 0.9rem;
   color: #2C3E50;
+  border: 1px solid #E5E7EB;
 }
 
 .grade-slider-label {
@@ -1094,23 +1110,26 @@
 .grade-slider-track {
   position: relative;
   height: 40px;
-  background: linear-gradient(to right, #FCF3CF 0%, #F39C12 50%, #2ECC71 100%);
+  /* neutral gray track to reduce glare (subtle depth to hint progress axis) */
+  background: linear-gradient(to right, #ECEFF1 0%, #E9ECEF 50%, #E6E9EB 100%);
   border-radius: 20px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .grade-slider-indicator {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: #8B3A62;
-  color: white;
+  /* indicator uses muted gray with dark text for better contrast and lower saturation */
+  background: #F3F4F6;
+  color: #2C3E50;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-weight: bold;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 2;
   white-space: nowrap;
+  border: 1px solid #D1D5DB;
 }
 
 .grade-warning {

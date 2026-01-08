@@ -2661,32 +2661,15 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
             {isMember && (
               <>
-                <div className="discussion-actions">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => {
-                      if (!showComments) {
-                        setShowComments(true);
-                        loadComments(true);
-                      } else {
-                        setShowComments(false);
-                      }
-                    }}
-                    className="w-100 discussion-btn"
+                {showComments && (
+                  <div
+                    className="discussion-container"
                     style={{
-                      background: '#6c5ce7',
-                      border: 'none',
-                      color: '#ffffff',
-                      fontWeight: '600',
+                      background: '#f7f7f9',
+                      padding: '1rem',
+                      borderRadius: '8px',
                     }}
                   >
-                    <span className="fa fa-comments me-2" aria-hidden="true" />
-                    Thảo luận
-                  </Button>
-                </div>
-                {showComments && (
-                  <div className="discussion-container">
                     <div className="create-post-box">
                   <div className="create-post-input">
                     <div className="user-avatar">

@@ -8,6 +8,7 @@ import {
 import { getConfig, camelCaseObject } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { getLeaderboardTabData } from '../data/api';
+import { formatInteger } from './numberUtils';
 
 // CSS styles for hover animation and sticky
 const hoverStyles = `
@@ -326,7 +327,7 @@ const TopStudentsByCoins = ({ courseId }) => {
                       </div>
                     </div>
                     <div className="font-weight-bold" style={{ fontSize: '1rem', color: '#f57c00' }}>
-                      {extractCoinValue(currentUserEntry)}
+                      {formatInteger(extractCoinValue(currentUserEntry))}
                                                     &nbsp;xu
                     </div>
                   </div>
@@ -369,7 +370,7 @@ const TopStudentsByCoins = ({ courseId }) => {
                             </div>
                           </div>
                           <div className="font-weight-bold" style={{ fontSize: '1rem', color: '#f57c00' }}>
-                            {coinValue}
+                            {formatInteger(coinValue)}
                                                             &nbsp;xu
                           </div>
                         </div>

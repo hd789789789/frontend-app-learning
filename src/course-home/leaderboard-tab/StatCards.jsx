@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Card } from '@openedx/paragon';
+import { formatInteger } from './numberUtils';
 
 // CSS styles for hover animation
 const cardHoverStyle = `
@@ -25,12 +26,12 @@ const StatCards = ({
     },
     {
       // Show highest coins (xu) instead of average XP per request
-      value: `${maxCoins != null ? Number(maxCoins).toLocaleString() : 0} xu`,
+      value: `${formatInteger(maxCoins != null ? maxCoins : 0)} xu`,
       label: 'Xu cao nhất',
       color: '#34a853',
     },
     {
-      value: `${maxGrade != null ? Number(maxGrade).toLocaleString() : 0} XP`,
+      value: `${formatInteger(maxGrade != null ? maxGrade : 0)} XP`,
       label: 'ĐIỂM XP CAO NHẤT',
       color: '#9c27b0',
     },

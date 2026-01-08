@@ -42,6 +42,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={outerRadius}
           fill="none"
+          className="progress-circle-bg"
           stroke="#F0F0F0"
           strokeWidth="8"
           style={{ opacity: 1 }}
@@ -52,7 +53,6 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={outerRadius}
           fill="none"
-          stroke="#81C784"
           strokeWidth="8"
           strokeDasharray={outerCircumference}
           strokeDashoffset={outerStrokeDashoffset}
@@ -80,7 +80,6 @@ const CircularProgress = memo(({ percent = 0 }) => {
           cy="125" 
           r={radius}
           fill="none"
-          stroke="#2ECC71"
           strokeWidth="20"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -483,12 +482,6 @@ const BadgeTab = memo(function BadgeTab() {
 
         return (
     <Container className="badge-tab py-4 px-0">
-      {isFetching && (
-        <div className="badge-tab__loading-overlay text-center mb-3">
-          <Spinner animation="border" size="sm" variant="primary" />
-          <span className="ms-2 text-muted">Đang tải dữ liệu Thành tích...</span>
-        </div>
-      )}
       {/* Full-width Progress Row (make Tiến độ span full width so sidebar drops below) */}
       <Row className="mx-0">
         <Col xs={12} className="px-1 px-md-2">
