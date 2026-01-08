@@ -500,27 +500,27 @@ const BadgeTab = memo(function BadgeTab() {
                   <h4 className="progress-stats-title">Thống kê học tập</h4>
                   <div className="progress-stats-list">
                     <div className="progress-stat-item">
-                      <span>Tổng số mục:</span>
-                      <strong>{totalUnits} mục</strong>
+                      <span className="stat-label">Tổng số mục:</span>
+                      <strong className="stat-value stat-total">{totalUnits} mục</strong>
                     </div>
                     <div className="progress-stat-item">
-                      <span>Đã hoàn thành:</span>
-                      <strong style={{ color: '#27AE60' }}>{completedLessons} bài</strong>
+                      <span className="stat-label">Đã hoàn thành:</span>
+                      <strong className="stat-value stat-completed">{completedLessons} bài</strong>
                     </div>
                     <div className="progress-stat-item">
-                      <span>Đang học:</span>
-                      <strong style={{ color: '#E67E22' }}>{inProgressLessons} bài</strong>
+                      <span className="stat-label">Đang học:</span>
+                      <strong className="stat-value stat-inprogress">{inProgressLessons} bài</strong>
                     </div>
                     <div className="progress-stat-item">
-                      <span>Chưa bắt đầu:</span>
-                      <strong style={{ color: '#7F8C8D' }}>{notStartedLessons} bài</strong>
+                      <span className="stat-label">Chưa bắt đầu:</span>
+                      <strong className="stat-value stat-locked">{notStartedLessons} bài</strong>
                     </div>
                   </div>
                 </div>
                 <div className="weekly-goal">
-                  <strong>Mục tiêu khoá học</strong>
+                  <h3 className="weekly-goal-title">Mục tiêu khoá học</h3>
                   <div className="weekly-goal-text">
-                    Hoàn thành khoá học để nhận danh hiệu "Người học chăm chỉ" 🌟
+                    Hoàn thành khoá học để nhận danh hiệu "Người học chăm chỉ" <span aria-hidden>🌟</span>
                   </div>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>

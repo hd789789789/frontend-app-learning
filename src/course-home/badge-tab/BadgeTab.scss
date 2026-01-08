@@ -875,12 +875,12 @@
 // Progress Section
 .progress-section {
   margin-top: 0px;
-  /* Use same purple/pink gradient as Welcome banner */
+  /* Use same purple/pink gradient as Welcome banner; larger radius + padding to match mock */
   background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%);
-  border: 2px solid #8B3A62;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 16px rgba(139, 58, 98, 0.12);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 20px;
+  padding: 2.5rem 2.5rem 3rem 2.5rem;
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.08), inset 0 2px 0 rgba(255,255,255,0.02);
 }
 
 .progress-section-title {
@@ -892,21 +892,21 @@
 
 .progress-overview {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 340px 1fr; /* larger donut column like reference */
   gap: 2rem;
   align-items: center;
 }
 
 .circular-progress {
   position: relative;
-  width: 250px;
-  height: 250px;
+  width: 300px;
+  height: 300px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 250px; // Ensure minimum height
-  flex-shrink: 0; // Prevent shrinking
+  min-height: 300px; /* Ensure minimum height */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .circular-progress-wrapper {
@@ -933,22 +933,25 @@
   visibility: visible !important;
   /* outer ring color to match welcome banner (subtle white) */
   /* make outer progress ring prominent: pink/purple, thicker and subtle shadow */
-  stroke: #C47E9E;
-  stroke-width: 10;
-  filter: drop-shadow(0 4px 10px rgba(196,126,158,0.18));
+  stroke: rgba(255,255,255,0.98);
+  stroke-width: 14;
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.18));
+  stroke-linecap: round;
 }
 
 .progress-circle-fill {
   transition: stroke-dashoffset 0.5s ease;
   transform-origin: center;
   /* filled ring color to match welcome banner */
-  stroke: #ffffff;
+  stroke: rgba(255,255,255,0.98);
+  stroke-width: 20;
+  stroke-linecap: round;
 }
 
 /* Background ring (behind the progress) - subtle, contrasts with gradient) */
 .progress-circle-bg {
-  stroke: rgba(255,255,255,0.12);
-  stroke-width: 8;
+  stroke: rgba(255,255,255,0.06);
+  stroke-width: 10;
 }
 
 .progress-text-overlay {
@@ -967,13 +970,14 @@
 }
 
 .progress-percentage-text {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: 3rem;
+  font-weight: 900;
   color: #ffffff;
   line-height: 1;
   margin-bottom: 0.25rem;
-  display: block; // Ensure text is displayed
-  visibility: visible; // Ensure visibility
+  display: block;
+  visibility: visible;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
 
 .progress-label-text {
@@ -985,6 +989,21 @@
   visibility: visible; // Ensure visibility
 }
 
+/* subtle inner ring / glow behind inner circle (to mimic reference) */
+.circular-progress-wrapper::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 30%, rgba(255,255,255,0.03), transparent 40%);
+  pointer-events: none;
+  z-index: 5;
+}
+
 .progress-stats {
   flex: 1;
 }
@@ -994,10 +1013,11 @@
 }
 
 .progress-stats-title {
-  margin-bottom: 0.5rem;
-  color: #2C3E50;
-  font-weight: 700;
-  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  color: #ffffff; /* white title to match reference */
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.25);
 }
 
 .progress-stats-list {
@@ -1008,45 +1028,68 @@
 .progress-stat-item {
   display: flex;
   justify-content: space-between;
-  color: #ffffff;
+  align-items: center;
+  color: rgba(255,255,255,0.9);
+  padding: 0.25rem 0;
 
-  strong {
+  .stat-label {
+    color: rgba(255,255,255,0.8);
     font-weight: 600;
   }
+
+  .stat-value {
+    font-weight: 800;
+    color: #ffffff;
+    background: rgba(255,255,255,0.06);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.95rem;
+  }
+
+  .stat-completed { color: #7EE787; } /* light green */
+  .stat-inprogress { color: #FFC58A; } /* orange */
+  .stat-locked { color: #93C5FD; } /* blue */
+  .stat-total { color: #ffffff; }
 }
 
 .weekly-goal {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  padding: 1.1rem;
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08) inset;
 }
 
-.weekly-goal strong {
+.weekly-goal-title {
   color: #ffffff;
   display: block;
   margin-bottom: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 .weekly-goal-text {
-  margin-top: 0.5rem;
-  color: rgba(255,255,255,0.9);
-  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  color: rgba(255,255,255,0.92);
+  font-size: 0.95rem;
+  line-height: 1.3;
 }
 
 .progress-bar {
   width: 100%;
-  height: 8px;
-  background: #E0E0E0;
-  border-radius: 4px;
+  height: 12px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
   overflow: hidden;
-  margin-top: 0.5rem;
+  margin-top: 0.9rem;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8B3A62 0%, #C47E9E 100%);
-  border-radius: 4px;
-  transition: width 0.3s;
+  background: linear-gradient(90deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.7) 100%);
+  border-radius: 999px;
+  transition: width 0.45s cubic-bezier(.2,.9,.2,1);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12) inset, 0 2px 6px rgba(255,255,255,0.06);
 }
 
 .weekly-goal-progress {
