@@ -48,7 +48,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           style={{ opacity: 1 }}
         />
         {/* Outer progress circle - shows progress */}
-        <circle 
+        {/* <circle 
           cx="125" 
           cy="125" 
           r={outerRadius}
@@ -64,7 +64,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
             opacity: 1,
             visibility: 'visible'
           }}
-        />
+        /> */}
         {/* Inner background circle */}
         <circle 
           cx="125" 
@@ -75,7 +75,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           strokeWidth="20"
         />
         {/* Inner progress circle */}
-        <circle 
+        {/* <circle 
           cx="125" 
           cy="125" 
           r={radius}
@@ -87,7 +87,7 @@ const CircularProgress = memo(({ percent = 0 }) => {
           transform="rotate(-90 125 125)"
           className="progress-circle-fill"
           style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-        />
+        /> */}
       </svg>
       {/* Text overlay */}
       <div className="progress-text-overlay">
