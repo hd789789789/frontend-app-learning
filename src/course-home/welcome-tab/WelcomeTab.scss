@@ -7,6 +7,12 @@
   margin: 0px !important;
 }
 
+// Stat icon for skeleton mode
+.stat-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
 // Skeleton Loading Styles
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);

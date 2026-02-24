@@ -13,15 +13,29 @@ import StudyTip from './StudyTip';
 import ReferralWidget from './ReferralWidget';
 import './WelcomeTab.scss';
 
-// Skeleton loading component for stats
+// Skeleton loading component for stats - only skeleton the number, show text/icon immediately
 const SkeletonStats = () => (
   <div className="stats-grid">
-    {[1, 2, 3, 4].map((i) => (
-      <div key={i} className="stat-card">
-        <div className="skeleton skeleton-stat-value" style={{ width: '50px', height: '40px', margin: '0 auto' }} />
-        <div className="skeleton skeleton-stat-label" style={{ width: '80px', height: '20px', margin: '8px auto 0' }} />
-      </div>
-    ))}
+    <div className="stat-card">
+      <div className="stat-icon">🔥</div>
+      <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
+      <div className="stat-label">Ngày liên tiếp</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-icon">📈</div>
+      <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
+      <div className="stat-label">Hoàn thành khóa học</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-icon">🎯</div>
+      <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
+      <div className="stat-label">Bài học đã hoàn thành</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-icon">🏆</div>
+      <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
+      <div className="stat-label">Xếp hạng lớp</div>
+    </div>
   </div>
 );
 
