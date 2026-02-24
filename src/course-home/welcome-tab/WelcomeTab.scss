@@ -7,6 +7,51 @@
   margin: 0px !important;
 }
 
+// Skeleton Loading Styles
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.dark-theme {
+  .skeleton {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-stat-value,
+.skeleton-stat-label {
+  border-radius: 4px;
+}
+
+.skeleton-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-timeline-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.group-streaks-skeleton {
+  margin-top: 1rem;
+}
+
 // Welcome Banner
 .welcome-banner {
   background: linear-gradient(135deg, #8B3A62 0%, #C47E9E 100%);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
@@ -13,6 +13,45 @@ import StudyTip from './StudyTip';
 import ReferralWidget from './ReferralWidget';
 import './WelcomeTab.scss';
 
+// Skeleton loading component for stats
+const SkeletonStats = () => (
+  <div className="stats-grid">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="stat-card">
+        <div className="skeleton skeleton-stat-value" style={{ width: '50px', height: '40px', margin: '0 auto' }} />
+        <div className="skeleton skeleton-stat-label" style={{ width: '80px', height: '20px', margin: '8px auto 0' }} />
+      </div>
+    ))}
+  </div>
+);
+
+// Skeleton loading for quest card
+const SkeletonQuestCard = () => (
+  <div className="quest-card">
+    <div className="quest-header">
+      <div className="skeleton" style={{ width: '70px', height: '70px', borderRadius: '14px' }} />
+      <div className="quest-info" style={{ flex: 1 }}>
+        <div className="skeleton" style={{ width: '60%', height: '24px', marginBottom: '8px' }} />
+        <div className="skeleton" style={{ width: '90%', height: '16px', marginBottom: '8px' }} />
+        <div className="skeleton" style={{ width: '40%', height: '16px' }} />
+      </div>
+    </div>
+    <div className="quest-progress">
+      <div className="skeleton" style={{ width: '100%', height: '8px', borderRadius: '4px' }} />
+    </div>
+  </div>
+);
+
+// Skeleton loading for sidebar
+const SkeletonSidebar = () => (
+  <div className="sidebar-skeleton">
+    <div className="skeleton" style={{ height: '200px', borderRadius: '12px', marginBottom: '16px' }} />
+    <div className="skeleton" style={{ height: '150px', borderRadius: '12px', marginBottom: '16px' }} />
+    <div className="skeleton" style={{ height: '180px', borderRadius: '12px' }} />
+  </div>
+);
+
+// Initial loading state - shows skeleton UI immediately
 const WelcomeTab = () => {
   const { courseId } = useParams();
   const dispatch = useDispatch();
@@ -26,11 +65,33 @@ const WelcomeTab = () => {
   // Data structure: welcomeModel contains the API response directly
   const welcomeData = welcomeModel;
   const { courseStatus } = useSelector((state) => state.courseHome);
+  
+  // Track which data has been loaded - start with true to show UI immediately
+  const [dataLoaded, setDataLoaded] = useState({
+    welcome: false,
+    progress: false,
+    dates: false,
+    studyGroups: false,
+    leaderboard: false,
+    groupStreaks: false,
+  });
+
+  // Overall loading state - only show full spinner on first render before any data
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  // Check if we have any welcome data from the model store
   const hasWelcomeData = Boolean(welcomeData && welcomeData.success);
-  // Nếu chưa có dữ liệu welcome hoặc course đang loading, luôn hiển thị trạng thái đang tải
   const loading = courseStatus === 'loading' || !hasWelcomeData;
   const error = courseStatus === 'failed' ? 'Không thể tải dữ liệu Chào mừng' : null;
- 
+
+  // Mark initial load complete after first render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialLoadComplete(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Use progress model early so hooks order remains stable
   const progressModel = useModel('progress', courseId) || {};
   const completionSummary = progressModel.completionSummary || {};
@@ -56,10 +117,17 @@ const WelcomeTab = () => {
   const currentUsername = currentUser?.username || null;
   const [hasPostedDiscussion, setHasPostedDiscussion] = useState(Boolean(welcomeData.studyGroupPostsCount || welcomeData.study_group_posts_count || false));
 
+  // Track loading states for each data type
+  const [loadingStudyGroupCheck, setLoadingStudyGroupCheck] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
-    if (!currentUsername || !courseId) return undefined;
+    if (!currentUsername || !courseId) {
+      setLoadingStudyGroupCheck(false);
+      return undefined;
+    }
 
+    setLoadingStudyGroupCheck(true);
     const checkPosted = async () => {
       let groupsToCheck = studyGroups;
       // if model has no groups, try fetching via API
@@ -79,7 +147,10 @@ const WelcomeTab = () => {
             const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
             const authorUsername = authorUser?.username || c.username || c.userName || null;
             if (authorUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
-              if (!cancelled) setHasPostedDiscussion(true);
+              if (!cancelled) {
+                setHasPostedDiscussion(true);
+                setLoadingStudyGroupCheck(false);
+              }
               return;
             }
           }
@@ -95,7 +166,10 @@ const WelcomeTab = () => {
             const authorUser = c.user || c.author || c.created_by || c.createdBy || {};
             const authorUsername = authorUser?.username || c.username || c.userName || null;
             if (authorUsername && authorUsername.toLowerCase() === currentUsername.toLowerCase()) {
-              if (!cancelled) setHasPostedDiscussion(true);
+              if (!cancelled) {
+                setHasPostedDiscussion(true);
+                setLoadingStudyGroupCheck(false);
+              }
               return;
             }
           }
@@ -104,7 +178,10 @@ const WelcomeTab = () => {
         }
       }
 
-      if (!cancelled) setHasPostedDiscussion(false);
+      if (!cancelled) {
+        setHasPostedDiscussion(false);
+        setLoadingStudyGroupCheck(false);
+      }
     };
 
     checkPosted();
@@ -113,36 +190,64 @@ const WelcomeTab = () => {
     };
   }, [studyGroups, currentUsername, courseId, welcomeData]);
   
-  // Fetch dates data để dùng Timeline component
+  // Fetch dates data để dùng Timeline component - lazy load
   const datesModel = useModel('dates', courseId) || {};
   const { courseDateBlocks } = datesModel;
+  const [loadingDates, setLoadingDates] = useState(true);
 
   useEffect(() => {
     // Fetch dates data nếu chưa có
     if (courseId && !courseDateBlocks) {
-      dispatch(fetchDatesTab(courseId));
+      dispatch(fetchDatesTab(courseId)).then(() => {
+        setDataLoaded(prev => ({ ...prev, dates: true }));
+        setLoadingDates(false);
+      }).catch(() => {
+        setLoadingDates(false);
+      });
+    } else {
+      setDataLoaded(prev => ({ ...prev, dates: true }));
+      setLoadingDates(false);
     }
   }, [courseId, dispatch, courseDateBlocks]);
 
-  // Ensure progress model is loaded (BadgeTab fetches it; WelcomeTab needs it too)
+  // Ensure progress model is loaded (BadgeTab fetches it; WelcomeTab needs it too) - lazy load
   const progressFetchingRef = useRef(false);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  
   useEffect(() => {
     if (!courseId) return;
     const shouldFetchProgress = courseId && !progressFetchingRef.current && !(progressModel && progressModel.completionSummary);
     if (shouldFetchProgress) {
       progressFetchingRef.current = true;
       const p = dispatch(fetchProgressTab(courseId));
-      if (p && typeof p.finally === 'function') {
-        p.finally(() => { progressFetchingRef.current = false; });
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          setDataLoaded(prev => ({ ...prev, progress: true }));
+          setLoadingProgress(false);
+        }).catch(() => {
+          setLoadingProgress(false);
+        });
+        if (p && typeof p.finally === 'function') {
+          p.finally(() => { progressFetchingRef.current = false; });
+        } else {
+          progressFetchingRef.current = false;
+        }
       } else {
         progressFetchingRef.current = false;
+        setDataLoaded(prev => ({ ...prev, progress: true }));
+        setLoadingProgress(false);
       }
+    } else {
+      setDataLoaded(prev => ({ ...prev, progress: true }));
+      setLoadingProgress(false);
     }
     // Only depend on courseId and dispatch to avoid loops caused by changing model references
   }, [courseId, dispatch]);
 
-  // Ensure welcome data contains dailyQuests (refresh if backend didn't provide them)
+  // Ensure welcome data contains dailyQuests (refresh if backend didn't provide them) - lazy load
   const welcomeFetchingRef = useRef(false);
+  const [loadingWelcome, setLoadingWelcome] = useState(true);
+  
   useEffect(() => {
     if (!courseId) return;
     const hasDailyQuests = Boolean(welcomeData && welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0);
@@ -150,25 +255,52 @@ const WelcomeTab = () => {
     if (shouldFetchWelcome) {
       welcomeFetchingRef.current = true;
       const p = dispatch(fetchWelcomeTab(courseId));
-      if (p && typeof p.finally === 'function') {
-        p.finally(() => { welcomeFetchingRef.current = false; });
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          setDataLoaded(prev => ({ ...prev, welcome: true }));
+          setLoadingWelcome(false);
+        }).catch(() => {
+          setLoadingWelcome(false);
+        });
+        if (p && typeof p.finally === 'function') {
+          p.finally(() => { welcomeFetchingRef.current = false; });
+        } else {
+          welcomeFetchingRef.current = false;
+        }
       } else {
         welcomeFetchingRef.current = false;
+        setDataLoaded(prev => ({ ...prev, welcome: true }));
+        setLoadingWelcome(false);
       }
+    } else {
+      setDataLoaded(prev => ({ ...prev, welcome: true }));
+      setLoadingWelcome(false);
     }
     // Only depend on courseId and dispatch to avoid continuous fetch loops
   }, [courseId, dispatch]);
 
-  // Ensure study-groups model is loaded so we can inspect comments if backend provides them
+  // Ensure study-groups model is loaded so we can inspect comments if backend provides them - lazy load
+  const [loadingStudyGroups, setLoadingStudyGroups] = useState(true);
+  
   useEffect(() => {
     const shouldFetchStudyGroups = courseId && !(studyGroupsModel && studyGroupsModel.results !== undefined);
     if (shouldFetchStudyGroups) {
-      dispatch(fetchStudyGroupsTab(courseId));
+      dispatch(fetchStudyGroupsTab(courseId)).then(() => {
+        setDataLoaded(prev => ({ ...prev, studyGroups: true }));
+        setLoadingStudyGroups(false);
+      }).catch(() => {
+        setLoadingStudyGroups(false);
+      });
+    } else {
+      setDataLoaded(prev => ({ ...prev, studyGroups: true }));
+      setLoadingStudyGroups(false);
     }
   }, [courseId, dispatch, studyGroupsModel]);
 
-  // Ensure leaderboard model is loaded so we can show the current user's class rank
+  // Ensure leaderboard model is loaded so we can show the current user's class rank - lazy load
   const leaderboardFetchingRef = useRef(false);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  
   useEffect(() => {
     if (!courseId) return;
     const hasLeaderboardData = Boolean(leaderboardModel && (leaderboardModel.topStudents !== undefined || leaderboardModel.summary !== undefined));
@@ -176,16 +308,31 @@ const WelcomeTab = () => {
     if (shouldFetchLeaderboard) {
       leaderboardFetchingRef.current = true;
       const p = dispatch(fetchLeaderboardTab(courseId));
-      if (p && typeof p.finally === 'function') {
-        p.finally(() => { leaderboardFetchingRef.current = false; });
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          setDataLoaded(prev => ({ ...prev, leaderboard: true }));
+          setLoadingLeaderboard(false);
+        }).catch(() => {
+          setLoadingLeaderboard(false);
+        });
+        if (p && typeof p.finally === 'function') {
+          p.finally(() => { leaderboardFetchingRef.current = false; });
+        } else {
+          leaderboardFetchingRef.current = false;
+        }
       } else {
         leaderboardFetchingRef.current = false;
+        setDataLoaded(prev => ({ ...prev, leaderboard: true }));
+        setLoadingLeaderboard(false);
       }
+    } else {
+      setDataLoaded(prev => ({ ...prev, leaderboard: true }));
+      setLoadingLeaderboard(false);
     }
     // Only depend on courseId and dispatch to avoid loops caused by changing model object references
   }, [courseId, dispatch]);
 
-  // Fetch group streaks
+  // Fetch group streaks - lazy load
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
 
@@ -209,13 +356,15 @@ const WelcomeTab = () => {
         setGroupStreaks([]);
       } finally {
         setLoadingStreaks(false);
+        setDataLoaded(prev => ({ ...prev, groupStreaks: true }));
       }
     };
 
     fetchGroupStreaks();
   }, [courseId]);
 
-  if (loading) {
+  // If still in initial loading state and no data at all, show quick spinner
+  if (loading && !initialLoadComplete) {
     return (
       <Container className="welcome-tab py-5 px-2 px-md-4 text-center">
         <Spinner animation="border" variant="primary" />
@@ -395,6 +544,9 @@ const WelcomeTab = () => {
     }
   };
 
+  // Check if any critical data is still loading
+  const isCriticalLoading = loadingProgress || loadingWelcome;
+
   return (
     <Container className="welcome-tab py-4 px-2 px-md-4">
       {/* Row 1: Full width banners */}
@@ -405,24 +557,29 @@ const WelcomeTab = () => {
             <h2>Chào mừng trở lại, Pi! 👋</h2>
             <p>Hôm nay là ngày thứ {userStats.streakDays} trong chuỗi ngày học liên tiếp của bạn. Hãy tiếp tục phấn đấu!</p>
             
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-value">{userStats.streakDays}</div>
-                <div className="stat-label">🔥 Ngày liên tiếp</div>
+            {/* Show skeleton while loading, show actual data when loaded */}
+            {isCriticalLoading ? (
+              <SkeletonStats />
+            ) : (
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-value">{userStats.streakDays}</div>
+                  <div className="stat-label">🔥 Ngày liên tiếp</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{displayCompletionPercent}%</div>
+                  <div className="stat-label">📈 Hoàn thành khóa học</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{completeCount}</div>
+                  <div className="stat-label">🎯 Bài học đã hoàn thành</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">#{displayClassRank}</div>
+                  <div className="stat-label">🏆 Xếp hạng lớp</div>
+                </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-value">{displayCompletionPercent}%</div>
-                <div className="stat-label">📈 Hoàn thành khóa học</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">{completeCount}</div>
-                <div className="stat-label">🎯 Bài học đã hoàn thành</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-value">#{displayClassRank}</div>
-                <div className="stat-label">🏆 Xếp hạng lớp</div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Motivational Call-to-Action Banner */}
@@ -562,12 +719,23 @@ const WelcomeTab = () => {
           {/* Important Dates Section - Sử dụng Timeline component giống Dates Tab */}
           <div className="important-dates-card">
             <h3 className="important-dates-title">📌 Ngày quan trọng</h3>
-            {courseDateBlocks && courseDateBlocks.length > 0 ? (
+            {loadingDates ? (
+              <div className="skeleton-dates">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="skeleton-timeline-item">
+                    <div className="skeleton" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ width: '60%', height: '14px', marginBottom: '4px' }} />
+                      <div className="skeleton" style={{ width: '80%', height: '16px' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : courseDateBlocks && courseDateBlocks.length > 0 ? (
               <Timeline />
             ) : (
               <div className="text-center py-4 text-muted">
-                <Spinner animation="border" size="sm" className="mr-2" />
-                <span>Đang tải ngày quan trọng...</span>
+                <span>Không có ngày quan trọng</span>
               </div>
             )}
           </div>
@@ -578,9 +746,8 @@ const WelcomeTab = () => {
           />
           
           {loadingStreaks ? (
-            <div className="group-streaks-loading text-center p-3">
-              <Spinner animation="border" size="sm" />
-              <span className="ms-2 text-muted">Đang tải chuỗi nhóm...</span>
+            <div className="group-streaks-skeleton p-3">
+              <div className="skeleton" style={{ height: '120px', borderRadius: '8px' }} />
             </div>
           ) : (
             <GroupStreaks groups={groupStreaks} disableFallback={true} />
