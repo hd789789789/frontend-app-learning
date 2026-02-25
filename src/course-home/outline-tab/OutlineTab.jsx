@@ -83,7 +83,7 @@ const OutlineTab = () => {
     } = {},
     datesWidget: {
       courseDateBlocks,
-    },
+    } = {},
     enableProctoredExams,
   } = useModel('outline', courseId) || {};
 
