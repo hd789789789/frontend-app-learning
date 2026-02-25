@@ -3,6 +3,7 @@ import { AppProvider, ErrorPage, PageWrap } from "@edx/frontend-platform/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { lazy, Suspense } from 'react';
 
 import { Helmet } from "react-helmet";
 import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
@@ -14,7 +15,6 @@ import messages from "./i18n";
 import { UserMessagesProvider } from "./generic/user-messages";
 
 import "./index.scss";
-import OutlineTab from "./course-home/outline-tab";
 import { CourseExit } from "./courseware/course/course-exit";
 import CoursewareContainer from "./courseware";
 import CoursewareRedirectLandingPage from "./courseware/CoursewareRedirectLandingPage";
@@ -24,6 +24,9 @@ import LeaderboardTab from "./course-home/leaderboard-tab";
 import { BadgeTab } from "./course-home/badge-tab";
 import ProgressTab from "./course-home/progress-tab/ProgressTab";
 import WelcomeTab from "./course-home/welcome-tab";
+
+// Lazy loading for course home tabs
+const OutlineTab = lazy(() => import("./course-home/outline-tab"));
 import { TabContainer } from "./tab-page";
 
 import { fetchDatesTab, fetchLeaderboardTab, fetchBadgeTab, fetchOutlineTab, fetchProgressTab, fetchTeamsTab, fetchWelcomeTab, fetchStudyGroupsTab } from "./course-home/data";
@@ -138,7 +141,9 @@ subscribe(APP_READY, () => {
                                         element={
                                             <DecodePageRoute>
                                                 <TabContainer tab="welcome" fetch={fetchWelcomeTab} slice="courseHome">
-                                                    <WelcomeTab />
+                                                    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                                        <WelcomeTab />
+                                                    </Suspense>
                                                 </TabContainer>
                                             </DecodePageRoute>
                                         }
@@ -149,7 +154,9 @@ subscribe(APP_READY, () => {
                                         element={
                                             <DecodePageRoute>
                                                 <TabContainer tab="outline" fetch={fetchOutlineTab} slice="courseHome">
-                                                    <OutlineTab />
+                                                    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                                        <OutlineTab />
+                                                    </Suspense>
                                                 </TabContainer>
                                             </DecodePageRoute>
                                         }

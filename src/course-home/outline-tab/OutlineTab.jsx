@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Button } from '@openedx/paragon';
+import { Button, Spinner } from '@openedx/paragon';
 import { CourseOutlineTabNotificationsSlot } from '../../plugin-slots/CourseOutlineTabNotificationsSlot';
 import { AlertList } from '../../generic/user-messages';
 
@@ -27,11 +27,47 @@ import WelcomeMessage from './widgets/WelcomeMessage';
 import ProctoringInfoPanel from './widgets/ProctoringInfoPanel';
 import AccountActivationAlert from '../../alerts/logistration-alert/AccountActivationAlert';
 import CourseHomeSectionOutlineSlot from '../../plugin-slots/CourseHomeSectionOutlineSlot';
+import './OutlineTab.scss';
+
+// Skeleton loading component for OutlineTab
+const SkeletonOutlineLoading = () => (
+  <div className="outline-tab-loading">
+    {/* Title skeleton */}
+    <div className="skeleton" style={{ width: '40%', height: '32px', marginBottom: '24px' }} />
+
+    <div className="row course-outline-tab">
+      <div className="col col-12 col-md-8">
+        {/* Start or Resume Card skeleton */}
+        <div className="skeleton mb-3" style={{ width: '100%', height: '120px', borderRadius: '8px' }} />
+
+        {/* Welcome Message skeleton */}
+        <div className="skeleton mb-3" style={{ width: '100%', height: '60px', borderRadius: '8px' }} />
+
+        {/* Section list skeleton */}
+        <div className="skeleton-outline-section">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton mb-2" style={{ width: '100%', height: '80px', borderRadius: '8px' }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Sidebar skeleton */}
+      <div className="col col-12 col-md-4">
+        <div className="skeleton-sidebar">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton mb-2" style={{ width: '100%', height: '100px', borderRadius: '8px' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const OutlineTab = () => {
   const intl = useIntl();
   const {
     courseId,
+    courseStatus,
     proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
 
@@ -115,6 +151,11 @@ const OutlineTab = () => {
       });
     }
   }, [location.search]);
+
+  // Show skeleton while loading
+  if (courseStatus === 'loading') {
+    return <SkeletonOutlineLoading />;
+  }
 
   return (
     <>
