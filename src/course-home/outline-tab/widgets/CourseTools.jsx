@@ -19,11 +19,10 @@ const CourseTools = () => {
   const {
     courseId,
   } = useSelector(state => state.courseHome);
-  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
-  const org = courseHomeMeta.org;
-  
-  const outlineData = useModel('outline', courseId) || {};
-  const courseTools = outlineData.courseTools || [];
+  const { org } = useModel('courseHomeMeta', courseId);
+  const {
+    courseTools,
+  } = useModel('outline', courseId);
 
   if (courseTools.length === 0) {
     return null;

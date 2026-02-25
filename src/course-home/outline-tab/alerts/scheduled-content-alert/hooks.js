@@ -6,7 +6,7 @@ import { useModel } from '../../../../generic/model-store';
 const ScheduledContentAlert = React.lazy(() => import('./ScheduledCotentAlert'));
 
 const useScheduledContentAlert = (courseId) => {
-  const outlineData = useModel('outline', courseId);
+  const outlineData = useModel('outline', courseId) || {};
   const courseBlocks = outlineData.courseBlocks || {};
   const courses = courseBlocks.courses || {};
   const datesWidget = outlineData.datesWidget || {};

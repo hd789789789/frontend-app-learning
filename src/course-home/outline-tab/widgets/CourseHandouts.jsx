@@ -12,8 +12,9 @@ const CourseHandouts = () => {
   const {
     courseId,
   } = useSelector(state => state.courseHome);
-  const outlineData = useModel('outline', courseId) || {};
-  const handoutsHtml = outlineData.handoutsHtml;
+  const {
+    handoutsHtml,
+  } = useModel('outline', courseId);
 
   if (!handoutsHtml) {
     return null;

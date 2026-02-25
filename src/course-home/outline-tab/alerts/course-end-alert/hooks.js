@@ -12,7 +12,7 @@ export function useCourseEndAlert(courseId) {
   const {
     isEnrolled,
   } = useModel('courseHomeMeta', courseId) || {};
-  const outlineData = useModel('outline', courseId);
+  const outlineData = useModel('outline', courseId) || {};
   const datesWidget = outlineData.datesWidget || {};
   const courseDateBlocks = datesWidget.courseDateBlocks || [];
   const userTimezone = datesWidget.userTimezone;

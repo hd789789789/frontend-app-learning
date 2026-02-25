@@ -15,19 +15,19 @@ const StartOrResumeCourseCard = () => {
 
   const {
     org,
-  } = useModel('courseHomeMeta', courseId) || {};
+  } = useModel('courseHomeMeta', courseId);
 
   const eventProperties = {
     org_key: org,
     courserun_key: courseId,
   };
 
-  const outlineData = useModel('outline', courseId) || {};
-  const resumeCourse = outlineData.resumeCourse || {};
   const {
-    hasVisitedCourse,
-    url: resumeCourseUrl,
-  } = resumeCourse;
+    resumeCourse: {
+      hasVisitedCourse,
+      url: resumeCourseUrl,
+    },
+  } = useModel('outline', courseId);
 
   if (!resumeCourseUrl) {
     return null;

@@ -8,10 +8,8 @@ const CourseStartMasqueradeBanner = React.lazy(() => import('./CourseStartMasque
 function IsStartDateInFuture(courseId) {
   const {
     start,
-  } = useModel('courseHomeMeta', courseId) || {};
+  } = useModel('courseHomeMeta', courseId);
 
-  if (!start) return false;
-  
   const today = new Date();
   const startDate = new Date(start);
   return startDate > today;
@@ -20,7 +18,7 @@ function IsStartDateInFuture(courseId) {
 function useCourseStartAlert(courseId) {
   const {
     isEnrolled,
-  } = useModel('courseHomeMeta', courseId) || {};
+  } = useModel('courseHomeMeta', courseId);
 
   const isVisible = isEnrolled && IsStartDateInFuture(courseId);
 
@@ -42,7 +40,7 @@ function useCourseStartAlert(courseId) {
 export function useCourseStartMasqueradeBanner(courseId, tab) {
   const {
     isMasquerading,
-  } = useModel('courseHomeMeta', courseId) || {};
+  } = useModel('courseHomeMeta', courseId);
 
   const isVisible = isMasquerading && tab === 'progress' && IsStartDateInFuture(courseId);
 

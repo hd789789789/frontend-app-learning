@@ -34,9 +34,11 @@ const Section: React.FC<Props> = ({
     title,
     hideFromTOC,
   } = section;
-  const outlineData = useModel('outline', courseId) || {};
-  const courseBlocks = outlineData.courseBlocks || {};
-  const sequences = courseBlocks.sequences || {};
+  const {
+    courseBlocks: {
+      sequences,
+    },
+  } = useModel('outline', courseId);
 
   const [open, setOpen] = useState(defaultOpen);
 

@@ -13,16 +13,12 @@ import { dismissWelcomeMessage } from '../../data/thunks';
 
 const WelcomeMessage = ({ courseId, nextElementRef }) => {
   const intl = useIntl();
-  const outlineData = useModel('outline', courseId) || {};
-  const welcomeMessageHtml = outlineData.welcomeMessageHtml;
+  const {
+    welcomeMessageHtml,
+  } = useModel('outline', courseId);
 
   const messageBodyRef = useRef();
   const [display, setDisplay] = useState(true);
-
-  // Early return if no welcome message
-  if (!welcomeMessageHtml) {
-    return null;
-  }
 
   // welcomeMessageHtml can contain comments or malformatted HTML which can impact the length that determines
   // messageCanBeShortened. We clean it by calling truncate with a length of welcomeMessageHtml.length which
@@ -42,6 +38,10 @@ const WelcomeMessage = ({ courseId, nextElementRef }) => {
 
   const [showShortMessage, setShowShortMessage] = useState(messageCanBeShortened);
   const dispatch = useDispatch();
+
+  if (!welcomeMessageHtml) {
+    return null;
+  }
 
   return (
     <Alert

@@ -22,8 +22,9 @@ const SequenceDueDate: React.FC<Props> = ({
     messages.sequenceNoDueDate,
     { description: description || '' },
   );
-  const outlineData = useModel('outline', courseId) || {};
-  const userTimezone = outlineData.userTimezone;
+  const {
+    userTimezone,
+  } = useModel('outline', courseId);
 
   if (due) {
     const timezoneFormatArgs = userTimezone ? { timeZone: userTimezone } : {};
