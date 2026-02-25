@@ -71,21 +71,19 @@ const OutlineTab = () => {
     proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
 
-  // Use empty string as fallback to ensure stable hook call
-  const safeCourseId = courseId || '';
-
   const {
     isSelfPaced,
     org,
     title,
-  } = useModel('courseHomeMeta', safeCourseId);
+  } = useModel('courseHomeMeta', courseId);
 
   const expandButtonRef = useRef();
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Get outline data with defensive checks
-  const outlineData = useModel('outline', safeCourseId);
+  const outlineData = useModel('outline', courseId);
   const courseBlocks = outlineData?.courseBlocks || {};
   const courses = courseBlocks?.courses || {};
   const sections = courseBlocks?.sections || {};
@@ -96,20 +94,23 @@ const OutlineTab = () => {
   const courseDateBlocks = datesWidget?.courseDateBlocks || [];
   const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  // Alert hooks - always call with stable value
-  const courseStartAlert = useCourseStartAlert(safeCourseId);
-  const courseEndAlert = useCourseEndAlert(safeCourseId);
-  const certificateAvailableAlert = useCertificateAvailableAlert(safeCourseId);
-  const privateCourseAlert = usePrivateCourseAlert(safeCourseId);
-  const scheduledContentAlert = useScheduledContentAlert(safeCourseId);
+  // Alert hooks - always call in same order regardless of courseId value
+  const courseStartAlert = useCourseStartAlert(courseId);
+  const courseEndAlert = useCourseEndAlert(courseId);
+  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
+  const privateCourseAlert = usePrivateCourseAlert(courseId);
+  const scheduledContentAlert = useScheduledContentAlert(courseId);
 
   const eventProperties = {
     org_key: org,
-    courserun_key: safeCourseId,
+    courserun_key: courseId,
   };
 
+  // Compute loading state AFTER all hooks to ensure stable hook count
+  const isLoading = courseStatus === 'loading' || !courseId;
+
   // Show skeleton while loading
-  if (courseStatus === 'loading' || !courseId) {
+  if (isLoading) {
     return <SkeletonOutlineLoading />;
   }
 
@@ -136,8 +137,6 @@ const OutlineTab = () => {
 
   /** show post enrolment survey to only B2C learners */
   const learnerType = isEnterpriseUser() ? 'enterprise_learner' : 'b2c_learner';
-
-  const location = useLocation();
 
   useEffect(() => {
     const currentParams = new URLSearchParams(location.search);
