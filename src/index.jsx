@@ -2,6 +2,7 @@ import { APP_INIT_ERROR, APP_READY, subscribe, initialize, mergeConfig, getConfi
 import { AppProvider, ErrorPage, PageWrap } from "@edx/frontend-platform/react";
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
+import { Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 
 import { Helmet } from "react-helmet";
 import { fetchDiscussionTab, fetchLiveTab } from "./course-home/data/thunks";
