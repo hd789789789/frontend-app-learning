@@ -156,7 +156,7 @@ const Course = ({
               enrollmentMode={course.enrollmentMode}
               isStaff={isStaff}
               courseId={courseId}
-              contentToolsEnabled={course.showCalculator || course.notes.enabled}
+              contentToolsEnabled={course.showCalculator || course.notes?.enabled}
               unitId={unitId}
             />
           </>
