@@ -12,15 +12,13 @@ const CourseDates = () => {
   const {
     courseId,
   } = useSelector(state => state.courseHome);
-  const {
-    userTimezone,
-  } = useModel('courseHomeMeta', courseId);
-  const {
-    datesWidget: {
-      courseDateBlocks,
-      datesTabLink,
-    },
-  } = useModel('outline', courseId);
+  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
+  const userTimezone = courseHomeMeta.userTimezone;
+  
+  const outlineData = useModel('outline', courseId) || {};
+  const datesWidget = outlineData.datesWidget || {};
+  const courseDateBlocks = datesWidget.courseDateBlocks || [];
+  const datesTabLink = datesWidget.datesTabLink;
 
   if (courseDateBlocks.length === 0) {
     return null;

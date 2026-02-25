@@ -34,11 +34,9 @@ const Section: React.FC<Props> = ({
     title,
     hideFromTOC,
   } = section;
-  const {
-    courseBlocks: {
-      sequences,
-    },
-  } = useModel('outline', courseId);
+  const outlineData = useModel('outline', courseId) || {};
+  const courseBlocks = outlineData.courseBlocks || {};
+  const sequences = courseBlocks.sequences || {};
 
   const [open, setOpen] = useState(defaultOpen);
 
@@ -48,7 +46,7 @@ const Section: React.FC<Props> = ({
 
   useEffect(() => {
     setOpen(defaultOpen);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
