@@ -71,18 +71,21 @@ const OutlineTab = () => {
     proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
 
+  // Use empty string as fallback to ensure stable hook call
+  const safeCourseId = courseId || '';
+
   const {
     isSelfPaced,
     org,
     title,
-  } = useModel('courseHomeMeta', courseId);
+  } = useModel('courseHomeMeta', safeCourseId);
 
   const expandButtonRef = useRef();
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();
 
   // Get outline data with defensive checks
-  const outlineData = useModel('outline', courseId);
+  const outlineData = useModel('outline', safeCourseId);
   const courseBlocks = outlineData?.courseBlocks || {};
   const courses = courseBlocks?.courses || {};
   const sections = courseBlocks?.sections || {};
@@ -93,19 +96,19 @@ const OutlineTab = () => {
   const courseDateBlocks = datesWidget?.courseDateBlocks || [];
   const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  // Alert hooks - must be called before early return
-  const courseStartAlert = useCourseStartAlert(courseId);
-  const courseEndAlert = useCourseEndAlert(courseId);
-  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
-  const privateCourseAlert = usePrivateCourseAlert(courseId);
-  const scheduledContentAlert = useScheduledContentAlert(courseId);
+  // Alert hooks - always call with stable value
+  const courseStartAlert = useCourseStartAlert(safeCourseId);
+  const courseEndAlert = useCourseEndAlert(safeCourseId);
+  const certificateAvailableAlert = useCertificateAvailableAlert(safeCourseId);
+  const privateCourseAlert = usePrivateCourseAlert(safeCourseId);
+  const scheduledContentAlert = useScheduledContentAlert(safeCourseId);
 
   const eventProperties = {
     org_key: org,
-    courserun_key: courseId,
+    courserun_key: safeCourseId,
   };
 
-  // Show skeleton while loading - must call AFTER all hooks
+  // Show skeleton while loading
   if (courseStatus === 'loading' || !courseId) {
     return <SkeletonOutlineLoading />;
   }
