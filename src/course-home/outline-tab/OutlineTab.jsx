@@ -68,8 +68,12 @@ const OutlineTab = () => {
   const {
     courseId,
     courseStatus,
-    proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
+
+  // Show skeleton while loading - must check before any useModel calls that access data
+  if (courseStatus === 'loading') {
+    return <SkeletonOutlineLoading />;
+  }
 
   const {
     isSelfPaced,
@@ -93,6 +97,10 @@ const OutlineTab = () => {
     },
     enableProctoredExams,
   } = useModel('outline', courseId);
+
+  const {
+    proctoringPanelStatus,
+  } = useSelector(state => state.courseHome);
 
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();
@@ -151,11 +159,6 @@ const OutlineTab = () => {
       });
     }
   }, [location.search]);
-
-  // Show skeleton while loading
-  if (courseStatus === 'loading') {
-    return <SkeletonOutlineLoading />;
-  }
 
   return (
     <>
