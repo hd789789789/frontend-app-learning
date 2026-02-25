@@ -5,7 +5,8 @@ import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
 import { CERT_STATUS_TYPE } from './CertificateStatusAlert';
-import CertificateStatusAlert from './CertificateStatusAlert';
+
+const CertificateStatusAlert = React.lazy(() => import('./CertificateStatusAlert'));
 
 // period of time (in ms) before end of course during which we alert
 
@@ -31,14 +32,13 @@ function useCertificateStatusAlert(courseId) {
     EXECUTIVE_EDUCATION: 'executive-education',
   };
 
-  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
   const {
     isEnrolled,
     org,
     tabs,
-  } = courseHomeMeta;
+  } = useModel('courseHomeMeta', courseId) || {};
 
-  const outlineData = useModel('outline', courseId) || {};
+  const outlineData = useModel('outline', courseId);
   const datesWidget = outlineData.datesWidget || {};
   const courseDateBlocks = datesWidget.courseDateBlocks || [];
   const {

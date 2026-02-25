@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
@@ -205,24 +205,28 @@ const OutlineTab = () => {
       <div className="row course-outline-tab">
         <AccountActivationAlert />
         <div className="col-12">
-          <AlertList
-            topic="outline-private-alerts"
-            customAlerts={{
-              ...privateCourseAlert,
-            }}
-          />
+          <Suspense fallback={null}>
+            <AlertList
+              topic="outline-private-alerts"
+              customAlerts={{
+                ...privateCourseAlert,
+              }}
+            />
+          </Suspense>
         </div>
         <div className="col col-12 col-md-8">
-          <AlertList
-            topic="outline-course-alerts"
-            className="mb-3"
-            customAlerts={{
-              ...certificateAvailableAlert,
-              ...courseEndAlert,
-              ...courseStartAlert,
-              ...scheduledContentAlert,
-            }}
-          />
+          <Suspense fallback={null}>
+            <AlertList
+              topic="outline-course-alerts"
+              className="mb-3"
+              customAlerts={{
+                ...certificateAvailableAlert,
+                ...courseEndAlert,
+                ...courseStartAlert,
+                ...scheduledContentAlert,
+              }}
+            />
+          </Suspense>
           {isSelfPaced && hasDeadlines && (
             <>
               <ShiftDatesAlert model="outline" fetch={fetchOutlineTab} />

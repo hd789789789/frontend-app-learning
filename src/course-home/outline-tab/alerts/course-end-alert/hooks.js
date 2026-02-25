@@ -3,15 +3,16 @@ import React, { useMemo } from 'react';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
-import CourseEndAlert from './CourseEndAlert';
+const CourseEndAlert = React.lazy(() => import('./CourseEndAlert'));
 
 // period of time (in ms) before end of course during which we alert
 const WARNING_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export function useCourseEndAlert(courseId) {
-  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
-  const isEnrolled = courseHomeMeta.isEnrolled;
-  const outlineData = useModel('outline', courseId) || {};
+  const {
+    isEnrolled,
+  } = useModel('courseHomeMeta', courseId) || {};
+  const outlineData = useModel('outline', courseId);
   const datesWidget = outlineData.datesWidget || {};
   const courseDateBlocks = datesWidget.courseDateBlocks || [];
   const userTimezone = datesWidget.userTimezone;

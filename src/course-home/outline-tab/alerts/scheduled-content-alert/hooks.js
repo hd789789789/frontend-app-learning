@@ -3,10 +3,10 @@ import React, { useMemo } from 'react';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
-import ScheduledContentAlert from './ScheduledCotentAlert';
+const ScheduledContentAlert = React.lazy(() => import('./ScheduledCotentAlert'));
 
 const useScheduledContentAlert = (courseId) => {
-  const outlineData = useModel('outline', courseId) || {};
+  const outlineData = useModel('outline', courseId);
   const courseBlocks = outlineData.courseBlocks || {};
   const courses = courseBlocks.courses || {};
   const datesWidget = outlineData.datesWidget || {};
@@ -16,8 +16,7 @@ const useScheduledContentAlert = (courseId) => {
     !!courses
     && !!Object.values(courses).find(course => course.hasScheduledContent === true)
   );
-  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
-  const isEnrolled = courseHomeMeta.isEnrolled;
+  const { isEnrolled } = useModel('courseHomeMeta', courseId) || {};
   const payload = useMemo(() => ({
     datesTabLink,
   }), [datesTabLink]);
