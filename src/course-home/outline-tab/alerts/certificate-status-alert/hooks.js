@@ -4,9 +4,9 @@ import { getConfig } from '@edx/frontend-platform';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
-import { CERT_STATUS_TYPE } from './CertificateStatusAlert';
+import { CERT_STATUS_TYPE, default as CertificateStatusAlert } from './CertificateStatusAlert';
 
-const CertificateStatusAlert = React.lazy(() => import('./CertificateStatusAlert'));
+// period of time (in ms) before end of course during which we alert
 
 function verifyCertStatusType(status) {
   switch (status) {

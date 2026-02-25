@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
-const CourseEndAlert = React.lazy(() => import('./CourseEndAlert'));
+import CourseEndAlert from './CourseEndAlert';
 
 // period of time (in ms) before end of course during which we alert
 const WARNING_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
