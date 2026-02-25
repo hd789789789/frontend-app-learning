@@ -98,28 +98,16 @@ const OutlineTab = () => {
   const courseDateBlocks = datesWidget?.courseDateBlocks || [];
   const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  // TEMPORARILY DISABLED FOR DEBUGGING - Comment out alert hooks to isolate the issue
-  // const courseStartAlert = useCourseStartAlert(courseId);
-  // const courseEndAlert = useCourseEndAlert(courseId);
-  // const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
-  // const privateCourseAlert = usePrivateCourseAlert(courseId);
-  // const scheduledContentAlert = useScheduledContentAlert(courseId);
-
-  // Placeholder values for debugging - remove when alert hooks are re-enabled
-  const courseStartAlert = {};
-  const courseEndAlert = {};
-  const certificateAvailableAlert = {};
-  const privateCourseAlert = {};
-  const scheduledContentAlert = {};
+  // Alert hooks - always call in same order regardless of courseId value
+  // This is critical for React hooks rules - hooks must be called the same number of times
+  const courseStartAlert = useCourseStartAlert(courseId);
+  const courseEndAlert = useCourseEndAlert(courseId);
+  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
+  const privateCourseAlert = usePrivateCourseAlert(courseId);
+  const scheduledContentAlert = useScheduledContentAlert(courseId);
 
   // Compute loading state AFTER all hooks to ensure stable hook count
   const isLoading = courseStatus === 'loading' || !courseId;
-
-  // Show skeleton while loading - MUST happen after all hooks are called
-  // to maintain consistent hook call order between renders
-  if (isLoading) {
-    return <SkeletonOutlineLoading />;
-  }
 
   const rootCourseId = courses && Object.keys(courses)[0];
 
@@ -145,6 +133,8 @@ const OutlineTab = () => {
   /** show post enrolment survey to only B2C learners */
   const learnerType = isEnterpriseUser() ? 'enterprise_learner' : 'b2c_learner';
 
+  // useEffect must ALWAYS be called at the top level - cannot be conditionally called
+  // This is critical to prevent "Rendered more hooks than previous render" error (#310)
   useEffect(() => {
     const currentParams = new URLSearchParams(location.search);
     const startCourse = currentParams.get('start_course');
@@ -161,6 +151,11 @@ const OutlineTab = () => {
       });
     }
   }, [location.search]);
+
+  // Show skeleton while loading - AFTER useEffect to maintain consistent hook count
+  if (isLoading) {
+    return <SkeletonOutlineLoading />;
+  }
 
   return (
     <>
