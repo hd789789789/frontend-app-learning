@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import React, { useContext, useMemo, useEffect } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@edx/frontend-platform/react';
 import { ALERT_TYPES, useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
@@ -24,15 +24,13 @@ export function usePrivateCourseAlert(courseId) {
     courseId,
   }), [authenticatedUser, courseId, outline]);
 
-  useEffect(() => {
-    useAlert(isVisible, {
-      code: 'clientPrivateCourseAlert',
-      dismissible: false,
-      payload,
-      topic: 'outline-private-alerts',
-      type: ALERT_TYPES.WELCOME,
-    });
-  }, [isVisible, payload]);
+  useAlert(isVisible, {
+    code: 'clientPrivateCourseAlert',
+    dismissible: false,
+    payload,
+    topic: 'outline-private-alerts',
+    type: ALERT_TYPES.WELCOME,
+  });
 
   return { clientPrivateCourseAlert: PrivateCourseAlert };
 }

@@ -1,10 +1,11 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 
 import { getConfig } from '@edx/frontend-platform';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
-import { CERT_STATUS_TYPE, default as CertificateStatusAlert } from './CertificateStatusAlert';
+import { CERT_STATUS_TYPE } from './CertificateStatusAlert';
+import CertificateStatusAlert from './CertificateStatusAlert';
 
 // period of time (in ms) before end of course during which we alert
 
@@ -89,13 +90,11 @@ function useCertificateStatusAlert(courseId) {
   }), [certStatus, certURL, certificateAvailableDate, courseId,
     endBlock, notPassingCourseEnded, org, tabs, userTimezone]);
 
-  useEffect(() => {
-    useAlert(isVisible || notPassingCourseEnded, {
-      code: 'clientCertificateStatusAlert',
-      payload,
-      topic: 'outline-course-alerts',
-    });
-  }, [isVisible, notPassingCourseEnded, payload]);
+  useAlert(isVisible || notPassingCourseEnded, {
+    code: 'clientCertificateStatusAlert',
+    payload,
+    topic: 'outline-course-alerts',
+  });
 
   return {
     clientCertificateStatusAlert: CertificateStatusAlert,

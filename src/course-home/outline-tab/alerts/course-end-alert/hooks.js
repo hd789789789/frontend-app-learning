@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
@@ -9,9 +9,8 @@ import CourseEndAlert from './CourseEndAlert';
 const WARNING_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export function useCourseEndAlert(courseId) {
-  const {
-    isEnrolled,
-  } = useModel('courseHomeMeta', courseId) || {};
+  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
+  const isEnrolled = courseHomeMeta.isEnrolled;
   const outlineData = useModel('outline', courseId) || {};
   const datesWidget = outlineData.datesWidget || {};
   const courseDateBlocks = datesWidget.courseDateBlocks || [];
@@ -27,13 +26,11 @@ export function useCourseEndAlert(courseId) {
     userTimezone,
   }), [endBlock, userTimezone]);
 
-  useEffect(() => {
-    useAlert(isVisible, {
-      code: 'clientCourseEndAlert',
-      payload,
-      topic: 'outline-course-alerts',
-    });
-  }, [isVisible, payload]);
+  useAlert(isVisible, {
+    code: 'clientCourseEndAlert',
+    payload,
+    topic: 'outline-course-alerts',
+  });
 
   return {
     clientCourseEndAlert: CourseEndAlert,

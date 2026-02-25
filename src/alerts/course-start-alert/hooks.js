@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useAlert } from '../../generic/user-messages';
 import { useModel } from '../../generic/model-store';
 
@@ -28,13 +28,11 @@ function useCourseStartAlert(courseId) {
     courseId,
   }), [courseId]);
 
-  useEffect(() => {
-    useAlert(isVisible, {
-      code: 'clientCourseStartAlert',
-      payload,
-      topic: 'outline-course-alerts',
-    });
-  }, [isVisible, payload]);
+  useAlert(isVisible, {
+    code: 'clientCourseStartAlert',
+    payload,
+    topic: 'outline-course-alerts',
+  });
 
   return {
     clientCourseStartAlert: CourseStartAlert,
@@ -53,13 +51,11 @@ export function useCourseStartMasqueradeBanner(courseId, tab) {
     courseId,
   }), [courseId]);
 
-  useEffect(() => {
-    useAlert(isVisible, {
-      code: 'clientCourseStartMasqueradeBanner',
-      payload,
-      topic: 'instructor-toolbar-alerts',
-    });
-  }, [isVisible, payload]);
+  useAlert(isVisible, {
+    code: 'clientCourseStartMasqueradeBanner',
+    payload,
+    topic: 'instructor-toolbar-alerts',
+  });
 
   return {
     clientCourseStartMasqueradeBanner: CourseStartMasqueradeBanner,
