@@ -5,7 +5,9 @@ import { useModel } from '../../generic/model-store';
 const CourseStartAlert = React.lazy(() => import('./CourseStartAlert'));
 const CourseStartMasqueradeBanner = React.lazy(() => import('./CourseStartMasqueradeBanner'));
 
-function IsStartDateInFuture(courseId) {
+// Custom hook to check if start date is in future
+// Must be a hook since it uses useModel internally
+function useIsStartDateInFuture(courseId) {
   const {
     start,
   } = useModel('courseHomeMeta', courseId);
@@ -20,7 +22,7 @@ function useCourseStartAlert(courseId) {
     isEnrolled,
   } = useModel('courseHomeMeta', courseId);
 
-  const isVisible = isEnrolled && IsStartDateInFuture(courseId);
+  const isVisible = isEnrolled && useIsStartDateInFuture(courseId);
 
   const payload = useMemo(() => ({
     courseId,
@@ -42,7 +44,7 @@ export function useCourseStartMasqueradeBanner(courseId, tab) {
     isMasquerading,
   } = useModel('courseHomeMeta', courseId);
 
-  const isVisible = isMasquerading && tab === 'progress' && IsStartDateInFuture(courseId);
+  const isVisible = isMasquerading && tab === 'progress' && useIsStartDateInFuture(courseId);
 
   const payload = useMemo(() => ({
     courseId,

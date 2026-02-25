@@ -101,15 +101,11 @@ const OutlineTab = () => {
   const privateCourseAlert = usePrivateCourseAlert(courseId);
   const scheduledContentAlert = useScheduledContentAlert(courseId);
 
-  const eventProperties = {
-    org_key: org,
-    courserun_key: courseId,
-  };
-
   // Compute loading state AFTER all hooks to ensure stable hook count
   const isLoading = courseStatus === 'loading' || !courseId;
 
-  // Show skeleton while loading
+  // Show skeleton while loading - MUST happen after all hooks are called
+  // to maintain consistent hook call order between renders
   if (isLoading) {
     return <SkeletonOutlineLoading />;
   }
