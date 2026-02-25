@@ -64,28 +64,26 @@ const OutlineTab = () => {
     proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
 
+  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
   const {
     isSelfPaced,
     org,
     title,
-  } = useModel('courseHomeMeta', courseId);
+  } = courseHomeMeta;
 
   const expandButtonRef = useRef();
 
-  const {
-    courseBlocks: {
-      courses,
-      sections,
-    } = {},
-    courseGoals: {
-      selectedGoal,
-      weeklyLearningGoalEnabled,
-    } = {},
-    datesWidget: {
-      courseDateBlocks,
-    } = {},
-    enableProctoredExams,
-  } = useModel('outline', courseId) || {};
+  // Get outline data safely
+  const outlineData = useModel('outline', courseId) || {};
+  const courseBlocks = outlineData.courseBlocks || {};
+  const courses = courseBlocks.courses || {};
+  const sections = courseBlocks.sections || {};
+  const courseGoals = outlineData.courseGoals || {};
+  const selectedGoal = courseGoals.selectedGoal;
+  const weeklyLearningGoalEnabled = courseGoals.weeklyLearningGoalEnabled;
+  const datesWidget = outlineData.datesWidget || {};
+  const courseDateBlocks = datesWidget.courseDateBlocks || [];
+  const enableProctoredExams = outlineData.enableProctoredExams;
 
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();

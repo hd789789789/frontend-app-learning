@@ -30,22 +30,23 @@ function useCertificateStatusAlert(courseId) {
     EXECUTIVE_EDUCATION: 'executive-education',
   };
 
+  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
   const {
     isEnrolled,
     org,
     tabs,
-  } = useModel('courseHomeMeta', courseId);
+  } = courseHomeMeta;
 
+  const outlineData = useModel('outline', courseId) || {};
+  const datesWidget = outlineData.datesWidget || {};
+  const courseDateBlocks = datesWidget.courseDateBlocks || [];
   const {
-    datesWidget: {
-      courseDateBlocks,
-    },
     certData,
     hasEnded,
     userHasPassingGrade,
     userTimezone,
     enrollmentMode,
-  } = useModel('outline', courseId);
+  } = outlineData;
 
   const {
     certStatus,

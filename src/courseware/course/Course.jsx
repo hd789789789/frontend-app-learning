@@ -57,12 +57,13 @@ const Course = ({
   windowWidth,
 }) => {
   const course = useModel('coursewareMeta', courseId);
+  const courseHomeMeta = useModel('courseHomeMeta', courseId) || {};
   const {
     celebrations,
     isStaff,
     isNewDiscussionSidebarViewEnabled,
     originalUserIsStaff,
-  } = useModel('courseHomeMeta', courseId);
+  } = courseHomeMeta;
   const sequence = useModel('sequences', sequenceId);
   const section = useModel('sections', sequence ? sequence.sectionId : null);
   const { enableNavigationSidebar } = useSelector(getCoursewareOutlineSidebarSettings);

@@ -6,20 +6,17 @@ import { useModel } from '../../../../generic/model-store';
 const ScheduledContentAlert = React.lazy(() => import('./ScheduledCotentAlert'));
 
 const useScheduledContentAlert = (courseId) => {
-  const {
-    courseBlocks: {
-      courses,
-    },
-    datesWidget: {
-      datesTabLink,
-    },
-  } = useModel('outline', courseId);
+  const outlineData = useModel('outline', courseId) || {};
+  const courseBlocks = outlineData.courseBlocks || {};
+  const courses = courseBlocks.courses || {};
+  const datesWidget = outlineData.datesWidget || {};
+  const datesTabLink = datesWidget.datesTabLink;
 
   const hasScheduledContent = (
     !!courses
     && !!Object.values(courses).find(course => course.hasScheduledContent === true)
   );
-  const { isEnrolled } = useModel('courseHomeMeta', courseId);
+  const { isEnrolled } = useModel('courseHomeMeta', courseId) || {};
   const payload = useMemo(() => ({
     datesTabLink,
   }), [datesTabLink]);

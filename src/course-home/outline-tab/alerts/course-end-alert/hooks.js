@@ -11,13 +11,11 @@ const WARNING_PERIOD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 export function useCourseEndAlert(courseId) {
   const {
     isEnrolled,
-  } = useModel('courseHomeMeta', courseId);
-  const {
-    datesWidget: {
-      courseDateBlocks,
-    },
-    userTimezone,
-  } = useModel('outline', courseId);
+  } = useModel('courseHomeMeta', courseId) || {};
+  const outlineData = useModel('outline', courseId) || {};
+  const datesWidget = outlineData.datesWidget || {};
+  const courseDateBlocks = datesWidget.courseDateBlocks || [];
+  const userTimezone = datesWidget.userTimezone;
 
   const endBlock = courseDateBlocks.find(b => b.dateType === 'course-end-date');
   const endDate = endBlock ? new Date(endBlock.date) : null;
