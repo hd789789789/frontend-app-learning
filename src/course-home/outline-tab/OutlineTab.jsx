@@ -68,12 +68,8 @@ const OutlineTab = () => {
   const {
     courseId,
     courseStatus,
+    proctoringPanelStatus,
   } = useSelector(state => state.courseHome);
-
-  // Show skeleton while loading - must check before any useModel calls that access data
-  if (courseStatus === 'loading') {
-    return <SkeletonOutlineLoading />;
-  }
 
   const {
     isSelfPaced,
@@ -83,24 +79,22 @@ const OutlineTab = () => {
 
   const expandButtonRef = useRef();
 
-  const {
-    courseBlocks: {
-      courses,
-      sections,
-    },
-    courseGoals: {
-      selectedGoal,
-      weeklyLearningGoalEnabled,
-    } = {},
-    datesWidget: {
-      courseDateBlocks,
-    },
-    enableProctoredExams,
-  } = useModel('outline', courseId);
+  // Get outline data with defensive checks
+  const outlineData = useModel('outline', courseId);
+  const courseBlocks = outlineData?.courseBlocks || {};
+  const courses = courseBlocks?.courses || {};
+  const sections = courseBlocks?.sections || {};
+  const courseGoals = outlineData?.courseGoals || {};
+  const selectedGoal = courseGoals?.selectedGoal;
+  const weeklyLearningGoalEnabled = courseGoals?.weeklyLearningGoalEnabled;
+  const datesWidget = outlineData?.datesWidget || {};
+  const courseDateBlocks = datesWidget?.courseDateBlocks || [];
+  const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  const {
-    proctoringPanelStatus,
-  } = useSelector(state => state.courseHome);
+  // Show skeleton while loading - must call AFTER all hooks
+  if (courseStatus === 'loading' || !courseId) {
+    return <SkeletonOutlineLoading />;
+  }
 
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();
@@ -164,7 +158,7 @@ const OutlineTab = () => {
     <>
       <div data-learner-type={learnerType} className="row w-100 mx-0 my-3 justify-content-between">
         <div className="col-12 col-sm-auto p-0">
-          <div role="heading" aria-level="1" className="h2">{title}</div>
+          <div role="heading" aria-level="1" className="h2">{title || 'Đang tải...'}</div>
         </div>
       </div>
       <div className="row course-outline-tab">
@@ -196,7 +190,7 @@ const OutlineTab = () => {
           )}
           <StartOrResumeCourseCard />
           <WelcomeMessage courseId={courseId} nextElementRef={expandButtonRef} />
-          {rootCourseId && (
+          {rootCourseId && courses[rootCourseId] && (
             <>
               <div id="expand-button-row" className="row w-100 m-0 mb-3 justify-content-end">
                 <div className="col-12 col-md-auto p-0">
