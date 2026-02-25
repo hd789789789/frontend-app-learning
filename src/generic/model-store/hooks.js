@@ -17,6 +17,11 @@ export function useModel(type, id) {
 }
 
 export function useModels(type, ids) {
+  // Defensive check: if ids is undefined/null/empty, return empty array
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return [];
+  }
+
   return useSelector(
     state => ids.map(
       id => ((state.models[type] !== undefined && state.models[type][id] !== undefined) ? state.models[type][id] : {}),

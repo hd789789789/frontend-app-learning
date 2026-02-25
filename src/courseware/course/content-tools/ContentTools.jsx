@@ -19,7 +19,7 @@ const ContentTools = ({
           {course.showCalculator && (
             <Calculator />
           )}
-          {course.notes.enabled && (
+          {course.notes?.enabled && (
             <NotesVisibility course={course} />
           )}
         </div>
