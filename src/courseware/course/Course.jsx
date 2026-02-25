@@ -18,6 +18,34 @@ import ContentTools from './content-tools';
 import Sequence from './sequence';
 import { CourseOutlineMobileSidebarTriggerSlot } from '../../plugin-slots/CourseOutlineMobileSidebarTriggerSlot';
 import { CourseBreadcrumbsSlot } from '../../plugin-slots/CourseBreadcrumbsSlot';
+import './Course.scss';
+
+// Skeleton loading component for course content
+const SkeletonCourseContent = () => (
+  <div className="skeleton-course-content">
+    {/* Breadcrumb skeleton */}
+    <div className="d-flex align-items-center mb-3">
+      <div className="skeleton me-2" style={{ width: '80px', height: '20px' }} />
+      <div className="skeleton me-2" style={{ width: '20px', height: '20px' }} />
+      <div className="skeleton me-2" style={{ width: '120px', height: '20px' }} />
+      <div className="skeleton me-2" style={{ width: '20px', height: '20px' }} />
+      <div className="skeleton" style={{ width: '100px', height: '20px' }} />
+    </div>
+
+    {/* Sequence content skeleton */}
+    <div className="sequence-skeleton">
+      <div className="skeleton mb-3" style={{ height: '48px', borderRadius: '8px' }} />
+      <div className="skeleton mb-2" style={{ height: '24px', width: '60%' }} />
+      <div className="skeleton mb-4" style={{ height: '200px', borderRadius: '8px' }} />
+
+      {/* Unit navigation skeleton */}
+      <div className="unit-nav-skeleton d-flex justify-content-between mt-4">
+        <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: '8px' }} />
+        <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: '8px' }} />
+      </div>
+    </div>
+  </div>
+);
 
 const Course = ({
   courseId,
@@ -41,6 +69,22 @@ const Course = ({
   const navigationDisabled = enableNavigationSidebar || (sequence?.navigationDisabled ?? false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  // Track initial load state - show skeleton until data is available
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  // Check if course and sequence data are available
+  const hasCourseData = Boolean(course && course.id);
+  const hasSequenceData = Boolean(sequence && sequence.id);
+  const isLoading = !hasCourseData || !hasSequenceData;
+
+  // Mark initial load complete after first render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialLoadComplete(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!originalUserIsStaff && pathname.startsWith('/preview')) {
     const courseUrl = pathname.replace('/preview', '');
@@ -77,6 +121,15 @@ const Course = ({
   }, [sequenceId]);
 
   const SidebarProviderComponent = isNewDiscussionSidebarViewEnabled ? NewSidebarProvider : SidebarProvider;
+
+  // Show skeleton loading state when data is not yet available
+  if (isLoading && !initialLoadComplete) {
+    return (
+      <div className="courseware-loading">
+        <SkeletonCourseContent />
+      </div>
+    );
+  }
 
   return (
     <SidebarProviderComponent courseId={courseId} unitId={unitId}>

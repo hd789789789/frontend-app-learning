@@ -67,11 +67,13 @@ const TabPage = (props) => {
 
       <HeaderSlot courseOrg={org} courseNumber={number} courseTitle={title} />
 
-      {courseStatus === 'loading' && (
+      {/* Show skeleton loading for courseware tabs to enable lazy loading UI */}
+      {courseStatus === 'loading' && !['courseware'].includes(activeTabSlug) && (
         <PageLoading srMessage={intl.formatMessage(messages.loading)} />
       )}
 
-      {(['loaded', 'denied'].includes(courseStatus) || activeTabSlug === 'badge') && (
+      {/* For courseware, we show the component immediately with skeleton UI */}
+      {(['loaded', 'denied'].includes(courseStatus) || activeTabSlug === 'badge' || activeTabSlug === 'courseware') && (
         <LoadedTabPage {...props} />
       )}
 

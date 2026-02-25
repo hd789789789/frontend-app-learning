@@ -17,24 +17,20 @@ import './WelcomeTab.scss';
 const SkeletonStats = () => (
   <div className="stats-grid">
     <div className="stat-card">
-      <div className="stat-icon">🔥</div>
       <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
-      <div className="stat-label">Ngày liên tiếp</div>
+      <div className="stat-label">🔥 Ngày liên tiếp</div>
     </div>
     <div className="stat-card">
-      <div className="stat-icon">📈</div>
       <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
-      <div className="stat-label">Hoàn thành khóa học</div>
+      <div className="stat-label">📈 Hoàn thành khóa học</div>
     </div>
     <div className="stat-card">
-      <div className="stat-icon">🎯</div>
       <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
-      <div className="stat-label">Bài học đã hoàn thành</div>
+      <div className="stat-label">🎯 Bài học đã hoàn thành</div>
     </div>
     <div className="stat-card">
-      <div className="stat-icon">🏆</div>
       <div className="skeleton skeleton-stat-value" style={{ width: '40px', height: '32px', margin: '0 auto 4px' }} />
-      <div className="stat-label">Xếp hạng lớp</div>
+      <div className="stat-label">🏆 Xếp hạng lớp</div>
     </div>
   </div>
 );
