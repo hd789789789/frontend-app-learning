@@ -71,21 +71,10 @@ const Course = ({
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  // Track initial load state - show skeleton until data is available
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-
   // Check if course and sequence data are available
   const hasCourseData = Boolean(course && course.id);
   const hasSequenceData = Boolean(sequence && sequence.id);
   const isLoading = !hasCourseData || !hasSequenceData;
-
-  // Mark initial load complete after first render
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setInitialLoadComplete(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   if (!originalUserIsStaff && pathname.startsWith('/preview')) {
     const courseUrl = pathname.replace('/preview', '');
@@ -124,7 +113,7 @@ const Course = ({
   const SidebarProviderComponent = isNewDiscussionSidebarViewEnabled ? NewSidebarProvider : SidebarProvider;
 
   // Show skeleton loading state when data is not yet available
-  if (isLoading && !initialLoadComplete) {
+  if (isLoading) {
     return (
       <div className="courseware-loading">
         <SkeletonCourseContent />

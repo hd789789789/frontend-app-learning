@@ -13,7 +13,8 @@ export function useSequenceNavigationMetadata(currentSequenceId, currentUnitId) 
   const sequence = useModel('sequences', currentSequenceId);
   const courseId = useSelector(state => state.courseware.courseId);
   const courseStatus = useSelector(state => state.courseware.courseStatus);
-  const { entranceExamData: { entranceExamPassed } } = useModel('coursewareMeta', courseId);
+  const coursewareMeta = useModel('coursewareMeta', courseId);
+  const entranceExamPassed = coursewareMeta?.entranceExamData?.entranceExamPassed;
   const sequenceStatus = useSelector(state => state.courseware.sequenceStatus);
 
   // If we don't know the sequence and unit yet, then assume no.

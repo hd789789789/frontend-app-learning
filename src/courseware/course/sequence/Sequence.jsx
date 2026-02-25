@@ -10,7 +10,6 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { useSelector } from 'react-redux';
 import SequenceExamWrapper from '@edx/frontend-lib-special-exams';
 
-import PageLoading from '@src/generic/PageLoading';
 import { useModel } from '@src/generic/model-store';
 import { useSequenceBannerTextAlert, useSequenceEntranceExamAlert } from '@src/alerts/sequence-alerts/hooks';
 import SequenceContainerSlot from '../../../plugin-slots/SequenceContainerSlot';
@@ -120,7 +119,7 @@ const Sequence = ({
     }
   }, [(unit || {}).id]);
 
-  // If sequence might be a unit, we want to keep showing a spinner - the courseware container will redirect us when
+  // If sequence might be a unit, we want to keep showing a skeleton - the courseware container will redirect us when
   // it knows which sequence to actually go to.
   const loading = sequenceStatus === 'loading' || (sequenceStatus === 'failed' && sequenceMightBeUnit);
   if (loading) {
@@ -128,9 +127,19 @@ const Sequence = ({
       return (<div> {intl.formatMessage(messages.noContent)} </div>);
     }
     return (
-      <PageLoading
-        srMessage={intl.formatMessage(messages.loadingSequence)}
-      />
+      <div className="skeleton-course-content" style={{ padding: '1rem' }}>
+        {/* Sequence navigation tabs skeleton */}
+        <div className="skeleton mb-3" style={{ height: '48px', borderRadius: '8px' }} />
+        {/* Unit title skeleton */}
+        <div className="skeleton mb-2" style={{ height: '24px', width: '60%' }} />
+        {/* Unit content area skeleton */}
+        <div className="skeleton mb-4" style={{ height: '400px', borderRadius: '8px' }} />
+        {/* Bottom navigation skeleton */}
+        <div className="d-flex justify-content-between mt-4">
+          <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: '8px' }} />
+          <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: '8px' }} />
+        </div>
+      </div>
     );
   }
 
