@@ -76,9 +76,13 @@ const TabContainer = (props) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseIdFromUrl, targetUserId, tab, isProgressTab]);
 
-  // Avoid flashing loader for some tabs (e.g., badge, welcome, study-groups, outline)
+  // Avoid flashing loader for some tabs (e.g., badge, welcome, study-groups)
   // when the course is already the active one and we're just fetching extra tab data.
-  const shouldHideGlobalLoaderForTab = ['badge', 'welcome', 'study-groups', 'outline'].includes(tab);
+  // NOTE: 'outline' is intentionally excluded here - OutlineTab uses hooks that require
+  // Redux data to be ready (courseId must exist). Faking 'loaded' status for outline
+  // causes React hook violations (Error #311) because hooks like useAlert/useSelector
+  // run before data is available. Instead, TabPage shows a skeleton for outline while loading.
+  const shouldHideGlobalLoaderForTab = ['badge', 'welcome', 'study-groups'].includes(tab);
   const effectiveCourseStatus = (
     shouldHideGlobalLoaderForTab
     && courseStatus === 'loading'

@@ -16,6 +16,7 @@ import messages from './messages';
 import LoadedTabPage from './LoadedTabPage';
 import { setCallToActionToast } from '../course-home/data/slice';
 import LaunchCourseHomeTourButton from '../product-tours/newUserCourseHomeTour/LaunchCourseHomeTourButton';
+import OutlineTabSkeleton from '../course-home/outline-tab/OutlineTabSkeleton';
 
 const TabPage = (props) => {
   const intl = useIntl();
@@ -72,9 +73,15 @@ const TabPage = (props) => {
         <PageLoading srMessage={intl.formatMessage(messages.loading)} />
       )}
 
-      {/* For courseware and outline, we show the component immediately with skeleton UI */}
+      {/* For courseware and outline, we show the component immediately with skeleton UI.
+          For outline: inject OutlineTabSkeleton as children replacement when loading
+          to prevent OutlineTab hooks from running before Redux data is ready (Error #311). */}
       {(['loaded', 'denied'].includes(courseStatus) || activeTabSlug === 'badge' || activeTabSlug === 'courseware' || activeTabSlug === 'outline') && (
-        <LoadedTabPage {...props} />
+        <LoadedTabPage {...props}>
+          {activeTabSlug === 'outline' && courseStatus === 'loading'
+            ? <OutlineTabSkeleton />
+            : props.children}
+        </LoadedTabPage>
       )}
 
       {/* courseStatus 'failed' and any other unexpected course status. */}
