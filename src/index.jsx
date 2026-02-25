@@ -152,11 +152,11 @@ subscribe(APP_READY, () => {
                                         path={DECODE_ROUTES.HOME}
                                         element={
                                             <DecodePageRoute>
-                                                <TabContainer tab="outline" fetch={fetchOutlineTab} slice="courseHome">
-                                                    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                                <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                                    <TabContainer tab="outline" fetch={fetchOutlineTab} slice="courseHome">
                                                         <OutlineTab />
-                                                    </Suspense>
-                                                </TabContainer>
+                                                    </TabContainer>
+                                                </Suspense>
                                             </DecodePageRoute>
                                         }
                                     />

@@ -65,11 +65,15 @@ const SkeletonOutlineLoading = () => (
 
 const OutlineTab = () => {
   const intl = useIntl();
+
+  // Get Redux state
+  const courseHomeState = useSelector(state => state.courseHome);
+
   const {
     courseId,
     courseStatus,
     proctoringPanelStatus,
-  } = useSelector(state => state.courseHome);
+  } = courseHomeState;
 
   const {
     isSelfPaced,
@@ -94,12 +98,19 @@ const OutlineTab = () => {
   const courseDateBlocks = datesWidget?.courseDateBlocks || [];
   const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  // Alert hooks - always call in same order regardless of courseId value
-  const courseStartAlert = useCourseStartAlert(courseId);
-  const courseEndAlert = useCourseEndAlert(courseId);
-  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
-  const privateCourseAlert = usePrivateCourseAlert(courseId);
-  const scheduledContentAlert = useScheduledContentAlert(courseId);
+  // TEMPORARILY DISABLED FOR DEBUGGING - Comment out alert hooks to isolate the issue
+  // const courseStartAlert = useCourseStartAlert(courseId);
+  // const courseEndAlert = useCourseEndAlert(courseId);
+  // const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
+  // const privateCourseAlert = usePrivateCourseAlert(courseId);
+  // const scheduledContentAlert = useScheduledContentAlert(courseId);
+
+  // Placeholder values for debugging - remove when alert hooks are re-enabled
+  const courseStartAlert = {};
+  const courseEndAlert = {};
+  const certificateAvailableAlert = {};
+  const privateCourseAlert = {};
+  const scheduledContentAlert = {};
 
   // Compute loading state AFTER all hooks to ensure stable hook count
   const isLoading = courseStatus === 'loading' || !courseId;

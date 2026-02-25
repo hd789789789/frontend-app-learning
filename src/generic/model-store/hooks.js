@@ -5,7 +5,13 @@ import { useSelector, shallowEqual } from 'react-redux';
  */
 export function useModel(type, id) {
   return useSelector(
-    state => ((state.models[type] !== undefined && state.models[type][id] !== undefined) ? state.models[type][id] : {}),
+    state => {
+      // Defensive check: if id is undefined/null, return empty object
+      if (id === undefined || id === null) {
+        return {};
+      }
+      return ((state.models[type] !== undefined && state.models[type][id] !== undefined) ? state.models[type][id] : {});
+    },
     shallowEqual,
   );
 }
