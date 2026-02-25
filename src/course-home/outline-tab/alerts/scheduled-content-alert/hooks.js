@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
@@ -20,11 +20,14 @@ const useScheduledContentAlert = (courseId) => {
   const payload = useMemo(() => ({
     datesTabLink,
   }), [datesTabLink]);
-  useAlert(hasScheduledContent && isEnrolled, {
-    code: 'ScheduledContentAlert',
-    payload,
-    topic: 'outline-course-alerts',
-  });
+
+  useEffect(() => {
+    useAlert(hasScheduledContent && isEnrolled, {
+      code: 'ScheduledContentAlert',
+      payload,
+      topic: 'outline-course-alerts',
+    });
+  }, [hasScheduledContent, isEnrolled, payload]);
 
   return { ScheduledContentAlert };
 };

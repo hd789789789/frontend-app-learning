@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useAlert } from '../../../../generic/user-messages';
 import { useModel } from '../../../../generic/model-store';
 
@@ -27,11 +27,13 @@ export function useCourseEndAlert(courseId) {
     userTimezone,
   }), [endBlock, userTimezone]);
 
-  useAlert(isVisible, {
-    code: 'clientCourseEndAlert',
-    payload,
-    topic: 'outline-course-alerts',
-  });
+  useEffect(() => {
+    useAlert(isVisible, {
+      code: 'clientCourseEndAlert',
+      payload,
+      topic: 'outline-course-alerts',
+    });
+  }, [isVisible, payload]);
 
   return {
     clientCourseEndAlert: CourseEndAlert,

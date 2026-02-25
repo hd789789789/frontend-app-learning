@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 
 import { getConfig } from '@edx/frontend-platform';
 import { useAlert } from '../../../../generic/user-messages';
@@ -89,11 +89,13 @@ function useCertificateStatusAlert(courseId) {
   }), [certStatus, certURL, certificateAvailableDate, courseId,
     endBlock, notPassingCourseEnded, org, tabs, userTimezone]);
 
-  useAlert(isVisible || notPassingCourseEnded, {
-    code: 'clientCertificateStatusAlert',
-    payload,
-    topic: 'outline-course-alerts',
-  });
+  useEffect(() => {
+    useAlert(isVisible || notPassingCourseEnded, {
+      code: 'clientCertificateStatusAlert',
+      payload,
+      topic: 'outline-course-alerts',
+    });
+  }, [isVisible, notPassingCourseEnded, payload]);
 
   return {
     clientCertificateStatusAlert: CertificateStatusAlert,
