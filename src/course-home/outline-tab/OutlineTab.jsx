@@ -78,6 +78,8 @@ const OutlineTab = () => {
   } = useModel('courseHomeMeta', courseId);
 
   const expandButtonRef = useRef();
+  const [expandAll, setExpandAll] = useState(false);
+  const navigate = useNavigate();
 
   // Get outline data with defensive checks
   const outlineData = useModel('outline', courseId);
@@ -91,25 +93,22 @@ const OutlineTab = () => {
   const courseDateBlocks = datesWidget?.courseDateBlocks || [];
   const enableProctoredExams = outlineData?.enableProctoredExams;
 
-  // Show skeleton while loading - must call AFTER all hooks
-  if (courseStatus === 'loading' || !courseId) {
-    return <SkeletonOutlineLoading />;
-  }
-
-  const [expandAll, setExpandAll] = useState(false);
-  const navigate = useNavigate();
+  // Alert hooks - must be called before early return
+  const courseStartAlert = useCourseStartAlert(courseId);
+  const courseEndAlert = useCourseEndAlert(courseId);
+  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
+  const privateCourseAlert = usePrivateCourseAlert(courseId);
+  const scheduledContentAlert = useScheduledContentAlert(courseId);
 
   const eventProperties = {
     org_key: org,
     courserun_key: courseId,
   };
 
-  // Below the course title alerts (appearing in the order listed here)
-  const courseStartAlert = useCourseStartAlert(courseId);
-  const courseEndAlert = useCourseEndAlert(courseId);
-  const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
-  const privateCourseAlert = usePrivateCourseAlert(courseId);
-  const scheduledContentAlert = useScheduledContentAlert(courseId);
+  // Show skeleton while loading - must call AFTER all hooks
+  if (courseStatus === 'loading' || !courseId) {
+    return <SkeletonOutlineLoading />;
+  }
 
   const rootCourseId = courses && Object.keys(courses)[0];
 
