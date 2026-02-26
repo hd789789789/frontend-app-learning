@@ -100,8 +100,89 @@ export function fetchProgressTab(courseId, targetUserId) {
   return fetchTab(courseId, 'progress', getProgressTabData, parseInt(targetUserId, 10) || targetUserId);
 }
 
+// --- Outline tab sessionStorage cache helpers ---
+// Cache key: outline tab data for a courseId, valid for 5 minutes within the session.
+const OUTLINE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getOutlineCacheKey(courseId) {
+  return `outline_tab_cache::${courseId}`;
+}
+
+function readOutlineCache(courseId) {
+  try {
+    const raw = sessionStorage.getItem(getOutlineCacheKey(courseId));
+    if (!raw) { return null; }
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > OUTLINE_CACHE_TTL_MS) {
+      sessionStorage.removeItem(getOutlineCacheKey(courseId));
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function writeOutlineCache(courseId, metaValue, tabValue) {
+  try {
+    sessionStorage.setItem(
+      getOutlineCacheKey(courseId),
+      JSON.stringify({ ts: Date.now(), data: { metaValue, tabValue } }),
+    );
+  } catch {
+    // sessionStorage quota exceeded or unavailable — silently skip
+  }
+}
+
 export function fetchOutlineTab(courseId) {
-  return fetchTab(courseId, 'outline', getOutlineTabData);
+  return async (dispatch) => {
+    // Serve from cache first: populate Redux store immediately then skip the network round-trip.
+    const cached = readOutlineCache(courseId);
+    if (cached) {
+      const { metaValue, tabValue } = cached;
+      dispatch(addModel({ modelType: 'courseHomeMeta', model: { id: courseId, ...metaValue } }));
+      dispatch(addModel({ modelType: 'outline', model: { id: courseId, ...tabValue } }));
+      dispatch(fetchTabSuccess({ courseId }));
+      return;
+    }
+
+    // No cache — do the normal network fetch and cache the result.
+    dispatch(fetchTabRequest({ courseId }));
+    try {
+      const [courseHomeCourseMetadataResult, tabDataResult] = await Promise.allSettled([
+        getCourseHomeCourseMetadata(courseId, 'outline'),
+        getOutlineTabData(courseId),
+      ]);
+
+      if (courseHomeCourseMetadataResult.status === 'fulfilled') {
+        dispatch(addModel({
+          modelType: 'courseHomeMeta',
+          model: { id: courseId, ...courseHomeCourseMetadataResult.value },
+        }));
+      }
+      if (tabDataResult?.status === 'fulfilled') {
+        dispatch(addModel({
+          modelType: 'outline',
+          model: { id: courseId, ...tabDataResult.value },
+        }));
+      }
+
+      if (courseHomeCourseMetadataResult.status === 'rejected') {
+        throw courseHomeCourseMetadataResult.reason;
+      } else if (!courseHomeCourseMetadataResult.value.courseAccess.hasAccess) {
+        dispatch(fetchTabDenied({ courseId }));
+      } else if (tabDataResult?.status === 'rejected') {
+        throw tabDataResult.reason;
+      } else {
+        // Persist to sessionStorage so subsequent visits (including prefetch → navigate) skip the network.
+        writeOutlineCache(courseId, courseHomeCourseMetadataResult.value, tabDataResult.value);
+        dispatch(fetchTabSuccess({ courseId }));
+      }
+    } catch (e) {
+      dispatch(fetchTabFailure({ courseId }));
+      logError(e);
+    }
+  };
 }
 
 export function fetchLiveTab(courseId) {
