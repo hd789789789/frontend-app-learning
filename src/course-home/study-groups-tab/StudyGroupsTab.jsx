@@ -2201,6 +2201,8 @@ const GroupCard = memo(({ group, courseId, currentUserId, currentUsername: curre
         try {
           await removeStudyGroupMember(localGroup.id, target);
           logInfo('Member removed successfully', { groupId: localGroup.id, userId: target });
+          alert('Đã xóa thành viên khỏi nhóm.');
+          if (onUpdate) onUpdate();
         } catch (err) {
           logError('Failed to remove member', {
             groupId: localGroup.id,
@@ -2259,6 +2261,9 @@ const GroupCard = memo(({ group, courseId, currentUserId, currentUsername: curre
         try {
           await removeStudyGroupMember(localGroup.id, targetId);
           logInfo('Left group successfully', { groupId: localGroup.id, userId: targetId });
+          alert('Bạn đã rời nhóm thành công.');
+          // Refresh danh sách nhóm từ server
+          if (onUpdate) onUpdate();
         } catch (err) {
           logError('Failed to leave group', {
             groupId: localGroup.id,
@@ -2268,6 +2273,7 @@ const GroupCard = memo(({ group, courseId, currentUserId, currentUsername: curre
             message: err.message,
           });
           showErrorDialog('Không thể rời nhóm', 'Vui lòng thử lại.');
+          // Revert optimistic update
           if (onUpdate) onUpdate();
         }
       },
