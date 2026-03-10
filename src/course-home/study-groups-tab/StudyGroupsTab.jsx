@@ -398,7 +398,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
       // Handle nested validation errors from DRF
       let msg = 'Có lỗi xảy ra khi gửi lời mời';
       if (errorData) {
-        if (typeof errorData === 'string') {
+        if (typeof errorData === 'string' && !errorData.includes('<html') && !errorData.includes('<!DOCTYPE') && errorData.length < 500) {
           msg = errorData;
         } else if (errorData.error) {
           msg = errorData.error;
