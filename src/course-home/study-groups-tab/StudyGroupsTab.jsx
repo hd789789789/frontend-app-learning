@@ -308,6 +308,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
   const searchTimerRef = useRef(null);
   const pageRef = useRef(1);
   const lastSearchRef = useRef('');
@@ -379,14 +380,16 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
   const handleAddUser = async (usernameOrEmail) => {
     setLoadingAdd(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const result = await inviteStudyGroupMember(groupId, usernameOrEmail);
       logInfo('Invitation sent successfully', { groupId, usernameOrEmail, result });
 
-      // Show success feedback via onSuccess callback
-      if (onSuccess) {
-        onSuccess({ invited: true, usernameOrEmail, ...result });
-      }
+      // Show success message in modal
+      setSuccessMsg(`Đã gửi lời mời đến ${usernameOrEmail} thành công!`);
+
+      // Clear success after 3 seconds
+      setTimeout(() => setSuccessMsg(null), 3000);
 
       // refresh list to remove invited user
       setUsers([]);
@@ -434,6 +437,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
         <ModalDialog.Title>Mời thành viên</ModalDialog.Title>
       </ModalDialog.Header>
       <ModalDialog.Body>
+        {successMsg && <Alert variant="success" dismissible onClose={() => setSuccessMsg(null)} className="mb-3">{successMsg}</Alert>}
         {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
         <FormGroup>
           <FormControl
@@ -827,11 +831,8 @@ const PostCommentsSection = ({ post, group, currentUserId, onCommentUpdate, onCo
             size="sm"
             onClick={handleAddComment}
             disabled={!commentContent.trim() || loading}
-            style={{ 
-              borderRadius: '20px',
+            style={{
               padding: '0.5rem 1.5rem',
-              backgroundColor: '#6c5ce7',
-              border: 'none'
             }}
           >
             {loading ? <Spinner animation="border" size="sm" /> : 'Gửi'}
@@ -963,6 +964,7 @@ const CommentItem = ({ comment, currentUserId, onUpdate, onDelete, openConfirmDi
                 align="end"
                 className="comment-menu-toggle"
                 disabled={loading}
+                aria-label="Menu bình luận"
                 style={{
                   padding: '0.25rem',
                   minWidth: 'auto',
@@ -1240,6 +1242,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
               align="end"
               className="comment-menu-toggle"
               disabled={loading}
+              aria-label="Menu bài viết"
               style={{
                 padding: '0.25rem',
                 minWidth: 'auto',
@@ -1313,7 +1316,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
           {/* Add new attachment while editing */}
            <div className="d-flex align-items-center gap-2 mt-2 flex-wrap" style={{ gap: '5px' }}>
             <label className="post-action-btn" title="Thêm ảnh mới">
-              📷
+              <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>image</span>
               <input
                 type="file"
                 accept="image/*"
@@ -1323,7 +1326,7 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
               />
             </label>
             <label className="post-action-btn" title="Thêm file mới">
-              📎
+              <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>attach_file</span>
               <input
                 type="file"
                 style={{ display: 'none' }}
@@ -2406,7 +2409,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
           <div className="group-info">
             <h3>{localGroup.name}</h3>
             {isOwner && (
-              <Badge variant="primary" className="ms-2">
+              <Badge
+                variant="primary"
+                className="ms-2 leader-badge"
+              >
                 Trưởng nhóm
               </Badge>
             )}
@@ -2473,7 +2479,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   }}
                   title="Xóa nhóm"
                 >
-                  Xoá nhóm
+                  Xóa nhóm
                 </Button>
               </div>
             )}
@@ -2508,7 +2514,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
 
         {!collapsed && (
           <>
-            <div className="group-subtitle">{localGroup.description || 'Chưa có mô tả'}</div>
+            <div className="group-subtitle" style={!localGroup.description ? { fontStyle: 'italic', color: '#9ca3af' } : undefined}>
+              {localGroup.description || 'Chưa có mô tả'}
+            </div>
 
             <div className="members-block">
               <div className="members-head">
@@ -2595,16 +2603,9 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                           
                           if (isLeader) {
                             return (
-                              <Badge 
-                                variant="primary" 
-                                style={{ 
-                                  padding: '6px 12px', 
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                  borderRadius: '6px',
-                                  backgroundColor: '#6366f1',
-                                  color: '#ffffff'
-                                }}
+                              <Badge
+                                variant="primary"
+                                className="leader-badge"
                               >
                                 Trưởng nhóm
                               </Badge>
@@ -2724,7 +2725,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                   )}
                   <div className="create-post-actions">
                     <label className="post-action-btn" title="Thêm ảnh">
-                      📷
+                      <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>image</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -2734,7 +2735,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                       />
                     </label>
                     <label className="post-action-btn" title="Thêm file">
-                      📎
+                      <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>attach_file</span>
                       <input
                         type="file"
                         style={{ display: 'none' }}
@@ -3258,21 +3259,29 @@ const StudyGroupsTab = () => {
           </div>
 
           {pendingInvitations.length > 0 && (
-            <Alert variant="info" className="mb-3">
-              <strong style={{ fontSize: '1.1rem' }}>Lời mời tham gia nhóm học tập</strong>
-              <hr className="mt-2 mb-2" />
+            <div className="invitation-banner mb-3">
+              <div className="invitation-banner-header">
+                <span className="material-icons-round" style={{ fontSize: '1.25rem', color: '#6c5ce7' }}>mail</span>
+                <strong>Lời mời tham gia nhóm học tập</strong>
+              </div>
               {pendingInvitations.map((inv) => (
-                <div key={inv.id} className="d-flex align-items-center justify-content-between py-2" style={{ borderBottom: '1px solid #e0e0e0' }}>
-                  <div>
-                    <strong>{inv.invitedBy?.username || 'Ai đó'}</strong>
-                    {' mời bạn vào nhóm '}
-                    <strong>{inv.groupName}</strong>
+                <div key={inv.id} className="invitation-item">
+                  <div className="invitation-info">
+                    <div className="user-avatar" style={{ background: getAvatarColor(inv.invitedBy?.id || 0), width: '36px', height: '36px', fontSize: '0.85rem' }}>
+                      {getInitials(inv.invitedBy?.username || '?')}
+                    </div>
+                    <div>
+                      <strong>{inv.invitedBy?.username || 'Ai đó'}</strong>
+                      {' mời bạn vào nhóm '}
+                      <strong style={{ color: '#6c5ce7' }}>{inv.groupName}</strong>
+                    </div>
                   </div>
-                  <div className="d-flex gap-2">
+                  <div className="invitation-actions">
                     <Button
                       size="sm"
                       variant="primary"
                       onClick={() => handleRespondInvitation(inv.id, 'accept')}
+                      style={{ backgroundColor: '#6c5ce7', border: 'none', borderRadius: '8px' }}
                     >
                       Chấp nhận
                     </Button>
@@ -3280,13 +3289,14 @@ const StudyGroupsTab = () => {
                       size="sm"
                       variant="outline-secondary"
                       onClick={() => handleRespondInvitation(inv.id, 'decline')}
+                      style={{ borderRadius: '8px' }}
                     >
                       Từ chối
                     </Button>
                   </div>
                 </div>
               ))}
-            </Alert>
+            </div>
           )}
 
           <section className="panel">
