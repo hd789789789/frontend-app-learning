@@ -2,11 +2,13 @@ import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Spinner, Alert, Row, Col } from '@openedx/paragon';
-import { useModel } from '../../generic/model-store';
+import { useModel, addModel } from '../../generic/model-store';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Timeline from '../dates-tab/timeline/Timeline';
-import { fetchDatesTab, fetchProgressTab, fetchStudyGroupsTab, fetchWelcomeTab, fetchLeaderboardTab } from '../data';
-import { getGroupStreaks, getStudyGroupComments, getStudyGroupsTabData } from '../data/api';
+import {
+  getWelcomeTabData, getDatesTabData, getProgressTabData, getLeaderboardTabData,
+  getStudyGroupsTabData, getGroupStreaks, getStudyGroupComments,
+} from '../data/api';
 import StreakCalendar from './StreakCalendar';
 import GroupStreaks from './GroupStreaks';
 import StudyTip from './StudyTip';
@@ -200,178 +202,127 @@ const WelcomeTab = () => {
     };
   }, [studyGroups, currentUsername, courseId, welcomeData]);
   
-  // Fetch dates data để dùng Timeline component - lazy load
+  // Supplementary data models
   const datesModel = useModel('dates', courseId) || {};
   const { courseDateBlocks } = datesModel;
   const [loadingDates, setLoadingDates] = useState(true);
-
-  useEffect(() => {
-    // Fetch dates data nếu chưa có
-    if (courseId && !courseDateBlocks) {
-      dispatch(fetchDatesTab(courseId)).then(() => {
-        setDataLoaded(prev => ({ ...prev, dates: true }));
-        setLoadingDates(false);
-      }).catch(() => {
-        setLoadingDates(false);
-      });
-    } else {
-      setDataLoaded(prev => ({ ...prev, dates: true }));
-      setLoadingDates(false);
-    }
-  }, [courseId, dispatch, courseDateBlocks]);
-
-  // Ensure progress model is loaded (BadgeTab fetches it; WelcomeTab needs it too) - lazy load
-  const progressFetchingRef = useRef(false);
   const [loadingProgress, setLoadingProgress] = useState(true);
-  
-  useEffect(() => {
-    if (!courseId) return;
-    const shouldFetchProgress = courseId && !progressFetchingRef.current && !(progressModel && progressModel.completionSummary);
-    if (shouldFetchProgress) {
-      progressFetchingRef.current = true;
-      const p = dispatch(fetchProgressTab(courseId));
-      if (p && typeof p.then === 'function') {
-        p.then(() => {
-          setDataLoaded(prev => ({ ...prev, progress: true }));
-          setLoadingProgress(false);
-        }).catch(() => {
-          setLoadingProgress(false);
-        });
-        if (p && typeof p.finally === 'function') {
-          p.finally(() => { progressFetchingRef.current = false; });
-        } else {
-          progressFetchingRef.current = false;
-        }
-      } else {
-        progressFetchingRef.current = false;
-        setDataLoaded(prev => ({ ...prev, progress: true }));
-        setLoadingProgress(false);
-      }
-    } else {
-      setDataLoaded(prev => ({ ...prev, progress: true }));
-      setLoadingProgress(false);
-    }
-    // Only depend on courseId and dispatch to avoid loops caused by changing model references
-  }, [courseId, dispatch]);
-
-  // Ensure welcome data contains dailyQuests (refresh if backend didn't provide them) - lazy load
-  const welcomeFetchingRef = useRef(false);
   const [loadingWelcome, setLoadingWelcome] = useState(true);
-  
-  useEffect(() => {
-    if (!courseId) return;
-    const hasDailyQuests = Boolean(welcomeData && welcomeData.dailyQuests && welcomeData.dailyQuests.length > 0);
-    const shouldFetchWelcome = !hasDailyQuests && !welcomeFetchingRef.current;
-    if (shouldFetchWelcome) {
-      welcomeFetchingRef.current = true;
-      const p = dispatch(fetchWelcomeTab(courseId));
-      if (p && typeof p.then === 'function') {
-        p.then(() => {
-          setDataLoaded(prev => ({ ...prev, welcome: true }));
-          setLoadingWelcome(false);
-        }).catch(() => {
-          setLoadingWelcome(false);
-        });
-        if (p && typeof p.finally === 'function') {
-          p.finally(() => { welcomeFetchingRef.current = false; });
-        } else {
-          welcomeFetchingRef.current = false;
-        }
-      } else {
-        welcomeFetchingRef.current = false;
-        setDataLoaded(prev => ({ ...prev, welcome: true }));
-        setLoadingWelcome(false);
-      }
-    } else {
-      setDataLoaded(prev => ({ ...prev, welcome: true }));
-      setLoadingWelcome(false);
-    }
-    // Only depend on courseId and dispatch to avoid continuous fetch loops
-  }, [courseId, dispatch]);
-
-  // Ensure study-groups model is loaded so we can inspect comments if backend provides them - lazy load
   const [loadingStudyGroups, setLoadingStudyGroups] = useState(true);
-  
-  useEffect(() => {
-    const shouldFetchStudyGroups = courseId && !(studyGroupsModel && studyGroupsModel.results !== undefined);
-    if (shouldFetchStudyGroups) {
-      dispatch(fetchStudyGroupsTab(courseId)).then(() => {
-        setDataLoaded(prev => ({ ...prev, studyGroups: true }));
-        setLoadingStudyGroups(false);
-      }).catch(() => {
-        setLoadingStudyGroups(false);
-      });
-    } else {
-      setDataLoaded(prev => ({ ...prev, studyGroups: true }));
-      setLoadingStudyGroups(false);
-    }
-  }, [courseId, dispatch, studyGroupsModel]);
-
-  // Ensure leaderboard model is loaded so we can show the current user's class rank - lazy load
-  const leaderboardFetchingRef = useRef(false);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
-  
-  useEffect(() => {
-    if (!courseId) return;
-    const hasLeaderboardData = Boolean(leaderboardModel && (leaderboardModel.topStudents !== undefined || leaderboardModel.summary !== undefined));
-    const shouldFetchLeaderboard = courseId && !hasLeaderboardData && !leaderboardFetchingRef.current;
-    if (shouldFetchLeaderboard) {
-      leaderboardFetchingRef.current = true;
-      const p = dispatch(fetchLeaderboardTab(courseId));
-      if (p && typeof p.then === 'function') {
-        p.then(() => {
-          setDataLoaded(prev => ({ ...prev, leaderboard: true }));
-          setLoadingLeaderboard(false);
-        }).catch(() => {
-          setLoadingLeaderboard(false);
-        });
-        if (p && typeof p.finally === 'function') {
-          p.finally(() => { leaderboardFetchingRef.current = false; });
-        } else {
-          leaderboardFetchingRef.current = false;
-        }
-      } else {
-        leaderboardFetchingRef.current = false;
-        setDataLoaded(prev => ({ ...prev, leaderboard: true }));
-        setLoadingLeaderboard(false);
-      }
-    } else {
-      setDataLoaded(prev => ({ ...prev, leaderboard: true }));
-      setLoadingLeaderboard(false);
-    }
-    // Only depend on courseId and dispatch to avoid loops caused by changing model object references
-  }, [courseId, dispatch]);
-
-  // Fetch group streaks - lazy load
   const [groupStreaks, setGroupStreaks] = useState([]);
   const [loadingStreaks, setLoadingStreaks] = useState(true);
 
+  // Single consolidated fetch for ALL supplementary data — NO redundant metadata calls.
+  // Each API is called directly (not via fetchTab thunk which would re-fetch metadata).
+  const supplementaryFetchRef = useRef(false);
+
   useEffect(() => {
-    const fetchGroupStreaks = async () => {
-      if (!courseId) {
-        setLoadingStreaks(false);
-        return;
+    if (!courseId || supplementaryFetchRef.current) return;
+    supplementaryFetchRef.current = true;
+
+    const fetchAll = async () => {
+      // Launch all supplementary API calls in parallel
+      const promises = [];
+
+      // 1. Welcome data (if dailyQuests not yet available)
+      const hasDailyQuests = Boolean(welcomeData?.dailyQuests?.length > 0);
+      if (!hasDailyQuests) {
+        promises.push(
+          getWelcomeTabData(courseId).then((data) => {
+            dispatch(addModel({ modelType: 'welcome', model: { id: courseId, ...data } }));
+          }).catch(() => {}).finally(() => {
+            setLoadingWelcome(false);
+            setDataLoaded((prev) => ({ ...prev, welcome: true }));
+          }),
+        );
+      } else {
+        setLoadingWelcome(false);
+        setDataLoaded((prev) => ({ ...prev, welcome: true }));
       }
-      
-      setLoadingStreaks(true);
-      try {
-        const data = await getGroupStreaks(courseId);
-        if (data && data.success && data.groups) {
-          setGroupStreaks(data.groups);
-        } else {
+
+      // 2. Progress data
+      const hasProgress = Boolean(progressModel?.completionSummary);
+      if (!hasProgress) {
+        promises.push(
+          getProgressTabData(courseId).then((data) => {
+            dispatch(addModel({ modelType: 'progress', model: { id: courseId, ...data } }));
+          }).catch(() => {}).finally(() => {
+            setLoadingProgress(false);
+            setDataLoaded((prev) => ({ ...prev, progress: true }));
+          }),
+        );
+      } else {
+        setLoadingProgress(false);
+        setDataLoaded((prev) => ({ ...prev, progress: true }));
+      }
+
+      // 3. Dates data
+      if (!courseDateBlocks) {
+        promises.push(
+          getDatesTabData(courseId).then((data) => {
+            dispatch(addModel({ modelType: 'dates', model: { id: courseId, ...data } }));
+          }).catch(() => {}).finally(() => {
+            setLoadingDates(false);
+            setDataLoaded((prev) => ({ ...prev, dates: true }));
+          }),
+        );
+      } else {
+        setLoadingDates(false);
+        setDataLoaded((prev) => ({ ...prev, dates: true }));
+      }
+
+      // 4. Study groups data
+      const hasStudyGroups = Boolean(studyGroupsModel?.results !== undefined);
+      if (!hasStudyGroups) {
+        promises.push(
+          getStudyGroupsTabData(courseId).then((data) => {
+            dispatch(addModel({ modelType: 'study-groups', model: { id: courseId, ...data } }));
+          }).catch(() => {}).finally(() => {
+            setLoadingStudyGroups(false);
+            setDataLoaded((prev) => ({ ...prev, studyGroups: true }));
+          }),
+        );
+      } else {
+        setLoadingStudyGroups(false);
+        setDataLoaded((prev) => ({ ...prev, studyGroups: true }));
+      }
+
+      // 5. Leaderboard data
+      const hasLeaderboard = Boolean(leaderboardModel?.topStudents !== undefined || leaderboardModel?.summary !== undefined);
+      if (!hasLeaderboard) {
+        promises.push(
+          getLeaderboardTabData(courseId).then((data) => {
+            dispatch(addModel({ modelType: 'leaderboardTab', model: { id: courseId, ...data } }));
+          }).catch(() => {}).finally(() => {
+            setLoadingLeaderboard(false);
+            setDataLoaded((prev) => ({ ...prev, leaderboard: true }));
+          }),
+        );
+      } else {
+        setLoadingLeaderboard(false);
+        setDataLoaded((prev) => ({ ...prev, leaderboard: true }));
+      }
+
+      // 6. Group streaks
+      promises.push(
+        getGroupStreaks(courseId).then((data) => {
+          if (data?.success && data.groups) {
+            setGroupStreaks(data.groups);
+          }
+        }).catch(() => {
           setGroupStreaks([]);
-        }
-      } catch (error) {
-        // Giữ xử lý lỗi nhưng không log ra console để tránh spam
-        setGroupStreaks([]);
-      } finally {
-        setLoadingStreaks(false);
-        setDataLoaded(prev => ({ ...prev, groupStreaks: true }));
-      }
+        }).finally(() => {
+          setLoadingStreaks(false);
+          setDataLoaded((prev) => ({ ...prev, groupStreaks: true }));
+        }),
+      );
+
+      await Promise.allSettled(promises);
     };
 
-    fetchGroupStreaks();
-  }, [courseId]);
+    fetchAll();
+  }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If still in initial loading state and no data at all, show quick spinner
   if (loading && !initialLoadComplete) {

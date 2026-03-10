@@ -53,7 +53,7 @@ import {
 
 import './StudyGroupsTab.scss';
 
-// Load Material Icons Round stylesheet if running in browser (no React hooks here)
+// Load Material Icons Round stylesheet if running in browser (non-blocking)
 (function ensureMaterialIcons() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   const href = "https://fonts.googleapis.com/icon?family=Material+Icons+Round";
@@ -61,6 +61,8 @@ import './StudyGroupsTab.scss';
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
+    link.media = 'print';
+    link.onload = function() { this.media = 'all'; };
     document.head.appendChild(link);
   }
 })();
@@ -374,7 +376,7 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
       clearTimeout(searchTimerRef.current);
     }
     // reload after small delay to debounce
-    searchTimerRef.current = setTimeout(() => loadUsers({ reset: true, searchTerm: val }), 150);
+    searchTimerRef.current = setTimeout(() => loadUsers({ reset: true, searchTerm: val }), 400);
   };
 
   const handleAddUser = async (usernameOrEmail) => {
@@ -510,8 +512,6 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
   const userReaction = comment.userReaction;
 
   const handleReaction = async (reactionType) => {
-    logInfo('Handling reaction', { commentId: comment.id, reactionType, currentReaction: userReaction });
-    
     // Optimistic update: update UI immediately
     const isRemoving = userReaction === reactionType;
     const newReactionType = isRemoving ? null : reactionType;
@@ -539,14 +539,10 @@ const ReactionPicker = ({ comment, onReactionChange }) => {
     try {
       if (isRemoving) {
         // Remove reaction
-        logInfo('Removing reaction', { commentId: comment.id, reactionType });
         await removeReaction(comment.id);
-        logInfo('Reaction removed successfully', { commentId: comment.id });
       } else {
         // Add or change reaction
-        logInfo('Adding/changing reaction', { commentId: comment.id, reactionType });
         const result = await addReaction(comment.id, reactionType);
-        logInfo('Reaction added/changed successfully', { commentId: comment.id, result });
         
         // Update with server response if available
         if (result && result.reactionCounts) {
@@ -1045,7 +1041,8 @@ const CommentCard = ({ comment, group, onReactionChange, onCommentUpdate, onComm
   const [localComment, setLocalComment] = useState(comment);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [errorModal, setErrorModal] = useState(null);
-  const currentUsername = getAuthenticatedUser()?.username || getAuthenticatedUser()?.email || null;
+  const _currentUser = getAuthenticatedUser();
+  const currentUsername = _currentUser?.username || _currentUser?.email || null;
   const [editUploadingFile, setEditUploadingFile] = useState(false);
 
   // Update local comment when prop changes
@@ -1537,7 +1534,7 @@ const getInitialCommentCount = (group) =>
   (Array.isArray(group?.comments) ? group.comments.length : 0) ??
   0;
 
-const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, onGroupDeleted, onMemberAdded, onMemberRemoved }) => {
+const GroupCard = memo(({ group, courseId, currentUserId, currentUsername: currentUsernameProp, onUpdate, onGroupUpdated, onGroupDeleted, onMemberAdded, onMemberRemoved }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
@@ -1562,8 +1559,8 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
     setLocalGroup(group);
   }, [group]);
 
-  // Lấy username hiện tại (fallback null)
-  const currentUsername = getAuthenticatedUser()?.username || null;
+  // Lấy username hiện tại từ prop
+  const currentUsername = currentUsernameProp || null;
 
   // Check if user is owner: match by id OR username to avoid type mismatches
   // Also handle case where createdBy/created_by is a direct ID (number/string) not an object
@@ -1616,62 +1613,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const canDelete = isOwner || (isOwner && apiCanDelete);
   const showGroupMenu = isOwner;
 
-  // Log quyền của tài khoản trong nhóm (một lần theo group/id)
-  useEffect(() => {
-    logInfo('StudyGroup permissions', {
-      groupId: localGroup.id,
-      currentUserId,
-      currentUsername,
-      ownerId,
-      ownerUsername,
-      currentRole,
-      isOwner,
-      isMember,
-      flagsFromApi: {
-        canManageMembers: localGroup.canManageMembers,
-        canEdit: localGroup.canEdit,
-        canDelete: localGroup.canDelete,
-      },
-      derived: {
-        canManageMembers,
-        canEdit,
-        canDelete,
-        showGroupMenu,
-      },
-    });
-  }, [
-    localGroup.id,
-    currentUserId,
-    currentUsername,
-    ownerId,
-    ownerUsername,
-    currentRole,
-    isOwner,
-    isMember,
-    canManageMembers,
-    canEdit,
-    canDelete,
-    showGroupMenu,
-    localGroup.canManageMembers,
-    localGroup.canEdit,
-    localGroup.canDelete,
-  ]);
-
-  // Debug logs for permission issues (giữ tối thiểu)
-  useEffect(() => {
-    logInfo('GroupCard permission check', {
-      groupId: localGroup.id,
-      currentUserId,
-      ownerId,
-      currentRole,
-      isOwner,
-      isGroupAdmin,
-      canManageMembers,
-      canEdit,
-      canDelete,
-      showGroupMenu,
-    });
-  }, [localGroup.id, currentUserId, ownerId, currentRole, isOwner, isGroupAdmin, canManageMembers, canEdit, canDelete, showGroupMenu]);
   const commentsLoadedRef = useRef(false);
   const commentCountLoadedRef = useRef(false);
 
@@ -1684,7 +1625,6 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
   const loadComments = useCallback(async (reset = true) => {
     // Use a ref to track if we're currently loading to prevent concurrent calls
     if (commentsLoadedRef.current === 'loading' && reset) {
-      logInfo('Comments already loading, skipping', { groupId: localGroup.id });
       return;
     }
     
@@ -2634,17 +2574,21 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                                   className="post-action-btn"
                                   onClick={handleViewProfile}
                                   title="Xem hồ sơ"
-                                  style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                  style={{ border: '1px solid #e5e7eb', background: '#f8f9fc', borderRadius: '10px', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = '#eef0f7'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = '#f8f9fc'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
                                 >
-                                  👁
+                                  <span className="fa fa-user" style={{ fontSize: '15px', color: '#6366f1' }} aria-hidden="true" />
                                 </button>
                                 <button
                                   className="post-action-btn"
                                   onClick={() => handleRemoveMember(null, member)}
                                   title="Xóa khỏi nhóm"
-                                  style={{ border: '1px solid #e5e7f0', background: '#ffffff', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                  style={{ border: '1px solid #e5e7eb', background: '#f8f9fc', borderRadius: '10px', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = '#f8f9fc'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
                                 >
-                                  🗑
+                                  <span className="fa fa-trash" style={{ fontSize: '15px', color: '#ef4444' }} aria-hidden="true" />
                                 </button>
                               </>
                             );
@@ -2834,7 +2778,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
       />
     </>
   );
-};
+});
 
 // Main Component
 const StudyGroupsTab = () => {
@@ -2862,31 +2806,6 @@ const StudyGroupsTab = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  // Debug: Log component render - only log when meaningful data changes
-  // Use window to persist across remounts
-  if (!window.__studyGroupsRenderCache) {
-    window.__studyGroupsRenderCache = new Map();
-  }
-  const renderCacheKey = `render::${courseId}`;
-  
-  useEffect(() => {
-    const currentData = {
-      courseId,
-      hasResults: studyGroupsModel.results !== undefined,
-      resultsCount: studyGroupsModel.results?.length || 0,
-      refreshKey,
-    };
-    
-    const prevData = window.__studyGroupsRenderCache.get(renderCacheKey);
-    const prevDataStr = prevData ? JSON.stringify(prevData) : null;
-    const currentDataStr = JSON.stringify(currentData);
-    const hasChanged = prevDataStr !== currentDataStr;
-    
-    if (hasChanged) {
-      window.__studyGroupsRenderCache.set(renderCacheKey, currentData);
-    }
-  });
-
   const currentUser = getAuthenticatedUser();
   // Fallback to username when id is missing to keep permission checks working
   const currentUserId = currentUser?.id || currentUser?.username || null;
@@ -2901,88 +2820,18 @@ const StudyGroupsTab = () => {
   // Only used for optimistic updates, not for initial render or refresh
   const [localGroups, setLocalGroups] = useState(null); // null = use model, array = use local
 
-  // Debug: Log when model changes - only log actual changes
-  // Use window object to persist across remounts
-  if (!window.__studyGroupsModelResultsCache) {
-    window.__studyGroupsModelResultsCache = new Map();
-  }
-  const cacheKey = `modelResults::${courseId}`;
-  
-  useEffect(() => {
-    const currentResults = studyGroupsModel.results;
-    const prevResults = window.__studyGroupsModelResultsCache.get(cacheKey);
-    const prevResultsStr = prevResults ? JSON.stringify(prevResults) : null;
-    const currentResultsStr = currentResults ? JSON.stringify(currentResults) : null;
-    const hasChanged = prevResultsStr !== currentResultsStr;
-    
-    if (hasChanged && currentResults !== undefined) {
-      // Cache the results for restoration on remount
-      window.__studyGroupsModelResultsCache.set(cacheKey, currentResults);
-    }
-  }, [studyGroupsModel.results, courseId]);
-
-  // Debug: Log when localGroups changes - only log actual changes
-  if (!window.__studyGroupsLocalGroupsCache) {
-    window.__studyGroupsLocalGroupsCache = new Map();
-  }
-  const localGroupsCacheKey = `localGroups::${courseId}`;
-  
-  useEffect(() => {
-    const prevLocalGroups = window.__studyGroupsLocalGroupsCache.get(localGroupsCacheKey);
-    const prevLocalGroupsStr = prevLocalGroups !== undefined ? JSON.stringify(prevLocalGroups) : null;
-    const currentLocalGroupsStr = localGroups !== null ? JSON.stringify(localGroups) : null;
-    const hasChanged = prevLocalGroupsStr !== currentLocalGroupsStr;
-    
-    if (hasChanged) {
-      window.__studyGroupsLocalGroupsCache.set(localGroupsCacheKey, localGroups);
-    }
-  }, [localGroups, courseId]);
-
-  // Track previous groups to detect actual changes - use window to persist across remounts
-  if (!window.__studyGroupsGroupsCache) {
-    window.__studyGroupsGroupsCache = new Map();
-  }
-  const groupsCacheKey = `groups::${courseId}`;
-  
   const groups = useMemo(() => {
-    // Calculate cache keys inside useMemo to ensure consistency
-    const modelResultsCacheKey = `modelResults::${courseId}`;
-    const groupsCacheKeyLocal = `groups::${courseId}`;
-    
     // Prefer localGroups if set (for optimistic updates)
     if (localGroups !== null) {
-      const result = localGroups;
-      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
-      return result;
+      return localGroups;
     }
-    
     // Use model results if available
     if (studyGroupsModel.results !== undefined) {
-      const result = studyGroupsModel.results;
-      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
-      return result;
+      return studyGroupsModel.results;
     }
-    
-    // Fallback to cached results if model is not ready yet (prevents flicker on remount)
-    const cachedResults = window.__studyGroupsModelResultsCache.get(modelResultsCacheKey);
-    if (cachedResults !== undefined) {
-      const result = cachedResults;
-      window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
-      return result;
-    }
-    
     // Default to empty array
-    const result = [];
-    
-    // Track last groups in cache
-    const prevGroups = window.__studyGroupsGroupsCache.get(groupsCacheKeyLocal);
-    const prevGroupsStr = prevGroups ? JSON.stringify(prevGroups) : null;
-    const currentGroupsStr = JSON.stringify(result);
-    const hasChanged = prevGroupsStr !== currentGroupsStr;
-    
-    window.__studyGroupsGroupsCache.set(groupsCacheKeyLocal, result);
-    return result;
-  }, [localGroups, studyGroupsModel.results, courseId]);
+    return [];
+  }, [localGroups, studyGroupsModel.results]);
   
   // Reset localGroups to null on manual refresh to use model directly
   // This prevents double rendering when refresh happens
@@ -3072,104 +2921,29 @@ const StudyGroupsTab = () => {
     });
   }, [studyGroupsModel.results]);
 
-  // Use module-level storage to persist across component remounts
-  // This ensures the fetch guard works even when component unmounts/remounts
-  if (!window.__studyGroupsStreaksFetchedMap) {
-    window.__studyGroupsStreaksFetchedMap = new Map();
-  }
-  if (!window.__studyGroupsStreaksFetching) {
-    window.__studyGroupsStreaksFetching = new Set();
-  }
-  if (!window.__studyGroupsStreaksDataCache) {
-    window.__studyGroupsStreaksDataCache = new Map();
-  }
-  
-  // Initialize state based on whether data was already fetched
-  // This prevents flicker when component remounts with cached data
-  const getInitialStreaksState = () => {
-    if (!courseId) return { groups: [], loading: false };
-    const fetchKey = `groupStreaks::${courseId}`;
-    const isAlreadyFetched = window.__studyGroupsStreaksFetchedMap.has(fetchKey);
-    const isCurrentlyFetching = window.__studyGroupsStreaksFetching.has(fetchKey);
-    const cachedData = window.__studyGroupsStreaksDataCache.get(fetchKey);
-    
-    // If already fetched, restore cached data and don't show loading spinner
-    if (isAlreadyFetched && cachedData) {
-      return { groups: cachedData, loading: false };
-    }
-    // If currently fetching, show loading but don't restore data
-    if (isCurrentlyFetching) {
-      return { groups: [], loading: true };
-    }
-    // Otherwise, show loading and empty data
-    return { groups: [], loading: true };
-  };
-  
-  const initialState = getInitialStreaksState();
   // Fetch group streaks
-  const [groupStreaks, setGroupStreaks] = useState(initialState.groups);
-  const [loadingStreaks, setLoadingStreaks] = useState(initialState.loading);
-  
+  const [groupStreaks, setGroupStreaks] = useState([]);
+  const [loadingStreaks, setLoadingStreaks] = useState(true);
+  const streaksFetchedRef = useRef(false);
+
   useEffect(() => {
     if (!courseId) {
       setLoadingStreaks(false);
       return;
     }
-
-    const fetchKey = `groupStreaks::${courseId}`;
-    const isAlreadyFetched = window.__studyGroupsStreaksFetchedMap.has(fetchKey);
-    const isCurrentlyFetching = window.__studyGroupsStreaksFetching.has(fetchKey);
-
-    // Skip if already fetched or currently fetching (prevent double fetch)
-    if (isAlreadyFetched || isCurrentlyFetching) {
-      if (isAlreadyFetched) {
-        // If already fetched, restore cached data and set loading to false
-        const cachedData = window.__studyGroupsStreaksDataCache.get(fetchKey);
-        if (cachedData) {
-          setGroupStreaks(cachedData);
-        }
-        setLoadingStreaks(false);
-      }
-      return;
-    }
-
-    // Set flags immediately to prevent double fetch (BEFORE async operation)
-    window.__studyGroupsStreaksFetching.add(fetchKey);
-    setLoadingStreaks(true);
+    if (streaksFetchedRef.current) return;
+    streaksFetchedRef.current = true;
 
     const fetchGroupStreaks = async () => {
       try {
         const data = await getGroupStreaks(courseId);
-        
-        // Mark as fetched AFTER successful fetch
-        window.__studyGroupsStreaksFetchedMap.set(fetchKey, true);
-        
-        // Only update state if data actually changed (prevent unnecessary re-renders)
         const newGroups = (data && data.success && data.groups) ? data.groups : [];
-        
-        // Cache the data for restoration on remount
-        window.__studyGroupsStreaksDataCache.set(fetchKey, newGroups);
-        
-        setGroupStreaks(prevGroups => {
-          // Compare to avoid unnecessary updates
-          const prevGroupsStr = JSON.stringify(prevGroups);
-          const newGroupsStr = JSON.stringify(newGroups);
-          if (prevGroupsStr !== newGroupsStr) {
-            return newGroups;
-          }
-          return prevGroups;
-        });
+        setGroupStreaks(newGroups);
       } catch (error) {
-        // Keep an error log for debugging/monitoring
         logError('Error fetching group streaks', error);
-        setGroupStreaks([]);
-        // Remove from map and cache on error to allow retry
-        window.__studyGroupsStreaksFetchedMap.delete(fetchKey);
-        window.__studyGroupsStreaksDataCache.delete(fetchKey);
+        streaksFetchedRef.current = false; // allow retry on error
       } finally {
         setLoadingStreaks(false);
-        // Remove from fetching set
-        window.__studyGroupsStreaksFetching.delete(fetchKey);
       }
     };
 
@@ -3196,7 +2970,6 @@ const StudyGroupsTab = () => {
     const shouldFetch = courseId && !welcomeFetchedRef.current && !hasData && !isSuccess;
 
     if (shouldFetch) {
-      logInfo('Fetching welcome tab data', { courseId });
       dispatch(fetchWelcomeTab(courseId));
       welcomeFetchedRef.current = true;
     }
@@ -3318,6 +3091,7 @@ const StudyGroupsTab = () => {
                         group={group}
                         courseId={courseId}
                         currentUserId={currentUserId}
+                        currentUsername={currentUsername}
                         onUpdate={handleRefresh}
                         onGroupUpdated={updateGroupInList}
                         onGroupDeleted={removeGroupFromList}
