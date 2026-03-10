@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet';
 
 import { getConfig } from '@edx/frontend-platform';
-import { useToggle } from '@openedx/paragon';
+import { Hyperlink, useToggle } from '@openedx/paragon';
 
 import { CourseTabsNavigation } from '../course-tabs';
 import { useModel } from '../generic/model-store';
@@ -238,6 +238,18 @@ const LoadedTabPage = ({
             ...logistrationAlert,
           }}
         />
+        <div className="container-xl mt-2 mb-1">
+          <nav aria-label="Breadcrumb" style={{ fontSize: '0.875rem' }}>
+            <Hyperlink
+              destination={`${getConfig().LMS_BASE_URL}/dashboard`}
+              style={{ color: '#707070', textDecoration: 'none' }}
+            >
+              ← Khóa học của tôi
+            </Hyperlink>
+            <span style={{ color: '#aaa', margin: '0 0.5rem' }}>/</span>
+            <span style={{ color: '#333' }}>{title}</span>
+          </nav>
+        </div>
         <CourseTabsNavigation tabs={tabs} className="mb-3" activeTabSlug={activeTabSlug} />
         <div id="main-content" className="container-xl">
           {children}

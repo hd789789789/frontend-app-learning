@@ -64,8 +64,8 @@ const CourseHomeRedirect = () => {
     // 2. Number of segments is exactly 2 (course and courseId)
     // 3. NOT /course/:courseId/home, /course/:courseId/welcome, etc.
     if (normalizedPathname === expectedBasePath && pathSegments.length === expectedSegments.length) {
-        console.log(`[CourseHomeRedirect] Redirecting from ${pathname} to /course/${courseId}/home`);
-        return <Navigate to={`/course/${courseId}/home`} replace />;
+        console.log(`[CourseHomeRedirect] Redirecting from ${pathname} to /course/${courseId}/welcome`);
+        return <Navigate to={`/course/${courseId}/welcome`} replace />;
     }
     
     console.log(`[CourseHomeRedirect] No redirect - pathname: ${pathname}, normalized: ${normalizedPathname}, expected: ${expectedBasePath}, segments: ${pathSegments.length} vs ${expectedSegments.length}`);

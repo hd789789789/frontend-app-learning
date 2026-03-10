@@ -35,6 +35,9 @@ import {
   addStudyGroupMember,
   removeStudyGroupMember,
   getAvailableMembers,
+  inviteStudyGroupMember,
+  getMyInvitations,
+  respondToInvitation,
   getStudyGroupMembers,
   getStudyGroupComments,
   getCommentDetail,
@@ -377,51 +380,36 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     setLoadingAdd(true);
     setError(null);
     try {
-      const result = await addStudyGroupMember(groupId, usernameOrEmail);
-      logInfo('Member added successfully', { groupId, usernameOrEmail, result });
-      
-      // Ensure the member data is properly formatted
-      // Backend may return user as collapsed reference (just username) or expanded (full user object)
-      const formattedMember = {
-        id: result.id,
-        user_id: result.user_id || result.userId || result.user?.id,
-        user: result.user || (typeof result.user === 'string' ? { username: result.user } : null),
-        role: result.role || 'member',
-        joinedAt: result.joinedAt || result.joined_at || new Date().toISOString(),
-      };
-      
-      // If user is just a string (username), try to get full user info from the users list
-      if (typeof formattedMember.user === 'string' || !formattedMember.user) {
-        const foundUser = users.find(u => u.username === usernameOrEmail || u.email === usernameOrEmail);
-        if (foundUser) {
-          formattedMember.user = {
-            id: foundUser.id,
-            username: foundUser.username,
-            email: foundUser.email,
-            fullName: foundUser.full_name || foundUser.fullName,
-          };
-        } else if (typeof formattedMember.user === 'string') {
-          // Fallback: create minimal user object from username
-          formattedMember.user = {
-            username: formattedMember.user,
-          };
-        }
-      }
-      
-      // Pass the formatted member to onSuccess callback
+      const result = await inviteStudyGroupMember(groupId, usernameOrEmail);
+      logInfo('Invitation sent successfully', { groupId, usernameOrEmail, result });
+
+      // Show success feedback via onSuccess callback
       if (onSuccess) {
-        onSuccess(formattedMember);
+        onSuccess({ invited: true, usernameOrEmail, ...result });
       }
-      
-      // refresh list to remove added user
+
+      // refresh list to remove invited user
       setUsers([]);
       setHasMore(false);
       pageRef.current = 1;
       loadUsers({ reset: true, searchTerm: lastSearchRef.current });
     } catch (err) {
-      const msg = err.response?.data?.error || err.message || 'Có lỗi xảy ra khi thêm thành viên';
+      const errorData = err.response?.data;
+      // Handle nested validation errors from DRF
+      let msg = 'Có lỗi xảy ra khi gửi lời mời';
+      if (errorData) {
+        if (typeof errorData === 'string') {
+          msg = errorData;
+        } else if (errorData.error) {
+          msg = errorData.error;
+        } else if (errorData.user) {
+          msg = Array.isArray(errorData.user) ? errorData.user[0] : errorData.user;
+        } else if (errorData.non_field_errors) {
+          msg = Array.isArray(errorData.non_field_errors) ? errorData.non_field_errors[0] : errorData.non_field_errors;
+        }
+      }
       setError(msg);
-      logError('Failed to add member', {
+      logError('Failed to send invitation', {
         groupId,
         usernameOrEmail,
         error: err.response?.data,
@@ -437,13 +425,13 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
     <ModalDialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Thêm thành viên"
+      title="Mời thành viên"
       size="md"
       hasCloseButton
       isFullscreenOnMobile
     >
       <ModalDialog.Header>
-        <ModalDialog.Title>Thêm thành viên</ModalDialog.Title>
+        <ModalDialog.Title>Mời thành viên</ModalDialog.Title>
       </ModalDialog.Header>
       <ModalDialog.Body>
         {error && <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-3">{error}</Alert>}
@@ -474,8 +462,9 @@ const AddMemberModal = ({ isOpen, onClose, groupId, onSuccess }) => {
                 onClick={() => handleAddUser(user.username)}
                 disabled={loadingAdd}
                 className="icon-pill"
+                title="Gửi lời mời"
               >
-                +
+                ✉
               </Button>
             </div>
           ))}
@@ -2529,7 +2518,7 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
                     size="sm"
                     variant="primary"
                     onClick={() => setShowAddMember(true)}
-                    title="Thêm thành viên"
+                    title="Mời thành viên"
                   >
                     +
                   </Button>
@@ -2825,94 +2814,10 @@ const GroupCard = ({ group, courseId, currentUserId, onUpdate, onGroupUpdated, o
         isOpen={showAddMember}
         onClose={() => setShowAddMember(false)}
         groupId={localGroup.id}
-        onSuccess={async (newMember) => {
-          // Fetch full member list to ensure we have complete data
-          try {
-            const membersData = await getStudyGroupMembers(localGroup.id);
-            logInfo('Fetched members after adding', { groupId: localGroup.id, membersData });
-            
-            // Handle different response formats
-            const allMembers = Array.isArray(membersData) 
-              ? membersData 
-              : (membersData.results || membersData.members || []);
-            
-            if (allMembers.length > 0) {
-              // Format all members to ensure consistency
-              const formattedMembers = allMembers.map(m => ({
-                id: m.id,
-                user_id: m.user_id || m.userId || m.user?.id,
-                user: m.user || (typeof m.user === 'string' ? { username: m.user } : { username: 'Người dùng đã xóa' }),
-                role: m.role || 'member',
-                joinedAt: m.joinedAt || m.joined_at || new Date().toISOString(),
-              }));
-              
-              // Update local group with full member list
-              setLocalGroup((prev) => ({
-                ...prev,
-                members: formattedMembers,
-                memberCount: formattedMembers.length,
-              }));
-              
-              // Also update parent groups list
-              if (onMemberAdded) {
-                // Find the newly added member
-                const addedMember = formattedMembers.find(m => 
-                  m.id === newMember.id || 
-                  (m.user?.username && newMember.user?.username && m.user.username === newMember.user.username) ||
-                  (m.user_id === (newMember.user_id || newMember.userId))
-                );
-                if (addedMember) {
-                  onMemberAdded(localGroup.id, addedMember);
-                }
-              }
-            } else {
-              // Fallback: use the returned member data
-              const formattedMember = {
-                id: newMember.id,
-                user_id: newMember.user_id || newMember.userId || newMember.user?.id,
-                user: newMember.user || (typeof newMember.user === 'string' ? { username: newMember.user } : { username: 'Người dùng đã xóa' }),
-                role: newMember.role || 'member',
-                joinedAt: newMember.joinedAt || newMember.joined_at || new Date().toISOString(),
-              };
-              
-              if (onMemberAdded) {
-                onMemberAdded(localGroup.id, formattedMember);
-              }
-              
-              setLocalGroup((prev) => ({
-                ...prev,
-                members: [...(prev.members || []), formattedMember],
-                memberCount: (prev.memberCount || 0) + 1,
-              }));
-            }
-          } catch (err) {
-            logError('Failed to fetch members after adding', {
-              groupId: localGroup.id,
-              error: err.response?.data,
-              status: err.response?.status,
-              message: err.message,
-            });
-            
-            // Fallback: use the returned member data with better formatting
-            const formattedMember = {
-              id: newMember.id,
-              user_id: newMember.user_id || newMember.userId || newMember.user?.id,
-              user: newMember.user || (typeof newMember.user === 'string' ? { username: newMember.user } : { username: 'Người dùng đã xóa' }),
-              role: newMember.role || 'member',
-              joinedAt: newMember.joinedAt || newMember.joined_at || new Date().toISOString(),
-            };
-            
-            if (onMemberAdded) {
-              onMemberAdded(localGroup.id, formattedMember);
-            }
-            
-            setLocalGroup((prev) => ({
-              ...prev,
-              members: [...(prev.members || []), formattedMember],
-              memberCount: (prev.memberCount || 0) + 1,
-            }));
-          }
-          
+        onSuccess={(result) => {
+          logInfo('Invitation sent', { groupId: localGroup.id, result });
+          // Invitation sent - member will join after accepting
+          // No need to update member list immediately
           setShowAddMember(false);
         }}
       />
@@ -3095,6 +3000,44 @@ const StudyGroupsTab = () => {
   // Đã có data nhóm hay chưa (để tránh hiển thị trạng thái “chưa có nhóm”
   // trước khi BE trả về results lần đầu)
   const hasGroupsData = (studyGroupsModel.results !== undefined) || (localGroups !== null);
+
+  // Pending invitations for current user
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
+
+  const loadInvitations = useCallback(async () => {
+    if (!courseId) return;
+    setInvitationsLoading(true);
+    try {
+      const data = await getMyInvitations(courseId);
+      const results = data.results || data || [];
+      setPendingInvitations(Array.isArray(results) ? results : []);
+    } catch (err) {
+      logError('Failed to load invitations', { courseId, error: err.message });
+      setPendingInvitations([]);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    loadInvitations();
+  }, [loadInvitations]);
+
+  const handleRespondInvitation = async (invitationId, action) => {
+    try {
+      await respondToInvitation(invitationId, action);
+      // Remove from local list
+      setPendingInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      if (action === 'accept') {
+        // Refresh groups list to show the newly joined group
+        dispatch(fetchStudyGroupsTab(courseId));
+        setLocalGroups(null);
+      }
+    } catch (err) {
+      logError('Failed to respond to invitation', { invitationId, action, error: err.message });
+    }
+  };
 
   // Helper functions to update groups state without reloading
   const addGroupToList = useCallback((newGroup) => {
@@ -3313,6 +3256,38 @@ const StudyGroupsTab = () => {
               </Button>
             )}
           </div>
+
+          {pendingInvitations.length > 0 && (
+            <Alert variant="info" className="mb-3">
+              <strong style={{ fontSize: '1.1rem' }}>Lời mời tham gia nhóm học tập</strong>
+              <hr className="mt-2 mb-2" />
+              {pendingInvitations.map((inv) => (
+                <div key={inv.id} className="d-flex align-items-center justify-content-between py-2" style={{ borderBottom: '1px solid #e0e0e0' }}>
+                  <div>
+                    <strong>{inv.invitedBy?.username || 'Ai đó'}</strong>
+                    {' mời bạn vào nhóm '}
+                    <strong>{inv.groupName}</strong>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleRespondInvitation(inv.id, 'accept')}
+                    >
+                      Chấp nhận
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline-secondary"
+                      onClick={() => handleRespondInvitation(inv.id, 'decline')}
+                    >
+                      Từ chối
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </Alert>
+          )}
 
           <section className="panel">
             <div className="panel-head">

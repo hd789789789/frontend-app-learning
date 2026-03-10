@@ -993,3 +993,66 @@ export async function uploadCommentAttachment(commentId, file) {
     throw error;
   }
 }
+
+// ========================
+// Study Group Invitations
+// ========================
+
+export async function inviteStudyGroupMember(groupId, usernameOrEmail) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/study-groups/${groupId}/invitations/`;
+
+  try {
+    const { data } = await getAuthenticatedHttpClient().post(url, { user: usernameOrEmail });
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error inviting member:', {
+      groupId,
+      usernameOrEmail,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
+export async function getMyInvitations(courseId) {
+  const params = new URLSearchParams();
+  if (courseId) { params.append('course_id', courseId); }
+
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/invitations/my/?${params.toString()}`;
+
+  try {
+    const { data } = await getAuthenticatedHttpClient().get(url);
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error getting my invitations:', {
+      courseId,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
+
+export async function respondToInvitation(invitationId, action) {
+  const url = `${getConfig().LMS_BASE_URL}/api/study-groups/invitations/${invitationId}/respond/`;
+
+  try {
+    const { data } = await getAuthenticatedHttpClient().post(url, { action });
+    return camelCaseObject(data);
+  } catch (error) {
+    console.error('[Study Groups API] Error responding to invitation:', {
+      invitationId,
+      action,
+      url,
+      status: error.response?.status,
+      error: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+}
